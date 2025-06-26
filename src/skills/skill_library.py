@@ -52,12 +52,12 @@ def time_slow_effect(player: Player, game: 'Game') -> None:
 def reveal_fog_effect(player: Player, game: 'Game') -> None:
     """臨時擴大玩家的迷霧揭示範圍"""
     original_radius = game.vision_radius
-    game.vision_radius = original_radius * 5  # 擴大視野
+    game.vision_radius = original_radius * 100  # 擴大視野
     tile_x = int(player.pos[0] / TILE_SIZE)
     tile_y = int(player.pos[1] / TILE_SIZE)
     game.update_fog_map(tile_x, tile_y)
     game.vision_radius = original_radius  # 恢復原始視野
-    print(f"Skill 'Reveal Fog' used: Temporarily doubled vision radius to {original_radius * 2}")
+    print(f"Skill 'Reveal Fog' used: Temporarily doubled vision radius to {original_radius * 100}")
 
 
 SKILL_LIBRARY = [
@@ -65,5 +65,5 @@ SKILL_LIBRARY = [
     Skill(name="Carry 10 Weapons", cooldown=0.0, duration=0.0, effect=carry_more_weapons_effect),
     Skill(name="Shadow Dash", cooldown=2.0, duration=1.0, effect=shadow_dash_effect),
     Skill(name="Time Warp", cooldown=2.0, duration=2.0, effect=time_slow_effect),
-    Skill(name="Reveal Fog", cooldown=5.0, duration=3.0, effect=reveal_fog_effect),
+    Skill(name="Reveal Fog", cooldown=5.0, duration=0.0, effect=reveal_fog_effect),
 ]
