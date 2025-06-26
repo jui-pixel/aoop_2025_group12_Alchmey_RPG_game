@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
-from config import *
+from src.config import *
 import random
 
 
