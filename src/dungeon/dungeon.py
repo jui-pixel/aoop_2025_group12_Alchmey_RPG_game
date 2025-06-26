@@ -39,6 +39,8 @@ class Dungeon:
     # 地牢參數
     ROOM_WIDTH = 40  # 單個房間的最大寬度（瓦片數）
     ROOM_HEIGHT = 40  # 單個房間的最大高度（瓦片數）
+    GRID_WIDTH = 300  # 地牢網格的寬度（瓦片數）
+    GRID_HEIGHT = 300  # 地牢網格的高度（瓦片數）
     MIN_ROOM_SIZE = 30  # 房間的最小尺寸（寬度和高度）
     TILE_SIZE = TILE_SIZE  # 每個瓦片的像素大小（假設值，應從 config 導入）
     ROOM_GAP = 4  # 房間之間的最小間距（瓦片數）
@@ -63,8 +65,8 @@ class Dungeon:
 
     def _initialize_grid(self) -> None:
         # 初始化地牢網格，填充為 'Outside'
-        self.grid_width = self.ROOM_WIDTH * 10  # 網格尺寸（400x400）
-        self.grid_height = self.ROOM_HEIGHT * 10
+        self.grid_width =self.GRID_WIDTH
+        self.grid_height = self.GRID_HEIGHT
         self.dungeon_tiles = [['Outside' for _ in range(self.grid_width)] for _ in range(self.grid_height)]
         print(f"初始化地牢網格：寬度={self.grid_width}, 高度={self.grid_height}")
 

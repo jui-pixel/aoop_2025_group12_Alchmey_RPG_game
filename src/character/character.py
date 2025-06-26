@@ -12,6 +12,7 @@ class Player(pygame.sprite.Sprite):
     pos: Tuple[float, float]
     speed: float = 300.0
     health: int = 100
+    max_health: int = 100
     weapons: List[Weapon] = None
     current_weapon_idx: int = 0
     skill: Optional[Skill] = None
@@ -59,7 +60,7 @@ class Player(pygame.sprite.Sprite):
         # if (0 <= global_tile_x < dungeon.grid_width and 0 <= global_tile_y < dungeon.grid_height):
 
         #     tile = dungeon.dungeon_tiles[global_tile_y][global_tile_x]
-        #     if tile in ('F', 'D', 'Road_floor'):
+        #     if tile in ('Room_floor', 'Bridge_floor', 'End_room_floor', 'End_room_portal'):
         #         self.pos = (new_x, new_y)
         #         self.rect.center = self.pos
         #     else:

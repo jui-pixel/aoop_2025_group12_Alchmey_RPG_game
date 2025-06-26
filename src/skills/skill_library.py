@@ -21,7 +21,7 @@ def carry_more_weapons_effect(player: Player, game: 'Game') -> None:
 
 def shadow_dash_effect(player: Player, game: 'Game') -> None:
     """使玩家向前衝刺並短暫無敵，檢查碰撞"""
-    direction = player.direction  # 固定向上衝刺，可根據鼠標方向動態調整
+    direction = player.direction
     dash_distance = 5 * TILE_SIZE
     new_x = player.pos[0] + direction[0] * dash_distance
     new_y = player.pos[1] + direction[1] * dash_distance

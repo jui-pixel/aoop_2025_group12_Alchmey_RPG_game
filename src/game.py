@@ -41,6 +41,8 @@ class Game:
         self.fog_surface = None  # 動態生成的圓形遮罩
         self.last_player_pos = None  # 用於檢測玩家位置變化
         self.last_vision_radius = None  # 用於檢測視野半徑變化
+        self.dungeon_clear_count = 0
+        self.dungeon_clear_goal = 5
 
     def draw_menu(self):
         self.screen.fill((0, 0, 0))
@@ -86,15 +88,23 @@ class Game:
         pygame.display.flip()
 
     def start_game(self):
+        self.dungeon_clear_count = 0  # 遊戲開始時歸零
+        self._start_new_dungeon()
+    
+    def _start_new_dungeon(self):
         self.dungeon.initialize_dungeon()
         spawn_room = self.dungeon.get_room(0)
         center_tile_x = int(spawn_room.x + spawn_room.width // 2)
         center_tile_y = int(spawn_room.y + spawn_room.height // 2)
         center_x = center_tile_x * TILE_SIZE
         center_y = center_tile_y * TILE_SIZE
-        self.player = Player(pos=(center_x, center_y), game=self)
-        print(f"遊戲開始：玩家生成在 ({center_x}, {center_y})，房間 ID: 0")
-        print(f"生成瓦片: ({center_tile_x}, {center_tile_y})，瓦片值: {self.dungeon.dungeon_tiles[center_tile_y][center_tile_x]}")
+        if not self.player:
+            self.player = Player(pos=(center_x, center_y), game=self)
+        else:
+            self.player.pos = (center_x, center_y)
+            self.player.rect.x = center_x
+            self.player.rect.y = center_y
+            self.player.health = self.player.max_health  # 通關後回血
         self.player.skill = self.selected_skill
         if self.player.skill and self.player.skill.cooldown == 0:
             self.player.skill.use(self.player, self, self.current_time)
@@ -256,6 +266,14 @@ class Game:
                             self.player.current_weapon_idx = idx
                     if event.key == pygame.K_e and self.player.skill:
                         self.player.skill.use(self.player, self, self.current_time)
+                    if event.key == pygame.K_c:
+                        self.dungeon_clear_count += 1
+                        if self.dungeon_clear_count >= self.dungeon_clear_goal:
+                            self.state = "win"
+                        else:
+                            print(f"已通過 {self.dungeon_clear_count} 次地牢，進入下一層！")
+                            self._start_new_dungeon()
+                        
             mouse_pos = pygame.mouse.get_pos()
             direction = (mouse_pos[0] - (self.player.pos[0] + self.camera_offset[0]),
                          mouse_pos[1] - (self.player.pos[1] + self.camera_offset[1]))
@@ -285,7 +303,12 @@ class Game:
                     self.last_player_pos = current_pos
                     self.last_vision_radius = self.vision_radius
             if self.dungeon.get_tile_at(self.player.pos) == 'End_room_portal':
-                self.state = "win"
+                self.dungeon_clear_count += 1
+                if self.dungeon_clear_count >= self.dungeon_clear_goal:
+                    self.state = "win"
+                else:
+                    print(f"已通過 {self.dungeon_clear_count} 次地牢，進入下一層！")
+                    self._start_new_dungeon()
         return True
 
     def update_fog_surface(self):
@@ -363,6 +386,8 @@ class Game:
                     cooldown = max(0, self.player.skill.cooldown - (self.current_time - self.player.skill.last_used))
                     cooldown_text = font.render(f"CD: {cooldown:.1f}s", True, (255, 255, 255))
                     self.screen.blit(cooldown_text, (10, 130))
+            progress_text = font.render(f"Dungeon: {self.dungeon_clear_count+1}/{self.dungeon_clear_goal}", True, (255, 255, 0))
+            self.screen.blit(progress_text, (10, 170))
             self.draw_minimap()
         elif self.state == "win":
             self.draw_win()
