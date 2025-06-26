@@ -18,6 +18,7 @@ class Player(pygame.sprite.Sprite):
     max_weapons: int = MAX_WEAPONS_DEFAULT
     last_fired: float = 0.0
     invulnerable: float = 0.0
+    direction: Tuple[float, float] = (0.0, 0.0)  # 玩家當前方向
     game: Optional['Game'] = None
 
     def __post_init__(self):
@@ -53,7 +54,7 @@ class Player(pygame.sprite.Sprite):
 
         self.pos = (new_x, new_y)
         self.rect.center = self.pos
-
+        self.direction = (dx, dy)
         # # 檢查新位置是否在地圖範圍內
         # if (0 <= global_tile_x < dungeon.grid_width and 0 <= global_tile_y < dungeon.grid_height):
 

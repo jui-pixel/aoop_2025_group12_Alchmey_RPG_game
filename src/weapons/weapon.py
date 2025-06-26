@@ -17,17 +17,20 @@ class Bullet(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.pos)
 
     def update(self, dt: float) -> bool:
+        # 更新子彈位置
         new_x = self.pos[0] + self.direction[0] * self.speed * dt
         new_y = self.pos[1] + self.direction[1] * self.speed * dt
-        tile_x = int(new_x // TILE_SIZE) - self.dungeon.offset_x
-        tile_y = int(new_y // TILE_SIZE) - self.dungeon.offset_y
+        tile_x = int(new_x // TILE_SIZE)
+        tile_y = int(new_y // TILE_SIZE)
 
+        # 檢查是否撞到牆壁或超出地牢邊界
         if (0 <= tile_x < self.dungeon.grid_width and 0 <= tile_y < self.dungeon.grid_height):
-            if self.dungeon.dungeon_tiles[tile_y][tile_x] == 'W':
+            if self.dungeon.dungeon_tiles[tile_y][tile_x] == 'Border_wall':
                 return False
         else:
             return False
 
+        # 檢查子彈是否在螢幕可見範圍內
         camera_offset = getattr(self.dungeon.game, 'camera_offset', [0, 0]) if hasattr(self.dungeon, 'game') else [0, 0]
         screen_left = -camera_offset[0]
         screen_right = screen_left + SCREEN_WIDTH
@@ -50,28 +53,30 @@ class Weapon:
         self.ammo = max_ammo if not is_melee else float('inf')
         self.is_melee = is_melee
         self.melee_range = melee_range  # 近戰範圍（以瓦片為單位）
+        self.last_fired = 0.0  # 上次開火時間
 
     def can_fire(self, last_fired: float, current_time: float) -> bool:
         return current_time - last_fired >= self.fire_rate and (self.is_melee or self.ammo > 0)
 
     def fire(self, pos: Tuple[float, float], direction: Tuple[float, float], current_time: float, dungeon: Dungeon) -> Optional[Bullet]:
-        if not self.can_fire(last_fired=current_time, current_time=current_time):
+        if not self.can_fire(last_fired=self.last_fired, current_time=current_time):
             return None
         if self.is_melee:
             self.apply_melee_damage(pos, dungeon)
             return None
         self.ammo -= 1
+        self.last_fired = current_time
         return Bullet(pos, direction, self.bullet_speed, current_time, dungeon)
 
     def apply_melee_damage(self, pos: Tuple[float, float], dungeon: Dungeon):
-        tile_x = int(pos[0] // TILE_SIZE) - dungeon.offset_x
-        tile_y = int(pos[1] // TILE_SIZE) - dungeon.offset_y
+        tile_x = int(pos[0] // TILE_SIZE)
+        tile_y = int(pos[1] // TILE_SIZE)
         for dx in range(-self.melee_range, self.melee_range + 1):
             for dy in range(-self.melee_range, self.melee_range + 1):
                 check_x = tile_x + dx
                 check_y = tile_y + dy
                 if (0 <= check_x < dungeon.grid_width and 0 <= check_y < dungeon.grid_height):
-                    if dungeon.dungeon_tiles[check_y][check_x] in ('F', 'D'):
+                    if dungeon.dungeon_tiles[check_y][check_x] in ('Border_wall'):
                         print(f"Melee hit at ({check_x}, {check_y})")  # 未來可添加敵人傷害邏輯
 
 
@@ -92,4 +97,4 @@ class Staff(Weapon):
 
 class Knife(Weapon):
     def __init__(self):
-        super().__init__(name="Knife", fire_rate=0.1, bullet_speed=0.0, max_ammo=0, is_melee=True, melee_range=1)
+        super().__init__(name="Knife", fire_rate=0.1, bullet_speed=0.0, max_ammo=0, is_melee=True, melee_range=2)
