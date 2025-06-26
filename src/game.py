@@ -36,8 +36,8 @@ class Game:
         self.minimap_height = int(self.dungeon.grid_height * self.minimap_scale)
         self.minimap_offset = (SCREEN_WIDTH - self.minimap_width - 10, 10)
         self.fog_map = None
-        self.vision_radius = 34
-        self.fog_edge_thickness = 2  # 視野迷霧邊緣厚度（瓦片數）
+        self.vision_radius = 10
+        self.fog_edge_thickness = 4  # 視野迷霧邊緣厚度（瓦片數）
         self.fog_surface = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)  # 用於半透明迷霧
         self.fog_surface.fill((0, 0, 0, 128))  # 半透明黑色（alpha=128）
 
@@ -104,25 +104,22 @@ class Game:
         self.minimap_width = int(self.dungeon.grid_width * self.minimap_scale)
         self.minimap_height = int(self.dungeon.grid_height * self.minimap_scale)
         self.minimap_offset = (SCREEN_WIDTH - self.minimap_width - 10, 10)
-        self.fog_map = [['hidden' for _ in range(self.dungeon.grid_width)] for _ in range(self.dungeon.grid_height)]
+        self.fog_map = [[False for _ in range(self.dungeon.grid_width)] for _ in range(self.dungeon.grid_height)]
         self.update_fog_map(center_tile_x, center_tile_y)
 
     def update_fog_map(self, tile_x: int, tile_y: int):
-        """更新迷霧地圖，標記已探索和邊緣瓦片"""
+        """更新迷霧地圖，僅標記已探索瓦片（用於小地圖）"""
         for y in range(max(0, tile_y - self.vision_radius), min(self.dungeon.grid_height, tile_y + self.vision_radius + 1)):
             for x in range(max(0, tile_x - self.vision_radius), min(self.dungeon.grid_width, tile_x + self.vision_radius + 1)):
-                distance = abs(x - tile_x) + abs(y - tile_y)
+                distance = math.sqrt((x - tile_x) ** 2 + (y - tile_y) ** 2)
                 try:
-                    if distance <= self.vision_radius - self.fog_edge_thickness:
-                        self.fog_map[y][x] = 'visible'  # 內圈，完全可見
-                    elif distance <= self.vision_radius:
-                        self.fog_map[y][x] = 'edge'  # 邊緣，半透明
-                    # 'hidden' 保持不變，表示未探索
+                    if distance <= self.vision_radius:
+                        self.fog_map[y][x] = True  # 標記為已探索
                 except:
                     pass
 
     def draw_minimap(self):
-        """繪製小地圖，顯示已探索和邊緣瓦片"""
+        """繪製小地圖，僅顯示已探索瓦片"""
         minimap_surface = pygame.Surface((self.minimap_width, self.minimap_height))
         minimap_surface.fill((0, 0, 0))  # 未探索區域為黑色
         for room in self.dungeon.rooms:
@@ -131,26 +128,23 @@ class Game:
                     grid_x = int(room.x + col)
                     grid_y = int(room.y + row)
                     if 0 <= grid_y < self.dungeon.grid_height and 0 <= grid_x < self.dungeon.grid_width:
-                        if self.fog_map[grid_y][grid_x] in ('visible', 'edge'):
+                        if self.fog_map[grid_y][grid_x]:
                             minimap_x = int(grid_x * self.minimap_scale)
                             minimap_y = int(grid_y * self.minimap_scale)
                             tile = room.tiles[row][col]
-                            base_color = {
+                            color = {
                                 'Room_floor': ROOM_FLOOR_COLOR,
                                 'Border_wall': BORDER_WALL_COLOR,
                                 'End_room_floor': END_ROOM_FLOOR_COLAR,
                                 'End_room_portal': END_ROOM_PROTAL_COLOR,
                             }.get(tile, OUTSIDE_COLOR)
-                            # 邊緣瓦片降低亮度
-                            color = tuple(c // 2 for c in base_color) if self.fog_map[grid_y][grid_x] == 'edge' else base_color
                             pygame.draw.rect(minimap_surface, color, (minimap_x, minimap_y, 1, 1))
         for y in range(self.dungeon.grid_height):
             for x in range(self.dungeon.grid_width):
-                if self.fog_map[y][x] in ('visible', 'edge') and self.dungeon.dungeon_tiles[y][x] == 'Bridge_floor':
+                if self.fog_map[y][x] and self.dungeon.dungeon_tiles[y][x] == 'Bridge_floor':
                     minimap_x = int(x * self.minimap_scale)
                     minimap_y = int(y * self.minimap_scale)
-                    color = tuple(c // 2 for c in BRIDGE_FLOOR_COLOR) if self.fog_map[y][x] == 'edge' else BRIDGE_FLOOR_COLOR
-                    pygame.draw.rect(minimap_surface, color, (minimap_x, minimap_y, 1, 1))
+                    pygame.draw.rect(minimap_surface, BRIDGE_FLOOR_COLOR, (minimap_x, minimap_y, 1, 1))
         if self.player:
             player_minimap_x = int(self.player.pos[0] / TILE_SIZE * self.minimap_scale)
             player_minimap_y = int(self.player.pos[1] / TILE_SIZE * self.minimap_scale)
@@ -298,12 +292,17 @@ class Game:
             view_right = min(self.dungeon.grid_width, int((-self.camera_offset[0] + SCREEN_WIDTH) // TILE_SIZE + 1))
             view_top = max(0, int(-self.camera_offset[1] // TILE_SIZE - 1))
             view_bottom = min(self.dungeon.grid_height, int((-self.camera_offset[1] + SCREEN_HEIGHT) // TILE_SIZE + 1))
+            # 動態計算當前視野（基於玩家位置）
+            player_tile_x = int(self.player.pos[0] / TILE_SIZE)
+            player_tile_y = int(self.player.pos[1] / TILE_SIZE)
             for row in range(view_top, view_bottom):
                 for col in range(view_left, view_right):
                     x = col * TILE_SIZE + self.camera_offset[0]
                     y = row * TILE_SIZE + self.camera_offset[1]
                     try:
-                        if self.fog_map[row][col] != 'hidden':
+                        # 使用歐幾里得距離計算視野
+                        distance = math.sqrt((col - player_tile_x) ** 2 + (row - player_tile_y) ** 2)
+                        if distance <= self.vision_radius:
                             tile = self.dungeon.dungeon_tiles[row][col]
                             color = {
                                 'Room_floor': ROOM_FLOOR_COLOR,
@@ -313,8 +312,8 @@ class Game:
                                 'End_room_portal': END_ROOM_PROTAL_COLOR,
                             }.get(tile, OUTSIDE_COLOR)
                             pygame.draw.rect(self.screen, color, (x, y, TILE_SIZE, TILE_SIZE))
-                            if self.fog_map[row][col] == 'edge':
-                                self.screen.blit(self.fog_surface, (x, y))  # 應用半透明迷霧
+                            if distance > self.vision_radius - self.fog_edge_thickness:
+                                self.screen.blit(self.fog_surface, (x, y))  # 邊緣施加半透明迷霧
                             pygame.draw.rect(self.screen, (255, 255, 255), (x, y, TILE_SIZE, TILE_SIZE), 1)
                     except:
                         continue
@@ -323,7 +322,8 @@ class Game:
                 bullet_tile_x = int(bullet.pos[0] / TILE_SIZE)
                 bullet_tile_y = int(bullet.pos[1] / TILE_SIZE)
                 if 0 <= bullet_tile_y < self.dungeon.grid_height and 0 <= bullet_tile_x < self.dungeon.grid_width:
-                    if self.fog_map[bullet_tile_y][bullet_tile_x] != 'hidden':
+                    distance = math.sqrt((bullet_tile_x - player_tile_x) ** 2 + (bullet_tile_y - player_tile_y) ** 2)
+                    if distance <= self.vision_radius:
                         self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
             font = pygame.font.SysFont(None, 36)
             health_text = font.render(f"Health: {self.player.health}", True, (255, 255, 255))
