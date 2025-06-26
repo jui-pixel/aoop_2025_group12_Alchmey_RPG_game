@@ -61,24 +61,24 @@ class Dungeon:
         self.bsp_tree: Optional[BSPNode] = None  # BSP 樹根節點
 
     def _initialize_grid(self) -> None:
-        # 初始化地牢網格，填充為 'W'（牆壁）
+        # 初始化地牢網格，填充為 'Outside'
         self.grid_width = self.ROOM_WIDTH * 10  # 網格尺寸（400x400）
         self.grid_height = self.ROOM_HEIGHT * 10
-        self.dungeon_tiles = [['W' for _ in range(self.grid_width)] for _ in range(self.grid_height)]
+        self.dungeon_tiles = [['Outside' for _ in range(self.grid_width)] for _ in range(self.grid_height)]
         print(f"初始化地牢網格：寬度={self.grid_width}, 高度={self.grid_height}")
 
     def generate_room(self, x: float, y: float, width: float, height: float, room_id: int, is_end_room: bool = False) -> Room:
         # 生成房間對象，創建房間瓦片空間
-        tiles = [['F' for _ in range(int(width))] for _ in range(int(height))]
+        tiles = [['Room_floor' for _ in range(int(width))] for _ in range(int(height))]
 
         # 如果是終點房間，將內部瓦片設為 'E'，中心設為 'G'（終點標記）
         if is_end_room:
             for row in range(1, int(height) - 1):
                 for col in range(1, int(width) - 1):
-                    tiles[row][col] = 'E'
+                    tiles[row][col] = 'End_room_floor'
             center_x = int(width) // 2
             center_y = int(height) // 2
-            tiles[center_y][center_x] = 'G'
+            tiles[center_y][center_x] = 'End_room_portal'  # 設置終點傳送門
 
         # 創建房間對象
         room = Room(id=room_id, x=x, y=y, width=width, height=height, tiles=tiles, is_end_room=is_end_room)
@@ -280,25 +280,25 @@ class Dungeon:
         # 填充橋接區域為 'F'，包括房間牆壁
         for y in range(max(0, y0 - 1), min(y1 + 1, self.grid_height)):
             for x in range(max(0, x0 - 1), min(x1 + 1, self.grid_width)):
-                if self.dungeon_tiles[y][x] and self.dungeon_tiles[y][x] != 'W':
+                if self.dungeon_tiles[y][x] and self.dungeon_tiles[y][x] != 'Outside':
                     # 如果已經有瓦片，則不覆蓋
                     continue
-                self.dungeon_tiles[y][x] = 'F'
+                self.dungeon_tiles[y][x] = 'Bridge_floor'
         print(f"放置橋接：從 ({x0}, {y0}) 到 ({x1}, {y1})")
 
     def _add_walls(self) -> None:
         for y in range(self.grid_height):
             for x in range(self.grid_width):
-                if self.dungeon_tiles[y][x] == 'F':
+                if self.dungeon_tiles[y][x] in ['Room_floor', 'Bridge_floor', 'End_room_floor']:
                     # 為每個地板瓦片添加牆壁
                     breaker = False  # 用於檢查是否已經添加過牆壁
                     for dy in [-1, 0, 1]:
                         for dx in [-1, 0, 1]:
                             if y + dy < 0 or y + dy >= self.grid_height or x + dx < 0 or x + dx >= self.grid_width:
-                                self.dungeon_tiles[y][x] = 'Room_wall'  # 邊界牆壁
+                                self.dungeon_tiles[y][x] = 'Border_wall'  # 邊界牆壁
                                 breaker = True
-                            elif self.dungeon_tiles[y + dy][x + dx] == 'W':
-                                self.dungeon_tiles[y][x] = 'Room_wall'  # 邊界牆壁
+                            elif self.dungeon_tiles[y + dy][x + dx] == 'Outside':
+                                self.dungeon_tiles[y][x] = 'Border_wall'  # 邊界牆壁
                                 breaker = True
                             if breaker:
                                 break

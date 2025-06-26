@@ -51,7 +51,8 @@ TRANSPARENT = (0, 0, 0, 0)          # 透明（RGBA）
 
 # ====== 遊戲特定顏色 ======
 ROOM_FLOOR_COLOR = GRAY  # 房間地板
-ROOM_WALL_COLOR = RED     # 房間牆
+BORDER_WALL_COLOR = RED     # 邊界牆
+BRIDGE_FLOOR_COLOR = LIGHT_GRAY  # 橋樑地板
 END_ROOM_FLOOR_COLAR = BLUE     # 最終房間地板
 END_ROOM_PROTAL_COLOR = PURPLE    # 最終房間傳送門
 OUTSIDE_COLOR = BLACK           # 外部區域

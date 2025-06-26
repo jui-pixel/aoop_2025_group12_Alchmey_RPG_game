@@ -35,6 +35,13 @@ class Game:
         self.weapons_library = [Gun(), Bow(), Staff(), Knife()]
         self.camera_offset = [0, 0]
         self.time_scale = 1.0
+        # 小地圖相關參數
+        self.minimap_scale = 0.45  # 小地圖縮放比例
+        self.minimap_width = int(self.dungeon.grid_width * self.minimap_scale)  # 小地圖寬度
+        self.minimap_height = int(self.dungeon.grid_height * self.minimap_scale)  # 小地圖高度
+        self.minimap_offset = (SCREEN_WIDTH - self.minimap_width - 10, 10)  # 小地圖右上角偏移
+        self.fog_map = None  # 迷霧地圖，記錄已探索的瓦片
+        self.vision_radius = 34  # 玩家視野半徑（瓦片數）
 
     def restore_ammo_effect(self, player: 'Player'):
         for weapon in player.weapons:
@@ -109,6 +116,63 @@ class Game:
         self.state = "playing"
         self.camera_offset = [-(self.player.pos[0] - SCREEN_WIDTH // 2),
                               -(self.player.pos[1] - SCREEN_HEIGHT // 2)]
+        # 初始化小地圖和迷霧地圖
+        self.minimap_width = int(self.dungeon.grid_width * self.minimap_scale)
+        self.minimap_height = int(self.dungeon.grid_height * self.minimap_scale)
+        self.minimap_offset = (SCREEN_WIDTH - self.minimap_width - 10, 10)
+        self.fog_map = [[False for _ in range(self.dungeon.grid_width)] for _ in range(self.dungeon.grid_height)]
+        # 揭示玩家出生點附近的區域
+        self.update_fog_map(center_tile_x, center_tile_y)
+
+    def update_fog_map(self, tile_x: int, tile_y: int):
+        """根據玩家位置更新迷霧地圖，揭示附近瓦片"""
+        for y in range(max(0, tile_y - self.vision_radius), min(self.dungeon.grid_height, tile_y + self.vision_radius + 1)):
+            for x in range(max(0, tile_x - self.vision_radius), min(self.dungeon.grid_width, tile_x + self.vision_radius + 1)):
+                # 使用曼哈頓距離限制視野範圍
+                if abs(x - tile_x) + abs(y - tile_y) <= self.vision_radius:
+                    self.fog_map[y][x] = True
+
+    def draw_minimap(self):
+        """繪製小地圖，只顯示已探索的區域"""
+        # 創建小地圖表面
+        minimap_surface = pygame.Surface((self.minimap_width, self.minimap_height))
+        minimap_surface.fill((0, 0, 0))  # 背景色為黑色（未探索區域）
+
+        # 繪製已探索的房間和橋接
+        for room in self.dungeon.rooms:
+            for row in range(int(room.height)):
+                for col in range(int(room.width)):
+                    grid_x = int(room.x + col)
+                    grid_y = int(room.y + row)
+                    if 0 <= grid_y < self.dungeon.grid_height and 0 <= grid_x < self.dungeon.grid_width:
+                        if self.fog_map[grid_y][grid_x]:
+                            minimap_x = int(grid_x * self.minimap_scale)
+                            minimap_y = int(grid_y * self.minimap_scale)
+                            tile = room.tiles[row][col]
+                            color = {
+                                'Room_floor': ROOM_FLOOR_COLOR,
+                                'Border_wall': BORDER_WALL_COLOR,
+                                'End_room_floor': END_ROOM_FLOOR_COLAR,
+                                'End_room_portal': END_ROOM_PROTAL_COLOR,
+                            }.get(tile, (128, 128, 128))  # 默認灰色
+                            pygame.draw.rect(minimap_surface, color, (minimap_x, minimap_y, 1, 1))
+
+        # 繪製已探索的橋接
+        for y in range(self.dungeon.grid_height):
+            for x in range(self.dungeon.grid_width):
+                if self.fog_map[y][x] and self.dungeon.dungeon_tiles[y][x] == 'Bridge_floor':
+                    minimap_x = int(x * self.minimap_scale)
+                    minimap_y = int(y * self.minimap_scale)
+                    pygame.draw.rect(minimap_surface, BRIDGE_FLOOR_COLOR, (minimap_x, minimap_y, 1, 1))
+
+        # 繪製玩家位置（綠色圓點）
+        if self.player:
+            player_minimap_x = int(self.player.pos[0] / TILE_SIZE * self.minimap_scale)
+            player_minimap_y = int(self.player.pos[1] / TILE_SIZE * self.minimap_scale)
+            pygame.draw.circle(minimap_surface, (0, 255, 0), (player_minimap_x, player_minimap_y), 3)
+
+        # 將小地圖繪製到主畫面上
+        self.screen.blit(minimap_surface, self.minimap_offset)
 
     def update(self, dt: float):
         self.current_time += dt * self.time_scale
@@ -203,7 +267,12 @@ class Game:
             target_offset_y = -(self.player.pos[1] - SCREEN_HEIGHT // 2)
             self.camera_offset[0] += (target_offset_x - self.camera_offset[0]) * self.camera_lerp_factor * dt
             self.camera_offset[1] += (target_offset_y - self.camera_offset[1]) * self.camera_lerp_factor * dt
-            # Check if player is on the goal tile
+            # 更新迷霧地圖
+            if self.player:
+                tile_x = int(self.player.pos[0] / TILE_SIZE)
+                tile_y = int(self.player.pos[1] / TILE_SIZE)
+                self.update_fog_map(tile_x, tile_y)
+            # 檢查玩家是否位於終點瓦片
             if self.dungeon.get_tile_at(self.player.pos) == 'G':
                 self.state = "win"
         return True
@@ -228,10 +297,11 @@ class Game:
                     try:
                         tile = self.dungeon.dungeon_tiles[row][col]
                         color = {
-                            'F': ROOM_FLOOR_COLOR,
-                            'Room_wall': ROOM_WALL_COLOR,
-                            'E': END_ROOM_FLOOR_COLAR,  # Magenta for end room floor
-                            'G': END_ROOM_PROTAL_COLOR   # Yellow for goal marker
+                            'Room_floor': ROOM_FLOOR_COLOR,
+                            'Border_wall': BORDER_WALL_COLOR,
+                            'Bridge_floor': BRIDGE_FLOOR_COLOR,
+                            'End_room_floor': END_ROOM_FLOOR_COLAR,
+                            'End_room_portal': END_ROOM_PROTAL_COLOR,
                         }.get(tile, OUTSIDE_COLOR)
                         pygame.draw.rect(self.screen, color, (x, y, TILE_SIZE, TILE_SIZE))
                         pygame.draw.rect(self.screen, (255, 255, 255), (x, y, TILE_SIZE, TILE_SIZE), 1)
@@ -254,6 +324,8 @@ class Game:
                     cooldown = max(0, self.player.skill.cooldown - (self.current_time - self.player.skill.last_used))
                     cooldown_text = font.render(f"CD: {cooldown:.1f}s", True, (255, 255, 255))
                     self.screen.blit(cooldown_text, (10, 130))
+            # 繪製小地圖（只顯示已探索區域）
+            self.draw_minimap()
         elif self.state == "win":
             self.draw_win()
         pygame.display.flip()
