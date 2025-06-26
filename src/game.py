@@ -296,7 +296,7 @@ class Game:
         center_x = self.player.rect.centerx + self.camera_offset[0]
         center_y = self.player.rect.centery + self.camera_offset[1]
         radius = int(self.vision_radius * TILE_SIZE)
-        layers = 50
+        layers = 100
         max_alpha = 255
 
         for i in range(layers, 0, -1):
