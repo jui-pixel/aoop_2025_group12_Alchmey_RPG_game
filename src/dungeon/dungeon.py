@@ -42,9 +42,9 @@ class Dungeon:
     TILE_SIZE = 32  # 每個瓦片的像素大小（假設值，應從 config 導入）
     ROOM_GAP = 4  # 房間之間的最小間距（瓦片數）
     BIAS_RATIO = 0.6  # 房間大小偏向比例
-    BIAS_STRENGTH = 0.3  # 偏向強度
+    BIAS_STRENGTH = 0.4  # 偏向強度
     MIN_BRIDGE_WIDTH = 4  # 橋接（走廊）的最小寬度（瓦片數）
-    MAX_BRIDGE_WIDTH = 5  # 橋接（走廊）的最大寬度（瓦片數）
+    MAX_BRIDGE_WIDTH = 6  # 橋接（走廊）的最大寬度（瓦片數）
     MAX_SPLIT_DEPTH = 20  # BSP 分割的最大深度
     EXTRA_BRIDGE_RATIO = 0.2  # 額外橋接的比例（相對於房間數）
     game = None  # 指向 Game 對象的引用，用於與遊戲邏輯交互
