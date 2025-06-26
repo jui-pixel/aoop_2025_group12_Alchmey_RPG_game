@@ -42,10 +42,10 @@ class Dungeon:
     MIN_ROOM_SIZE = 30  # 房間的最小尺寸（寬度和高度）
     TILE_SIZE = TILE_SIZE  # 每個瓦片的像素大小（假設值，應從 config 導入）
     ROOM_GAP = 4  # 房間之間的最小間距（瓦片數）
-    BIAS_RATIO = 0.6  # 房間大小偏向比例
+    BIAS_RATIO = 0.55  # 房間大小偏向比例
     BIAS_STRENGTH = 0.4  # 偏向強度
-    MIN_BRIDGE_WIDTH = 4  # 橋接（走廊）的最小寬度（瓦片數）
-    MAX_BRIDGE_WIDTH = 6  # 橋接（走廊）的最大寬度（瓦片數）
+    MIN_BRIDGE_WIDTH = 6  # 橋接（走廊）的最小寬度（瓦片數）
+    MAX_BRIDGE_WIDTH = 10  # 橋接（走廊）的最大寬度（瓦片數）
     MAX_SPLIT_DEPTH = 20  # BSP 分割的最大深度
     EXTRA_BRIDGE_RATIO = 0.2  # 額外橋接的比例（相對於房間數）
     game = None  # 指向 Game 對象的引用，用於與遊戲邏輯交互
@@ -110,9 +110,21 @@ class Dungeon:
                 node.room = self.generate_room(room_x, room_y, room_width, room_height, self.next_room_id)
                 self.next_room_id += 1
             return
-
+        w, h = node.width, node.height
+        total = w + h
+        vertical_weight = w / total
+        horizontal_weight = h / total
+        possible_directions = []
+        weights = []
+        if can_split_horizontally:
+            possible_directions.append("vertical")
+            weights.append(vertical_weight)
+        if can_split_vertically:
+            possible_directions.append("horizontal")
+            weights.append(horizontal_weight)
+        direction = random.choices(possible_directions, weights=weights)[0]
         # 隨機選擇水平或垂直分割
-        if random.random() < 0.5 and can_split_horizontally:
+        if direction == "vertical":
             split_x = random.randint(min_split_size, int(node.width - min_split_size))
             node.left = BSPNode(node.x, node.y, split_x, node.height)
             node.right = BSPNode(node.x + split_x, node.y, node.width - split_x, node.height)
@@ -186,7 +198,8 @@ class Dungeon:
 
         start_x, start_y = rand_room_point(room1)
         end_x, end_y = rand_room_point(room2)
-        bridge_width = random.randint(self.MIN_BRIDGE_WIDTH, self.MAX_BRIDGE_WIDTH)
+        bridge_width = int(random.gauss((self.MIN_BRIDGE_WIDTH + self.MAX_BRIDGE_WIDTH) // 2, self.MAX_BRIDGE_WIDTH - self.MIN_BRIDGE_WIDTH))
+        bridge_width = max(self.MIN_BRIDGE_WIDTH, min(bridge_width, self.MAX_BRIDGE_WIDTH))  # 限制橋接寬度
         bridges = []
 
         print(f"橋接從房間 {room1.id} 到 {room2.id}")
