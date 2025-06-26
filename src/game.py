@@ -130,7 +130,10 @@ class Game:
             for x in range(max(0, tile_x - self.vision_radius), min(self.dungeon.grid_width, tile_x + self.vision_radius + 1)):
                 # 使用曼哈頓距離限制視野範圍
                 if abs(x - tile_x) + abs(y - tile_y) <= self.vision_radius:
-                    self.fog_map[y][x] = True
+                    try:
+                        self.fog_map[y][x] = True
+                    except:
+                        pass  # 忽略超出邊界的情況
 
     def draw_minimap(self):
         """繪製小地圖，只顯示已探索的區域"""
@@ -154,7 +157,7 @@ class Game:
                                 'Border_wall': BORDER_WALL_COLOR,
                                 'End_room_floor': END_ROOM_FLOOR_COLAR,
                                 'End_room_portal': END_ROOM_PROTAL_COLOR,
-                            }.get(tile, (128, 128, 128))  # 默認灰色
+                            }.get(tile, OUTSIDE_COLOR)
                             pygame.draw.rect(minimap_surface, color, (minimap_x, minimap_y, 1, 1))
 
         # 繪製已探索的橋接
