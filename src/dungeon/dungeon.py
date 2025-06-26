@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
+from config import *
 import random
 
 
@@ -39,7 +40,7 @@ class Dungeon:
     ROOM_WIDTH = 40  # 單個房間的最大寬度（瓦片數）
     ROOM_HEIGHT = 40  # 單個房間的最大高度（瓦片數）
     MIN_ROOM_SIZE = 30  # 房間的最小尺寸（寬度和高度）
-    TILE_SIZE = 32  # 每個瓦片的像素大小（假設值，應從 config 導入）
+    TILE_SIZE = TILE_SIZE  # 每個瓦片的像素大小（假設值，應從 config 導入）
     ROOM_GAP = 4  # 房間之間的最小間距（瓦片數）
     BIAS_RATIO = 0.6  # 房間大小偏向比例
     BIAS_STRENGTH = 0.4  # 偏向強度
