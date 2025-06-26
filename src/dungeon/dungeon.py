@@ -337,10 +337,10 @@ class Dungeon:
                 # 更新終點房間的瓦片
                 for row in range(1, int(end_room.height) - 1):
                     for col in range(1, int(end_room.width) - 1):
-                        end_room.tiles[row][col] = 'E'
+                        end_room.tiles[row][col] = 'End_room_floor'
                 center_x = int(end_room.width) // 2
                 center_y = int(end_room.height) // 2
-                end_room.tiles[center_y][center_x] = 'G'
+                end_room.tiles[center_y][center_x] = 'End_room_portal'
                 print(f"指定房間 {end_room.id} 為終點房間，距離起點 {max_dist}")
 
         # 放置所有房間
