@@ -36,10 +36,11 @@ class Game:
         self.minimap_height = int(self.dungeon.grid_height * self.minimap_scale)
         self.minimap_offset = (SCREEN_WIDTH - self.minimap_width - 10, 10)
         self.fog_map = None
-        self.vision_radius = 10
-        self.fog_edge_thickness = 4  # 視野迷霧邊緣厚度（瓦片數）
-        self.fog_surface = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)  # 用於半透明迷霧
-        self.fog_surface.fill((0, 0, 0, 128))  # 半透明黑色（alpha=128）
+        self.vision_radius = 15
+        self.fog_edge_thickness = 3  # 視野迷霧邊緣厚度（瓦片數）
+        self.fog_surface = None  # 動態生成的圓形遮罩
+        self.last_player_pos = None  # 用於檢測玩家位置變化
+        self.last_vision_radius = None  # 用於檢測視野半徑變化
 
     def draw_menu(self):
         self.screen.fill((0, 0, 0))
@@ -106,6 +107,8 @@ class Game:
         self.minimap_offset = (SCREEN_WIDTH - self.minimap_width - 10, 10)
         self.fog_map = [[False for _ in range(self.dungeon.grid_width)] for _ in range(self.dungeon.grid_height)]
         self.update_fog_map(center_tile_x, center_tile_y)
+        self.last_player_pos = None
+        self.last_vision_radius = None
 
     def update_fog_map(self, tile_x: int, tile_y: int):
         """更新迷霧地圖，僅標記已探索瓦片（用於小地圖）"""
@@ -275,10 +278,37 @@ class Game:
                 tile_x = int(self.player.pos[0] / TILE_SIZE)
                 tile_y = int(self.player.pos[1] / TILE_SIZE)
                 self.update_fog_map(tile_x, tile_y)
+                # 檢查是否需要更新圓形遮罩
+                current_pos = (self.player.pos[0], self.player.pos[1])
+                if self.last_player_pos != current_pos or self.last_vision_radius != self.vision_radius:
+                    self.update_fog_surface()
+                    self.last_player_pos = current_pos
+                    self.last_vision_radius = self.vision_radius
             if self.dungeon.get_tile_at(self.player.pos) == 'End_room_portal':
                 self.state = "win"
         return True
 
+    def update_fog_surface(self):
+        """使用漸層圓形遮罩優化玩家視野效果"""
+        self.fog_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        self.fog_surface.fill((0, 0, 0, 255))  # 預設為完全黑
+
+        center_x = self.player.rect.centerx + self.camera_offset[0]
+        center_y = self.player.rect.centery + self.camera_offset[1]
+        radius = int(self.vision_radius * TILE_SIZE)
+        layers = 50
+        max_alpha = 255
+
+        for i in range(layers, 0, -1):
+            alpha = int((i / layers) * max_alpha)
+            current_radius = int((i / layers) * radius)
+            # 畫出同心圓，每層都更透明
+            pygame.draw.circle(
+                self.fog_surface,
+                (0, 0, 0, alpha),
+                (center_x, center_y),
+                current_radius
+            )
     def draw(self):
         self.screen.fill((0, 0, 0))
         if self.state == "menu":
@@ -292,39 +322,33 @@ class Game:
             view_right = min(self.dungeon.grid_width, int((-self.camera_offset[0] + SCREEN_WIDTH) // TILE_SIZE + 1))
             view_top = max(0, int(-self.camera_offset[1] // TILE_SIZE - 1))
             view_bottom = min(self.dungeon.grid_height, int((-self.camera_offset[1] + SCREEN_HEIGHT) // TILE_SIZE + 1))
-            # 動態計算當前視野（基於玩家位置）
-            player_tile_x = int(self.player.pos[0] / TILE_SIZE)
-            player_tile_y = int(self.player.pos[1] / TILE_SIZE)
+            # 繪製地圖瓦片
             for row in range(view_top, view_bottom):
                 for col in range(view_left, view_right):
                     x = col * TILE_SIZE + self.camera_offset[0]
                     y = row * TILE_SIZE + self.camera_offset[1]
                     try:
-                        # 使用歐幾里得距離計算視野
-                        distance = math.sqrt((col - player_tile_x) ** 2 + (row - player_tile_y) ** 2)
-                        if distance <= self.vision_radius:
-                            tile = self.dungeon.dungeon_tiles[row][col]
-                            color = {
-                                'Room_floor': ROOM_FLOOR_COLOR,
-                                'Border_wall': BORDER_WALL_COLOR,
-                                'Bridge_floor': BRIDGE_FLOOR_COLOR,
-                                'End_room_floor': END_ROOM_FLOOR_COLAR,
-                                'End_room_portal': END_ROOM_PROTAL_COLOR,
-                            }.get(tile, OUTSIDE_COLOR)
-                            pygame.draw.rect(self.screen, color, (x, y, TILE_SIZE, TILE_SIZE))
-                            if distance > self.vision_radius - self.fog_edge_thickness:
-                                self.screen.blit(self.fog_surface, (x, y))  # 邊緣施加半透明迷霧
-                            pygame.draw.rect(self.screen, (255, 255, 255), (x, y, TILE_SIZE, TILE_SIZE), 1)
+                        tile = self.dungeon.dungeon_tiles[row][col]
+                        color = {
+                            'Room_floor': ROOM_FLOOR_COLOR,
+                            'Border_wall': BORDER_WALL_COLOR,
+                            'Bridge_floor': BRIDGE_FLOOR_COLOR,
+                            'End_room_floor': END_ROOM_FLOOR_COLAR,
+                            'End_room_portal': END_ROOM_PROTAL_COLOR,
+                        }.get(tile, OUTSIDE_COLOR)
+                        pygame.draw.rect(self.screen, color, (x, y, TILE_SIZE, TILE_SIZE))
+                        pygame.draw.rect(self.screen, (255, 255, 255), (x, y, TILE_SIZE, TILE_SIZE), 1)
                     except:
                         continue
+            # 繪製玩家
             self.screen.blit(self.player.image, (self.player.rect.x + self.camera_offset[0], self.player.rect.y + self.camera_offset[1]))
+            # 繪製子彈
             for bullet in self.bullet_group:
-                bullet_tile_x = int(bullet.pos[0] / TILE_SIZE)
-                bullet_tile_y = int(bullet.pos[1] / TILE_SIZE)
-                if 0 <= bullet_tile_y < self.dungeon.grid_height and 0 <= bullet_tile_x < self.dungeon.grid_width:
-                    distance = math.sqrt((bullet_tile_x - player_tile_x) ** 2 + (bullet_tile_y - player_tile_y) ** 2)
-                    if distance <= self.vision_radius:
-                        self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
+                self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
+            # 應用圓形遮罩
+            if self.fog_surface:
+                self.screen.blit(self.fog_surface, (0, 0))
+            # 繪製 UI（始終可見）
             font = pygame.font.SysFont(None, 36)
             health_text = font.render(f"Health: {self.player.health}", True, (255, 255, 255))
             self.screen.blit(health_text, (10, 10))
@@ -339,8 +363,6 @@ class Game:
                     cooldown = max(0, self.player.skill.cooldown - (self.current_time - self.player.skill.last_used))
                     cooldown_text = font.render(f"CD: {cooldown:.1f}s", True, (255, 255, 255))
                     self.screen.blit(cooldown_text, (10, 130))
-            if self.bullet_group:
-                self.bullet_group.draw(self.screen)
             self.draw_minimap()
         elif self.state == "win":
             self.draw_win()

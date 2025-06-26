@@ -65,5 +65,5 @@ SKILL_LIBRARY = [
     Skill(name="Carry 10 Weapons", cooldown=0.0, duration=0.0, effect=carry_more_weapons_effect),
     Skill(name="Shadow Dash", cooldown=2.0, duration=1.0, effect=shadow_dash_effect),
     Skill(name="Time Warp", cooldown=2.0, duration=2.0, effect=time_slow_effect),
-    Skill(name="Reveal Fog", cooldown=5.0, duration=0.0, effect=reveal_fog_effect),
+    Skill(name="Reveal Fog", cooldown=5.0, duration=3.0, effect=reveal_fog_effect),
 ]
