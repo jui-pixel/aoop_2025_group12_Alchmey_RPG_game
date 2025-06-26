@@ -289,7 +289,7 @@ class Dungeon:
     def _add_walls(self) -> None:
         for y in range(self.grid_height):
             for x in range(self.grid_width):
-                if self.dungeon_tiles[y][x] in ['Room_floor', 'Bridge_floor', 'End_room_floor']:
+                if self.dungeon_tiles[y][x] in ['Room_floor', 'Bridge_floor']:
                     # 為每個地板瓦片添加牆壁
                     breaker = False  # 用於檢查是否已經添加過牆壁
                     for dy in [-1, 0, 1]:
