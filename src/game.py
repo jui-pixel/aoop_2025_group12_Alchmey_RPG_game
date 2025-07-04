@@ -154,10 +154,13 @@ class Game:
                             pygame.draw.rect(minimap_surface, color, (minimap_x, minimap_y, 1, 1))
         for y in range(self.dungeon.grid_height):
             for x in range(self.dungeon.grid_width):
-                if self.fog_map[y][x] and self.dungeon.dungeon_tiles[y][x] == 'Bridge_floor':
-                    minimap_x = int(x * self.minimap_scale)
-                    minimap_y = int(y * self.minimap_scale)
-                    pygame.draw.rect(minimap_surface, BRIDGE_FLOOR_COLOR, (minimap_x, minimap_y, 1, 1))
+                try:
+                    if self.fog_map[y][x] and self.dungeon.dungeon_tiles[y][x] == 'Bridge_floor':
+                        minimap_x = int(x * self.minimap_scale)
+                        minimap_y = int(y * self.minimap_scale)
+                        pygame.draw.rect(minimap_surface, BRIDGE_FLOOR_COLOR, (minimap_x, minimap_y, 1, 1))
+                except:
+                    pass
         if self.player:
             player_minimap_x = int(self.player.pos[0] / TILE_SIZE * self.minimap_scale)
             player_minimap_y = int(self.player.pos[1] / TILE_SIZE * self.minimap_scale)
