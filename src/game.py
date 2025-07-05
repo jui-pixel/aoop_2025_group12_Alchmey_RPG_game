@@ -10,6 +10,7 @@ from src.skills.skill_library import SKILL_LIBRARY
 from src.dungeon.dungeon import *
 from src.config import *
 from src.character.character import *
+from src.enemy.basic_enemy import BasicEnemy
 
 class Game:
     def __init__(self, screen, pygame_clock):
@@ -19,6 +20,7 @@ class Game:
         self.dungeon.game = self
         self.player = None
         self.bullet_group = pygame.sprite.Group()
+        self.enemy_group = pygame.sprite.Group()
         self.current_time = 0.0
         self.state = "menu"
         self.selected_skill = None
@@ -96,6 +98,7 @@ class Game:
     def start_game(self):
         self.dungeon_clear_count = 0
         self._start_new_dungeon()
+        self._generate_new_enemies()
 
     def _start_new_dungeon(self):
         self.dungeon.initialize_dungeon()
@@ -125,6 +128,16 @@ class Game:
         self.update_fog_map(center_tile_x, center_tile_y)
         self.last_player_pos = None
         self.last_vision_radius = None
+        
+    def _generate_new_enemies(self):
+        """生成新的敵人，根據當前地牢的房間數量和難度調整敵人數量"""
+        num_enemies = max(1, len(self.dungeon.rooms) // 2)  
+        for _ in range(num_enemies):
+            room = random.choice(self.dungeon.rooms)
+            enemy = BasicEnemy(pos=(room.x * TILE_SIZE + random.randint(0, room.width * TILE_SIZE - TILE_SIZE),
+                                    room.y * TILE_SIZE + random.randint(0, room.height * TILE_SIZE - TILE_SIZE)),
+                                game=self)
+            self.enemy_group.add(enemy)
 
     def update_fog_map(self, tile_x: int, tile_y: int):
         """更新迷霧地圖，僅標記已探索瓦片（用於小地圖）"""
@@ -341,6 +354,12 @@ class Game:
                     self.update_fog_surface()
                     self.last_player_pos = current_pos
                     self.last_vision_radius = self.vision_radius
+            if self.enemy_group:
+                for enemy in self.enemy_group:
+                    if enemy.health <= 0:
+                        self.enemy_group.remove(enemy)
+                    else:
+                        enemy.update(dt, self.current_time)
             if self.dungeon.get_tile_at(self.player.pos) == 'End_room_portal':
                 self.dungeon_clear_count += 1
                 if self.dungeon_clear_count >= self.dungeon_clear_goal:
@@ -368,6 +387,13 @@ class Game:
                 current_radius
             )
 
+    def draw_enemy(self, enemy):
+        if enemy.health <= 0:
+            return
+        enemy_x = enemy.rect.x + self.camera_offset[0]
+        enemy_y = enemy.rect.y + self.camera_offset[1]
+        self.screen.blit(enemy.image, (enemy_x, enemy_y))
+    
     def draw(self):
         self.screen.fill((0, 0, 0))
         if self.state == "menu":
@@ -394,6 +420,9 @@ class Game:
                         continue
             # Draw player
             self.screen.blit(self.player.image, (self.player.rect.x + self.camera_offset[0], self.player.rect.y + self.camera_offset[1]))
+            for enemy in self.enemy_group:
+                if enemy.health > 0 and enemy.pos[0] + self.camera_offset[0] >= 0 and enemy.pos[1] + self.camera_offset[1] >= 0:
+                    self.draw_enemy(enemy)
             for row in range(view_top, view_bottom):
                 for col in range(view_left, view_right):
                     x = col * TILE_SIZE + self.camera_offset[0]
