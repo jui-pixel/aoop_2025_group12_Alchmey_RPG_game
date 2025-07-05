@@ -52,10 +52,12 @@ class Player(pygame.sprite.Sprite):
         # 更新 global 座標
         global_tile_x = tile_x
         global_tile_y = tile_y
-
+        
+        # 穿牆模式
         self.pos = (new_x, new_y)
         self.rect.center = self.pos
         self.direction = (dx, dy)
+        
         # # 檢查新位置是否在地圖範圍內
         # if (0 <= global_tile_x < dungeon.grid_width and 0 <= global_tile_y < dungeon.grid_height):
 
