@@ -31,7 +31,7 @@ class Game:
         self.weapons_library = WEAPON_LIBRARY
         self.camera_offset = [0, 0]
         self.time_scale = 1.0
-        self.minimap_scale = 0.45
+        self.minimap_scale = 1
         self.minimap_width = int(self.dungeon.grid_width * self.minimap_scale)
         self.minimap_height = int(self.dungeon.grid_height * self.minimap_scale)
         self.minimap_offset = (SCREEN_WIDTH - self.minimap_width - 10, 10)
