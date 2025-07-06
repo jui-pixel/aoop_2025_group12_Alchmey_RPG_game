@@ -1,4 +1,20 @@
 # src/config.py
+from enum import Enum
+
+class DungeonConfig(Enum):
+    ROOM_WIDTH = 150  # 單個房間的最大寬度（瓦片數，控制房間的最大尺寸）
+    ROOM_HEIGHT = 150 # 單個房間的最大高度（瓦片數，控制房間的最大尺寸）
+    GRID_WIDTH = 150  # 地牢網格的寬度（瓦片數，定義地牢的總寬度）
+    GRID_HEIGHT = 150  # 地牢網格的高度（瓦片數，定義地牢的總高度）
+    MIN_ROOM_SIZE = 15  # 房間的最小尺寸（寬度和高度，確保房間不會太小）
+    TILE_SIZE = 32  # 每個瓦片的像素大小
+    ROOM_GAP = 2  # 房間之間的最小間距（瓦片數，防止房間互相重疊）
+    BIAS_RATIO = 0.6  # 房間大小偏向比例（控制房間大小的隨機性）
+    BIAS_STRENGTH = 0.3  # 偏向強度（控制房間位置的隨機偏移）
+    MIN_BRIDGE_WIDTH = 2  # 走廊（橋接）的最小寬度（瓦片數，確保走廊不會太窄）
+    MAX_BRIDGE_WIDTH = 4  # 走廊（橋接）的最大寬度（瓦片數，控制走廊的最大寬度）
+    MAX_SPLIT_DEPTH = 15  # BSP 分割的最大深度（控制生成房間的數量，深度越大房間越多）
+    EXTRA_BRIDGE_RATIO = 0.2  # 額外走廊的比例（增加連通性，生成更多非必要走廊）
 FPS = 60
 SCREEN_WIDTH = 1400
 SCREEN_HEIGHT = 750
