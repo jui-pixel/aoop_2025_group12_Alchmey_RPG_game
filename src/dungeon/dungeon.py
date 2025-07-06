@@ -1,30 +1,12 @@
+# src/dungeon/dungeon.py
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 from src.config import DungeonConfig
 from src.dungeon.room import Room
+from src.dungeon.bridge import Bridge
+from src.dungeon.BSPnode import BSPNode
 import random
 
-# 定義 BSP 樹節點，用於二元空間分割
-@dataclass
-class BSPNode:
-    x: float  # 節點左上角的 x 座標（瓦片單位）
-    y: float  # 節點左上角的 y 座標（瓦片單位）
-    width: float  # 節點的寬度（瓦片單位）
-    height: float  # 節點的高度（瓦片單位）
-    room: Optional[Room] = None  # 節點包含的房間物件（若為葉節點，則有房間；否則為 None）
-    left: Optional['BSPNode'] = None  # 左子節點（分割後的左半部分）
-    right: Optional['BSPNode'] = None  # 右子節點（分割後的右半部分）
-
-# 定義 Bridge 類，用於表示房間之間的走廊
-@dataclass
-class Bridge:
-    x0: float  # 走廊起點的 x 座標
-    y0: float  # 走廊起點的 y 座標
-    x1: float  # 走廊終點的 x 座標
-    y1: float  # 走廊終點的 y 座標
-    width: float  # 走廊的寬度（瓦片單位）
-    room1_id: int  # 連接的第一個房間 ID
-    room2_id: int  # 連接的第二個房間 ID
 
 # 地牢生成類，負責生成 BSP 地牢並管理房間與走廊
 class Dungeon:
