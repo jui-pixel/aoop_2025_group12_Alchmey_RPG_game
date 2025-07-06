@@ -1,3 +1,4 @@
+# src/game.py
 import pygame
 import random
 import math
@@ -19,7 +20,8 @@ class Game:
         self.dungeon = Dungeon()
         self.dungeon.game = self
         self.player = None
-        self.bullet_group = pygame.sprite.Group()
+        self.player_bullet_group = pygame.sprite.Group()  # Player bullets
+        self.enemy_bullet_group = pygame.sprite.Group()  # Enemy bullets
         self.enemy_group = pygame.sprite.Group()
         self.current_time = 0.0
         self.state = "menu"
@@ -130,8 +132,8 @@ class Game:
         self.last_vision_radius = None
         
     def _generate_new_enemies(self):
-        """生成新的敵人，根據當前地牢的房間數量和難度調整敵人數量"""
-        num_enemies = max(1, len(self.dungeon.rooms) // 2)  
+        """Generate new enemies based on the number of rooms and difficulty."""
+        num_enemies = max(1, len(self.dungeon.rooms) // 2)
         for _ in range(num_enemies):
             room = random.choice(self.dungeon.rooms)
             enemy = BasicEnemy(pos=(room.x * TILE_SIZE + random.randint(0, room.width * TILE_SIZE - TILE_SIZE),
@@ -140,19 +142,18 @@ class Game:
             self.enemy_group.add(enemy)
 
     def update_fog_map(self, tile_x: int, tile_y: int):
-        """更新迷霧地圖，僅標記已探索瓦片（用於小地圖）"""
+        """Update fog map, marking explored tiles (for minimap)."""
         for y in range(max(0, tile_y - self.vision_radius), min(self.dungeon.grid_height, tile_y + self.vision_radius + 1)):
             for x in range(max(0, tile_x - self.vision_radius), min(self.dungeon.grid_width, tile_x + self.vision_radius + 1)):
                 distance = math.sqrt((x - tile_x) ** 2 + (y - tile_y) ** 2)
                 try:
                     if distance <= self.vision_radius:
-                        self.fog_map[y][x] = True  # 標記為已探索
+                        self.fog_map[y][x] = True  # Mark as explored
                 except:
                     pass
-                
 
-    def draw_3d_walls(self, row, col, x, y, tile, wall = False):
-        """Draw walls with a 3D effect by shifting original tile up and adding a dark red face"""
+    def draw_3d_walls(self, row, col, x, y, tile, wall=False):
+        """Draw walls with a 3D effect by shifting original tile up and adding a dark red face."""
         color = {
             'Room_floor': ROOM_FLOOR_COLOR,
             'Border_wall': BORDER_WALL_COLOR,
@@ -336,11 +337,27 @@ class Game:
             if pygame.mouse.get_pressed()[0]:
                 bullet = self.player.fire(direction, self.current_time)
                 if bullet:
-                    self.bullet_group.add(bullet)
-            self.bullet_group.update(dt)
-            for bullet in self.bullet_group.copy():
+                    self.player_bullet_group.add(bullet)
+            # Update player bullets
+            for bullet in self.player_bullet_group.copy():
                 if not bullet.update(dt):
-                    self.bullet_group.remove(bullet)
+                    self.player_bullet_group.remove(bullet)
+                else:
+                    # Check for collisions with enemies
+                    for enemy in self.enemy_group:
+                        if bullet.rect.colliderect(enemy.rect):
+                            enemy.take_damage(bullet.damage)
+                            self.player_bullet_group.remove(bullet)
+                            break  # Bullet can only hit one enemy
+            # Update enemy bullets
+            for bullet in self.enemy_bullet_group.copy():
+                if not bullet.update(dt):
+                    self.enemy_bullet_group.remove(bullet)
+                elif bullet.shooter != self.player and self.player and self.player.invulnerable <= 0 and bullet.rect.colliderect(self.player.rect):
+                    self.player.health -= bullet.damage
+                    self.enemy_bullet_group.remove(bullet)
+                    if self.player.health <= 0:
+                        print("Player died!")  # Future: Implement game over state
             target_offset_x = -(self.player.pos[0] - SCREEN_WIDTH // 2)
             target_offset_y = -(self.player.pos[1] - SCREEN_HEIGHT // 2)
             self.camera_offset[0] += (target_offset_x - self.camera_offset[0]) * self.camera_lerp_factor * dt
@@ -371,7 +388,7 @@ class Game:
 
     def update_fog_surface(self):
         self.fog_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        self.fog_surface.fill((0, 0, 0, 255))
+        self.fog_surface.fill((0,0, 0, 255))
         center_x = self.player.rect.centerx + self.camera_offset[0]
         center_y = self.player.rect.centery + self.camera_offset[1]
         radius = int(self.vision_radius * TILE_SIZE)
@@ -434,8 +451,11 @@ class Game:
                             self.draw_3d_walls(row, col, x, y, tile, True)
                     except:
                         continue
-            # Draw bullets
-            for bullet in self.bullet_group:
+            # Draw player bullets
+            for bullet in self.player_bullet_group:
+                self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
+            # Draw enemy bullets
+            for bullet in self.enemy_bullet_group:
                 self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
             # Apply fog of war
             if self.fog_surface:

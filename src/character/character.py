@@ -1,3 +1,4 @@
+# src/character/character.py
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 import pygame
@@ -73,7 +74,7 @@ class Player(pygame.sprite.Sprite):
     def fire(self, direction: Tuple[float, float], current_time: float) -> Optional['Bullet']:
         weapon = self.weapons[self.current_weapon_idx] if self.weapons else None
         if weapon and weapon.can_fire(self.last_fired, current_time) and self.game and self.game.dungeon:
-            bullet = weapon.fire(self.pos, direction, current_time, self.game.dungeon)
+            bullet = weapon.fire(self.pos, direction, current_time, self.game.dungeon, self)
             if bullet:
                 self.last_fired = current_time
             return bullet

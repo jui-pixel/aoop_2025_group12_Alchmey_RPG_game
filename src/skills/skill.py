@@ -1,3 +1,4 @@
+# src/skills/skill.py
 from dataclasses import dataclass
 from typing import Optional, Callable
 # from src.character.player import Player
