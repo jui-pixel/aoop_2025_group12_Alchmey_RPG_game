@@ -4,14 +4,14 @@ import random
 import math
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
-from src.weapons.weapon import *
-from src.weapons.weapon_library import WEAPON_LIBRARY
-from src.skills.skill import *
-from src.skills.skill_library import SKILL_LIBRARY
+from src.entities.character.weapons.weapon import *
+from src.entities.character.weapons.weapon_library import WEAPON_LIBRARY
+from src.entities.character.skills.skill import *
+from src.entities.character.skills.skill_library import SKILL_LIBRARY
 from src.dungeon.dungeon import *
 from src.config import *
-from src.character.character import *
-from src.enemy.basic_enemy import BasicEnemy
+from src.entities.character.character import *
+from src.entities.enemy.basic_enemy import BasicEnemy
 
 class Game:
     def __init__(self, screen, pygame_clock):
