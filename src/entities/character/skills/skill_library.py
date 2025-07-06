@@ -1,6 +1,6 @@
 # src/skills/skill_library.py
-from src.skills.skill import Skill
-from src.character.character import Player
+from src.entities.character.skills.skill import Skill
+from src.entities.character.character import Player
 from src.dungeon.dungeon import Dungeon
 from src.config import TILE_SIZE
 import pygame

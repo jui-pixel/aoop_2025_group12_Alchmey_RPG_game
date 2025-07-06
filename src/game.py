@@ -322,7 +322,7 @@ class Game:
                 if length > 0:
                     dx /= length
                     dy /= length
-                    self.player.move(dx, dy, dt, current_room)
+                    self.player.move(dx, dy, dt)
             for event in events:
                 if event.type == pygame.KEYDOWN:
                     if event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4):
