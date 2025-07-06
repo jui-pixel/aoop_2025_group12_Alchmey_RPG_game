@@ -133,6 +133,12 @@ class Game:
         
     def _generate_new_enemies(self):
         """Generate new enemies based on the number of rooms and difficulty."""
+        if self.enemy_group:
+            self.enemy_group.empty()
+        if self.enemy_bullet_group:
+            self.enemy_bullet_group.empty()
+        if self.player_bullet_group:
+            self.player_bullet_group.empty()
         num_enemies = max(1, len(self.dungeon.rooms) // 2)
         for _ in range(num_enemies):
             room = random.choice(self.dungeon.rooms)
