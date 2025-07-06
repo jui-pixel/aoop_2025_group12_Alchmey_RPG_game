@@ -104,7 +104,11 @@ class Game:
 
     def _start_new_dungeon(self):
         self.dungeon.initialize_dungeon()
-        spawn_room = self.dungeon.get_room(0)
+        for room in self.dungeon.rooms:
+            if room.room_type == RoomType.START:
+                self.current_room_id = room.id
+                break
+        spawn_room = self.dungeon.get_room(self.current_room_id)
         center_tile_x = int(spawn_room.x + spawn_room.width // 2)
         center_tile_y = int(spawn_room.y + spawn_room.height // 2)
         center_x = center_tile_x * TILE_SIZE
@@ -328,12 +332,13 @@ class Game:
                     if event.key == pygame.K_e and self.player.skill:
                         self.player.skill.use(self.player, self, self.current_time)
                     if event.key == pygame.K_c:
-                        self.dungeon_clear_count += 1
+                        # self.dungeon_clear_count += 1
                         if self.dungeon_clear_count >= self.dungeon_clear_goal:
                             self.state = "win"
                         else:
                             print(f"已通過 {self.dungeon_clear_count} 次地牢，進入下一層！")
                             self._start_new_dungeon()
+                            self._generate_new_enemies()
             mouse_pos = pygame.mouse.get_pos()
             direction = (mouse_pos[0] - (self.player.pos[0] + self.camera_offset[0]),
                          mouse_pos[1] - (self.player.pos[1] + self.camera_offset[1]))
@@ -390,6 +395,7 @@ class Game:
                 else:
                     print(f"已通過 {self.dungeon_clear_count} 次地牢，進入下一層！")
                     self._start_new_dungeon()
+                    self._generate_new_enemies()
         return True
 
     def update_fog_surface(self):
