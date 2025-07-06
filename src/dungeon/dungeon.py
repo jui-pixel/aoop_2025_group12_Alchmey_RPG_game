@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 from src.config import DungeonConfig
-from src.dungeon.room import Room
+from src.dungeon.room import Room, RoomType
 from src.dungeon.bridge import Bridge
 from src.dungeon.BSPnode import BSPNode
 import random
@@ -22,6 +22,9 @@ class Dungeon:
     MAX_BRIDGE_WIDTH = DungeonConfig.MAX_BRIDGE_WIDTH.value
     MAX_SPLIT_DEPTH = DungeonConfig.MAX_SPLIT_DEPTH.value
     EXTRA_BRIDGE_RATIO = DungeonConfig.EXTRA_BRIDGE_RATIO.value
+    MOMSTER_ROOM_RATIO = DungeonConfig.MOMSTER_ROOM_RATIO.value
+    TRAP_ROOM_RATIO = DungeonConfig.TRAP_ROOM_RATIO.value
+    REWARD_ROOM_RATIO = DungeonConfig.REWARD_ROOM_RATIO.value
     game = None
 
     def __init__(self):
@@ -42,13 +45,11 @@ class Dungeon:
         self.dungeon_tiles = [['Outside' for _ in range(self.grid_width)] for _ in range(self.grid_height)]
         print(f"初始化地牢網格：寬度={self.grid_width}, 高度={self.grid_height}")
 
-    def generate_room(self, x: float, y: float, width: float, height: float, room_id: int, is_end_room: bool = False) -> Room:
+    def generate_room(self, x: float, y: float, width: float, height: float, room_id: int, room_type: RoomType = RoomType.EMPTY) -> Room:
         """生成單個房間物件，包含房間的瓦片數據"""
         tiles = [['Room_floor' for _ in range(int(width))] for _ in range(int(height))]
-        if is_end_room:
-            self._configure_end_room(tiles, width, height)
-        room = Room(id=room_id, x=x, y=y, width=width, height=height, tiles=tiles, is_end_room=is_end_room)
-        print(f"生成房間 {room_id} 在 ({x}, {y}), 尺寸=({width}, {height}), 終點房間={is_end_room}")
+        room = Room(id=room_id, x=x, y=y, width=width, height=height, tiles=tiles, room_type=room_type)
+        print(f"生成房間 {room_id} 在 ({x}, {y}), 尺寸=({width}, {height}), 房間類型={room_type}")
         return room
 
     def _configure_end_room(self, tiles: List[List[str]], width: float, height: float) -> None:
@@ -396,6 +397,45 @@ class Dungeon:
                     return True
         return False
 
+    def _assign_room_types(self) -> None:
+        """分配房間類型：隨機選擇出生房，設置最遠房間為終點房，其餘隨機分配"""
+        if not self.rooms:
+            raise ValueError("無房間可分配類型")
+
+        # 隨機選擇出生房
+        self.current_room_id = random.choice(range(len(self.rooms)))
+        start_room = self.rooms[self.current_room_id]
+        start_room.room_type = RoomType.START
+        print(f"指定房間 {start_room.id} 為出生房")
+
+        # 找到離出生房最遠的房間作為終點房
+        if len(self.rooms) > 1:
+            max_dist = 0
+            end_room = None
+            start_center = (start_room.x + start_room.width / 2, start_room.y + start_room.height / 2)
+            for room in self.rooms:
+                if room.id == start_room.id:
+                    continue
+                room_center = (room.x + room.width / 2, room.y + room.height / 2)
+                dist = abs(room_center[0] - start_center[0]) + abs(room_center[1] - start_center[1])
+                if dist > max_dist:
+                    max_dist = dist
+                    end_room = room
+            if end_room:
+                end_room.room_type = RoomType.END
+                print(f"指定房間 {end_room.id} 為終點房間，距離出生房 {max_dist}")
+
+        # 隨機分配其他房間類型
+        for room in self.rooms:
+            if room.room_type not in [RoomType.START, RoomType.END]:
+                room_type = random.choices(
+                    [RoomType.MONSTER, RoomType.TRAP, RoomType.REWARD],
+                    weights=[self.MOMSTER_ROOM_RATIO, self.TRAP_ROOM_RATIO, self.REWARD_ROOM_RATIO],
+                    k=1
+                )[0]
+                room.room_type = room_type
+                print(f"房間 {room.id} 分配為 {room_type} 類型")
+    
     def initialize_dungeon(self) -> None:
         """初始化整個地牢，生成房間、走廊和牆壁"""
         self._initialize_grid()
@@ -409,33 +449,14 @@ class Dungeon:
         if not self.rooms:
             raise ValueError("未生成任何房間")
 
-        self._setup_start_and_end_rooms()
+        self._assign_room_types()
+
         self._place_rooms()
         self.bridges = self._generate_bridges(self.rooms)
         for bridge in self.bridges:
             self._place_bridge(bridge)
         self._add_walls()
         print(f"初始化地牢：{len(self.rooms)} 個房間，{len(self.bridges)} 個橋接")
-
-    def _setup_start_and_end_rooms(self) -> None:
-        """設置起始房間和終點房間"""
-        self.rooms[0].id = 0
-        self.current_room_id = 0
-
-        if len(self.rooms) > 1:
-            max_dist = 0
-            end_room = None
-            start_center = (self.rooms[0].x + self.rooms[0].width / 2, self.rooms[0].y + self.rooms[0].height / 2)
-            for room in self.rooms[1:]:
-                room_center = (room.x + room.width / 2, room.y + room.height / 2)
-                dist = abs(room_center[0] - start_center[0]) + abs(room_center[1] - start_center[1])
-                if dist > max_dist:
-                    max_dist = dist
-                    end_room = room
-            if end_room:
-                end_room.is_end_room = True
-                self._configure_end_room(end_room.tiles, end_room.width, end_room.height)
-                print(f"指定房間 {end_room.id} 為終點房間，距離起點 {max_dist}")
 
     def _place_rooms(self) -> None:
         """將所有房間放置到地牢網格中"""

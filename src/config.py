@@ -15,6 +15,9 @@ class DungeonConfig(Enum):
     MAX_BRIDGE_WIDTH = 4  # 走廊（橋接）的最大寬度（瓦片數，控制走廊的最大寬度）
     MAX_SPLIT_DEPTH = 15  # BSP 分割的最大深度（控制生成房間的數量，深度越大房間越多）
     EXTRA_BRIDGE_RATIO = 0.2  # 額外走廊的比例（增加連通性，生成更多非必要走廊）
+    MOMSTER_ROOM_RATIO = 0.3  # 怪物房間的比例（控制怪物房間的數量，增加遊戲挑戰性）
+    TRAP_ROOM_RATIO = 0.2  # 陷阱房間的比例（控制陷阱房間的數量，增加遊戲危險性）
+    REWARD_ROOM_RATIO = 0.2  # 獎勵房間的比例（控制獎勵房間的數量，增加遊戲獎勵）
 FPS = 60
 SCREEN_WIDTH = 1400
 SCREEN_HEIGHT = 750
