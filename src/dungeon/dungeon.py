@@ -461,6 +461,7 @@ class Dungeon:
     def _place_rooms(self) -> None:
         """將所有房間放置到地牢網格中"""
         for room in self.rooms:
+            room._configure_tiles()
             self._place_room(room)
 
     def _place_room(self, room: Room) -> None:
