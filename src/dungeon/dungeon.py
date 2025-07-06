@@ -7,7 +7,6 @@ from src.dungeon.bridge import Bridge
 from src.dungeon.BSPnode import BSPNode
 import random
 
-
 # 地牢生成類，負責生成 BSP 地牢並管理房間與走廊
 class Dungeon:
     ROOM_WIDTH = DungeonConfig.ROOM_WIDTH.value
@@ -27,7 +26,7 @@ class Dungeon:
 
     def __init__(self):
         self.rooms: List[Room] = []
-        self.bridges: List[Bridge] = []  # 改用 Bridge 物件列表
+        self.bridges: List[Bridge] = []
         self.current_room_id = 0
         self.dungeon_tiles: List[List[str]] = []
         self.grid_width = 0
@@ -37,45 +36,67 @@ class Dungeon:
         self.bsp_tree: Optional[BSPNode] = None
 
     def _initialize_grid(self) -> None:
+        """初始化地牢網格，創建空的瓦片陣列"""
         self.grid_width = self.GRID_WIDTH
         self.grid_height = self.GRID_HEIGHT
         self.dungeon_tiles = [['Outside' for _ in range(self.grid_width)] for _ in range(self.grid_height)]
         print(f"初始化地牢網格：寬度={self.grid_width}, 高度={self.grid_height}")
 
     def generate_room(self, x: float, y: float, width: float, height: float, room_id: int, is_end_room: bool = False) -> Room:
+        """生成單個房間物件，包含房間的瓦片數據"""
         tiles = [['Room_floor' for _ in range(int(width))] for _ in range(int(height))]
         if is_end_room:
-            for row in range(1, int(height) - 1):
-                for col in range(1, int(width) - 1):
-                    tiles[row][col] = 'End_room_floor'
-            center_x = int(width) // 2
-            center_y = int(height) // 2
-            tiles[center_y][center_x] = 'End_room_portal'
+            self._configure_end_room(tiles, width, height)
         room = Room(id=room_id, x=x, y=y, width=width, height=height, tiles=tiles, is_end_room=is_end_room)
         print(f"生成房間 {room_id} 在 ({x}, {y}), 尺寸=({width}, {height}), 終點房間={is_end_room}")
         return room
 
+    def _configure_end_room(self, tiles: List[List[str]], width: float, height: float) -> None:
+        """配置終點房間的瓦片，將內部設為 End_room_floor，中間放置傳送門"""
+        for row in range(1, int(height) - 1):
+            for col in range(1, int(width) - 1):
+                tiles[row][col] = 'End_room_floor'
+        center_x = int(width) // 2
+        center_y = int(height) // 2
+        tiles[center_y][center_x] = 'End_room_portal'
+
     def _split_bsp(self, node: BSPNode, depth: int, max_depth: int = MAX_SPLIT_DEPTH) -> None:
+        """使用二元空間分割（BSP）將地牢空間分成小區域"""
         min_split_size = self.MIN_ROOM_SIZE + self.ROOM_GAP * 2
-        if depth >= max_depth or (node.width < min_split_size * 2 and node.height < min_split_size * 2):
-            if node.width >= min_split_size and node.height >= min_split_size:
-                room_width, room_height, room_x, room_y = self._generate_room_bounds(
-                    (node.x, node.y, node.x + node.width, node.y + node.height)
-                )
-                node.room = self.generate_room(room_x, room_y, room_width, room_height, self.next_room_id)
-                self.next_room_id += 1
+        if self._should_stop_splitting(node, depth, max_depth, min_split_size):
+            self._try_generate_room(node, min_split_size)
             return
 
+        split_direction = self._choose_split_direction(node, min_split_size)
+        if not split_direction:
+            self._try_generate_room(node, min_split_size)
+            return
+
+        self._perform_split(node, split_direction, min_split_size)
+        if node.left:
+            self._split_bsp(node.left, depth + 1, max_depth)
+        if node.right:
+            self._split_bsp(node.right, depth + 1, max_depth)
+
+    def _should_stop_splitting(self, node: BSPNode, depth: int, max_depth: int, min_split_size: float) -> bool:
+        """判斷是否應停止 BSP 分割"""
+        return depth >= max_depth or (node.width < min_split_size * 2 and node.height < min_split_size * 2)
+
+    def _try_generate_room(self, node: BSPNode, min_split_size: float) -> None:
+        """嘗試在 BSP 節點中生成房間"""
+        if node.width >= min_split_size and node.height >= min_split_size:
+            room_width, room_height, room_x, room_y = self._generate_room_bounds(
+                (node.x, node.y, node.x + node.width, node.y + node.height)
+            )
+            node.room = self.generate_room(room_x, room_y, room_width, room_height, self.next_room_id)
+            self.next_room_id += 1
+
+    def _choose_split_direction(self, node: BSPNode, min_split_size: float) -> Optional[str]:
+        """根據節點尺寸選擇分割方向"""
         can_split_horizontally = node.width >= min_split_size * 2
         can_split_vertically = node.height >= min_split_size * 2
         if not (can_split_horizontally or can_split_vertically):
-            if node.width >= min_split_size and node.height >= min_split_size:
-                room_width, room_height, room_x, room_y = self._generate_room_bounds(
-                    (node.x, node.y, node.x + node.width, node.y + node.height)
-                )
-                node.room = self.generate_room(room_x, room_y, room_width, room_height, self.next_room_id)
-                self.next_room_id += 1
-            return
+            return None
 
         w, h = node.width, node.height
         total = w * w + h * h
@@ -91,16 +112,10 @@ class Dungeon:
             possible_directions.append("horizontal")
             weights.append(horizontal_weight)
 
-        if not possible_directions:
-            if node.width >= min_split_size and node.height >= min_split_size:
-                room_width, room_height, room_x, room_y = self._generate_room_bounds(
-                    (node.x, node.y, node.x + node.width, node.y + node.height)
-                )
-                node.room = self.generate_room(room_x, room_y, room_width, room_height, self.next_room_id)
-                self.next_room_id += 1
-            return
+        return random.choices(possible_directions, weights=weights)[0]
 
-        direction = random.choices(possible_directions, weights=weights)[0]
+    def _perform_split(self, node: BSPNode, direction: str, min_split_size: float) -> None:
+        """執行 BSP 分割，創建左和右子節點"""
         if direction == "vertical":
             split_x = random.randint(min_split_size, int(node.width - min_split_size))
             node.left = BSPNode(node.x, node.y, split_x, node.height)
@@ -110,12 +125,8 @@ class Dungeon:
             node.left = BSPNode(node.x, node.y, node.width, split_y)
             node.right = BSPNode(node.x, node.y + split_y, node.width, node.height - split_y)
 
-        if node.left:
-            self._split_bsp(node.left, depth + 1, max_depth)
-        if node.right:
-            self._split_bsp(node.right, depth + 1, max_depth)
-
     def _generate_room_bounds(self, partition: Tuple[float, float, float, float]) -> Tuple[float, float, float, float]:
+        """根據 BSP 分區計算房間的邊界（位置和尺寸）"""
         x0, y0, x1, y1 = partition
         room_x = x0 + self.ROOM_GAP
         room_y = y0 + self.ROOM_GAP
@@ -129,6 +140,7 @@ class Dungeon:
         return room_width, room_height, room_x, room_y
 
     def _collect_rooms(self, node: BSPNode, rooms: List[Room]) -> None:
+        """遍歷 BSP 樹，收集所有包含房間的葉節點"""
         if node.room:
             rooms.append(node.room)
         if node.left:
@@ -137,6 +149,7 @@ class Dungeon:
             self._collect_rooms(node.right, rooms)
 
     def _check_bridge_room_collision(self, bridge: Bridge, room1: Room, room2: Room) -> bool:
+        """檢查走廊是否與其他房間相交（除了要連接的兩個房間）"""
         x0 = min(bridge.x0, bridge.x1)
         y0 = min(bridge.y0, bridge.y1)
         x1 = max(bridge.x0, bridge.x1)
@@ -154,34 +167,19 @@ class Dungeon:
         return False
 
     def _generate_bridge(self, room1: Room, room2: Room) -> List[Bridge]:
+        """生成兩個房間之間的走廊，優先直線，否則用 L 形路徑"""
+        start_x, start_y, end_x, end_y, room1, room2 = self._select_connection_points(room1, room2)
+        bridge_width = self._calculate_bridge_width()
+
+        return self._try_generate_bridge_paths(room1, room2, start_x, start_y, end_x, end_y, bridge_width)
+
+    def _select_connection_points(self, room1: Room, room2: Room) -> Tuple[int, int, int, int, Room, Room]:
+        """選擇兩個房間的隨機連接點，並確保起點在左側"""
         def rand_room_point(room: Room) -> Tuple[int, int]:
             x = random.randint(int(room.x + 2), int(room.x + room.width - 3))
             y = random.randint(int(room.y + 2), int(room.y + room.height - 3))
             return x, y
 
-        def add_horizontal(x1: int, y: int, x2: int, width: int) -> Bridge:
-            return Bridge(
-                x0=min(x1, x2),
-                y0=y - width / 2,
-                x1=max(x1, x2),
-                y1=y + width / 2,
-                width=width,
-                room1_id=room1.id,
-                room2_id=room2.id
-            )
-
-        def add_vertical(x: int, y1: int, y2: int, width: int) -> Bridge:
-            return Bridge(
-                x0=x - width / 2,
-                y0=min(y1, y2),
-                x1=x + width / 2,
-                y1=max(y1, y2),
-                width=width,
-                room1_id=room1.id,
-                room2_id=room2.id
-            )
-
-        bridges = []
         start_x, start_y = rand_room_point(room1)
         end_x, end_y = rand_room_point(room2)
 
@@ -189,81 +187,118 @@ class Dungeon:
             start_x, end_x = end_x, start_x
             start_y, end_y = end_y, start_y
             room1, room2 = room2, room1
+        return start_x, start_y, end_x, end_y, room1, room2
 
-        bridge_width = int(random.gauss((self.MIN_BRIDGE_WIDTH + self.MAX_BRIDGE_WIDTH) // 2, (self.MAX_BRIDGE_WIDTH - self.MIN_BRIDGE_WIDTH) / 2))
-        bridge_width = max(self.MIN_BRIDGE_WIDTH, min(bridge_width, self.MAX_BRIDGE_WIDTH))
+    def _calculate_bridge_width(self) -> int:
+        """計算隨機走廊寬度，使用高斯分佈"""
+        bridge_width = int(random.gauss((self.MIN_BRIDGE_WIDTH + self.MAX_BRIDGE_WIDTH) // 2,
+                                        (self.MAX_BRIDGE_WIDTH - self.MIN_BRIDGE_WIDTH) / 2))
+        return max(self.MIN_BRIDGE_WIDTH, min(bridge_width, self.MAX_BRIDGE_WIDTH))
 
+    def _create_horizontal_bridge(self, x1: int, y: int, x2: int, width: int, room1: Room, room2: Room) -> Bridge:
+        """生成水平走廊段"""
+        return Bridge(
+            x0=min(x1, x2),
+            y0=y - width / 2,
+            x1=max(x1, x2),
+            y1=y + width / 2,
+            width=width,
+            room1_id=room1.id,
+            room2_id=room2.id
+        )
+
+    def _create_vertical_bridge(self, x: int, y1: int, y2: int, width: int, room1: Room, room2: Room) -> Bridge:
+        """生成垂直走廊段"""
+        return Bridge(
+            x0=x - width / 2,
+            y0=min(y1, y2),
+            x1=x + width / 2,
+            y1=max(y1, y2),
+            width=width,
+            room1_id=room1.id,
+            room2_id=room2.id
+        )
+
+    def _try_generate_bridge_paths(self, room1: Room, room2: Room, start_x: int, start_y: int, end_x: int, end_y: int, bridge_width: int) -> List[Bridge]:
+        """嘗試生成直線或 L 形走廊路徑"""
+        bridges = []
         if abs(start_x - end_x) <= 1:
-            bridge = add_vertical(start_x, start_y, end_y, bridge_width)
+            bridge = self._create_vertical_bridge(start_x, start_y, end_y, bridge_width, room1, room2)
             if not self._check_bridge_room_collision(bridge, room1, room2):
                 bridges.append(bridge)
                 print("直線垂直橋接")
             else:
-                bridge1 = add_horizontal(start_x, start_y, end_x, bridge_width)
-                bridge2 = add_vertical(end_x, start_y, end_y, bridge_width)
-                if not self._check_bridge_room_collision(bridge1, room1, room2) and not self._check_bridge_room_collision(bridge2, room1, room2):
-                    bridges.extend([bridge1, bridge2])
-                    print("後備L形橋接 (水平→垂直)")
-                else:
-                    bridges.extend([bridge1, bridge2])
-                    print("後備L形橋接 (水平→垂直，忽略碰撞)")
+                bridges = self._generate_l_shape_bridge(room1, room2, start_x, start_y, end_x, end_y, bridge_width, horizontal_first=True)
         elif abs(start_y - end_y) <= 1:
-            bridge = add_horizontal(start_x, start_y, end_x, bridge_width)
+            bridge = self._create_horizontal_bridge(start_x, start_y, end_x, bridge_width, room1, room2)
             if not self._check_bridge_room_collision(bridge, room1, room2):
                 bridges.append(bridge)
                 print("直線水平橋接")
             else:
-                bridge1 = add_vertical(start_x, start_y, end_y, bridge_width)
-                bridge2 = add_horizontal(start_x, end_y, end_x, bridge_width)
-                if not self._check_bridge_room_collision(bridge1, room1, room2) and not self._check_bridge_room_collision(bridge2, room1, room2):
-                    bridges.extend([bridge1, bridge2])
-                    print("後備L形橋接 (垂直→水平)")
-                else:
-                    bridges.extend([bridge1, bridge2])
-                    print("後備L形橋接 (垂直→水平，忽略碰撞)")
+                bridges = self._generate_l_shape_bridge(room1, room2, start_x, start_y, end_x, end_y, bridge_width, horizontal_first=False)
         else:
-            if random.choice([True, False]):
-                bridge1 = add_horizontal(start_x, start_y, end_x, bridge_width)
-                bridge2 = add_vertical(end_x, start_y, end_y, bridge_width)
-                if not self._check_bridge_room_collision(bridge1, room1, room2) and not self._check_bridge_room_collision(bridge2, room1, room2):
-                    bridges.extend([bridge1, bridge2])
-                    print("L形橋接 (水平→垂直)")
-                else:
-                    bridge1 = add_vertical(start_x, start_y, end_y, bridge_width)
-                    bridge2 = add_horizontal(start_x, end_y, end_x, bridge_width)
-                    if not self._check_bridge_room_collision(bridge1, room1, room2) and not self._check_bridge_room_collision(bridge2, room1, room2):
-                        bridges.extend([bridge1, bridge2])
-                        print("L形橋接 (垂直→水平)")
-                    else:
-                        bridges.extend([bridge1, bridge2])
-                        print("後備L形橋接 (垂直→水平，忽略碰撞)")
-            else:
-                bridge1 = add_vertical(start_x, start_y, end_y, bridge_width)
-                bridge2 = add_horizontal(start_x, end_y, end_x, bridge_width)
-                if not self._check_bridge_room_collision(bridge1, room1, room2) and not self._check_bridge_room_collision(bridge2, room1, room2):
-                    bridges.extend([bridge1, bridge2])
-                    print("L形橋接 (垂直→水平)")
-                else:
-                    bridge1 = add_horizontal(start_x, start_y, end_x, bridge_width)
-                    bridge2 = add_vertical(end_x, start_y, end_y, bridge_width)
-                    if not self._check_bridge_room_collision(bridge1, room1, room2) and not self._check_bridge_room_collision(bridge2, room1, room2):
-                        bridges.extend([bridge1, bridge2])
-                        print("L形橋接 (水平→垂直)")
-                    else:
-                        bridges.extend([bridge1, bridge2])
-                        print("後備L形橋接 (水平→垂直，忽略碰撞)")
+            bridges = self._generate_l_shape_bridge(room1, room2, start_x, start_y, end_x, end_y, bridge_width, random.choice([True, False]))
 
         print(f"橋接從房間 {room1.id} 到 {room2.id}")
         print(f"起點: ({start_x}, {start_y}) → 終點: ({end_x}, {end_y}) | 寬度: {bridge_width}")
         print(f"橋接段: {[str(bridge) for bridge in bridges]}")
         return bridges
 
+    def _generate_l_shape_bridge(self, room1: Room, room2: Room, start_x: int, start_y: int, end_x: int, end_y: int, bridge_width: int, horizontal_first: bool) -> List[Bridge]:
+        """生成 L 形走廊路徑，優先嘗試指定方向，失敗則嘗試另一方向"""
+        bridges = []
+        if horizontal_first:
+            bridge1 = self._create_horizontal_bridge(start_x, start_y, end_x, bridge_width, room1, room2)
+            bridge2 = self._create_vertical_bridge(end_x, start_y, end_y, bridge_width, room1, room2)
+            if not self._check_bridge_room_collision(bridge1, room1, room2) and not self._check_bridge_room_collision(bridge2, room1, room2):
+                bridges.extend([bridge1, bridge2])
+                print("L形橋接 (水平→垂直)")
+            else:
+                bridge1 = self._create_vertical_bridge(start_x, start_y, end_y, bridge_width, room1, room2)
+                bridge2 = self._create_horizontal_bridge(start_x, end_y, end_x, bridge_width, room1, room2)
+                if not self._check_bridge_room_collision(bridge1, room1, room2) and not self._check_bridge_room_collision(bridge2, room1, room2):
+                    bridges.extend([bridge1, bridge2])
+                    print("L形橋接 (垂直→水平)")
+                else:
+                    bridges.extend([bridge1, bridge2])
+                    print("後備L形橋接 (垂直→水平，忽略碰撞)")
+        else:
+            bridge1 = self._create_vertical_bridge(start_x, start_y, end_y, bridge_width, room1, room2)
+            bridge2 = self._create_horizontal_bridge(start_x, end_y, end_x, bridge_width, room1, room2)
+            if not self._check_bridge_room_collision(bridge1, room1, room2) and not self._check_bridge_room_collision(bridge2, room1, room2):
+                bridges.extend([bridge1, bridge2])
+                print("L形橋接 (垂直→水平)")
+            else:
+                bridge1 = self._create_horizontal_bridge(start_x, start_y, end_x, bridge_width, room1, room2)
+                bridge2 = self._create_vertical_bridge(end_x, start_y, end_y, bridge_width, room1, room2)
+                if not self._check_bridge_room_collision(bridge1, room1, room2) and not self._check_bridge_room_collision(bridge2, room1, room2):
+                    bridges.extend([bridge1, bridge2])
+                    print("L形橋接 (水平→垂直)")
+                else:
+                    bridges.extend([bridge1, bridge2])
+                    print("後備L形橋接 (水平→垂直，忽略碰撞)")
+        return bridges
+
     def _generate_bridges(self, rooms: List[Room]) -> List[Bridge]:
+        """生成所有房間之間的走廊，確保連通並添加額外走廊"""
         bridges = []
         connected_pairs = set()
         rooms_left = rooms[:]
         current_room = rooms_left[0]
 
+        # 生成最小生成樹，確保所有房間連通
+        bridges.extend(self._generate_minimum_spanning_bridges(rooms_left, connected_pairs))
+
+        # 添加額外走廊以增加路徑多樣性
+        bridges.extend(self._generate_extra_bridges(rooms, connected_pairs))
+
+        print(f"總共生成 {len(bridges)} 個橋接，連通 {len(connected_pairs)} 對房間")
+        return bridges
+
+    def _generate_minimum_spanning_bridges(self, rooms_left: List[Room], connected_pairs: set) -> List[Bridge]:
+        """生成最小生成樹的走廊，確保所有房間連通"""
+        bridges = []
+        current_room = rooms_left[0]
         while rooms_left:
             rooms_left.remove(current_room)
             closest_room = self._find_closest_room(current_room, rooms_left)
@@ -275,10 +310,15 @@ class Dungeon:
                 current_room = closest_room
             else:
                 break
+        return bridges
 
+    def _generate_extra_bridges(self, rooms: List[Room], connected_pairs: set) -> List[Bridge]:
+        """生成額外走廊，增加地牢連通性"""
+        bridges = []
         extra_bridges = int(len(rooms) * self.EXTRA_BRIDGE_RATIO)
         room_ids = [room.id for room in rooms]
         end_room_id = next((room.id for room in rooms if room.is_end_room), None)
+
         possible_pairs = [
             (id1, id2, ((rooms[id1].x + rooms[id1].width / 2 - rooms[id2].x - rooms[id2].width / 2) ** 2 +
                         (rooms[id1].y + rooms[id1].height / 2 - rooms[id2].y - rooms[id2].height / 2) ** 2) ** 0.5)
@@ -292,7 +332,6 @@ class Dungeon:
 
         max_bridges_per_room = 3
         room_bridge_count = {room.id: 0 for room in rooms}
-
         selected_pairs = []
         for id1, id2 in available_pairs:
             if room_bridge_count[id1] < max_bridges_per_room and room_bridge_count[id2] < max_bridges_per_room:
@@ -307,11 +346,10 @@ class Dungeon:
             room2 = next(r for r in rooms if r.id == id2)
             bridges.extend(self._generate_bridge(room1, room2))
             connected_pairs.add(tuple(sorted([id1, id2])))
-
-        print(f"總共生成 {len(bridges)} 個橋接，連通 {len(connected_pairs)} 對房間")
         return bridges
 
     def _find_closest_room(self, room: Room, rooms: List[Room]) -> Optional[Room]:
+        """找到距離指定房間最近的其他房間"""
         closest_room = None
         closest_distance = float('inf')
         room_center = (room.x + room.width / 2, room.y + room.height / 2)
@@ -324,6 +362,7 @@ class Dungeon:
         return closest_room
 
     def _place_bridge(self, bridge: Bridge) -> None:
+        """將走廊放置到地牢網格中，設為 Bridge_floor"""
         x0 = int(min(bridge.x0, bridge.x1))
         y0 = int(min(bridge.y0, bridge.y1))
         x1 = int(max(bridge.x0, bridge.x1))
@@ -340,25 +379,25 @@ class Dungeon:
         print(f"放置橋接：從 ({x0}, {y0}) 到 ({x1}, {y1})")
 
     def _add_walls(self) -> None:
+        """為地牢中的地板瓦片添加邊界牆壁"""
         for y in range(self.grid_height):
             for x in range(self.grid_width):
                 if self.dungeon_tiles[y][x] in ['Room_floor', 'Bridge_floor']:
-                    breaker = False
-                    for dy in [-1, 0, 1]:
-                        for dx in [-1, 0, 1]:
-                            if y + dy < 0 or y + dy >= self.grid_height or x + dx < 0 or x + dx >= self.grid_width:
-                                self.dungeon_tiles[y][x] = 'Border_wall'
-                                breaker = True
-                            elif self.dungeon_tiles[y + dy][x + dx] == 'Outside':
-                                self.dungeon_tiles[y][x] = 'Border_wall'
-                                breaker = True
-                            if breaker:
-                                break
-                        if breaker:
-                            break
-        print("添加牆壁完成")
+                    if self._is_border_tile(x, y):
+                        self.dungeon_tiles[y][x] = 'Border_wall'
+
+    def _is_border_tile(self, x: int, y: int) -> bool:
+        """檢查指定瓦片是否應設為邊界牆壁"""
+        for dy in [-1, 0, 1]:
+            for dx in [-1, 0, 1]:
+                if y + dy < 0 or y + dy >= self.grid_height or x + dx < 0 or x + dx >= self.grid_width:
+                    return True
+                if self.dungeon_tiles[y + dy][x + dx] == 'Outside':
+                    return True
+        return False
 
     def initialize_dungeon(self) -> None:
+        """初始化整個地牢，生成房間、走廊和牆壁"""
         self._initialize_grid()
         self.bsp_tree = BSPNode(0, 0, self.grid_width, self.grid_height)
         self._split_bsp(self.bsp_tree, 0)
@@ -370,6 +409,16 @@ class Dungeon:
         if not self.rooms:
             raise ValueError("未生成任何房間")
 
+        self._setup_start_and_end_rooms()
+        self._place_rooms()
+        self.bridges = self._generate_bridges(self.rooms)
+        for bridge in self.bridges:
+            self._place_bridge(bridge)
+        self._add_walls()
+        print(f"初始化地牢：{len(self.rooms)} 個房間，{len(self.bridges)} 個橋接")
+
+    def _setup_start_and_end_rooms(self) -> None:
+        """設置起始房間和終點房間"""
         self.rooms[0].id = 0
         self.current_room_id = 0
 
@@ -385,29 +434,20 @@ class Dungeon:
                     end_room = room
             if end_room:
                 end_room.is_end_room = True
-                for row in range(1, int(end_room.height) - 1):
-                    for col in range(1, int(end_room.width) - 1):
-                        end_room.tiles[row][col] = 'End_room_floor'
-                center_x = int(end_room.width) // 2
-                center_y = int(end_room.height) // 2
-                end_room.tiles[center_y][center_x] = 'End_room_portal'
+                self._configure_end_room(end_room.tiles, end_room.width, end_room.height)
                 print(f"指定房間 {end_room.id} 為終點房間，距離起點 {max_dist}")
 
+    def _place_rooms(self) -> None:
+        """將所有房間放置到地牢網格中"""
         for room in self.rooms:
             self._place_room(room)
 
-        self.bridges = self._generate_bridges(self.rooms)
-        for bridge in self.bridges:
-            self._place_bridge(bridge)
-
-        self._add_walls()
-        print(f"初始化地牢：{len(self.rooms)} 個房間，{len(self.bridges)} 個橋接")
-
     def _place_room(self, room: Room) -> None:
+        """將單個房間的瓦片放置到地牢網格中"""
         grid_x = int(room.x)
         grid_y = int(room.y)
         if (grid_x < 0 or grid_x + int(room.width) > self.grid_width or
-            grid_y < 0 or grid_y + int(room.height) > self.grid_height):
+                grid_y < 0 or grid_y + int(room.height) > self.grid_height):
             self.expand_grid(grid_x + int(room.width), grid_y + int(room.height))
         for row in range(int(room.height)):
             for col in range(int(room.width)):
@@ -415,12 +455,14 @@ class Dungeon:
         print(f"放置房間 {room.id} 在網格 ({grid_x}, {grid_y})")
 
     def get_room(self, room_id: int) -> Room:
+        """根據房間 ID 獲取房間物件"""
         try:
             return next(r for r in self.rooms if r.id == room_id)
         except StopIteration:
             raise ValueError(f"未找到房間 {room_id}")
 
     def expand_grid(self, new_width: int, new_height: int) -> None:
+        """擴展地牢網格以適應更大的尺寸"""
         if new_width > self.grid_width:
             for row in self.dungeon_tiles:
                 row.extend(['W' for _ in range(new_width - self.grid_width)])
@@ -431,6 +473,7 @@ class Dungeon:
         print(f"擴展網格到 ({self.grid_width}, {self.grid_height})")
 
     def get_tile_at(self, pos: Tuple[float, float]) -> str:
+        """根據像素座標獲取對應的瓦片類型"""
         tile_x = int(pos[0] // self.TILE_SIZE)
         tile_y = int(pos[1] // self.TILE_SIZE)
         if 0 <= tile_y < self.grid_height and 0 <= tile_x < self.grid_width:
