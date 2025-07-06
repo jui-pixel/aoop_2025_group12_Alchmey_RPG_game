@@ -45,9 +45,9 @@ def shadow_dash_effect(player: Player, game: 'Game') -> None:
 
 def time_slow_effect(player: Player, game: 'Game') -> None:
     """減慢遊戲時間 2 秒"""
-    game.time_scale = 0.5
+    game.time_scale = 0.3
     pygame.time.set_timer(pygame.USEREVENT, 2000)
-    print("Skill 'Time Warp' used: Time scale set to 0.5 for 2 seconds")
+    print("Skill 'Time Warp' used: Time scale set to 0.3 for 2 seconds")
 
 
 def reveal_fog_effect(player: Player, game: 'Game') -> None:

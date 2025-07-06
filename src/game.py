@@ -231,6 +231,7 @@ class Game:
 
     def update(self, dt: float):
         self.current_time += dt * self.time_scale
+        dt *= self.time_scale
         if self.player and self.player.invulnerable > 0:
             self.player.invulnerable -= dt
         events = pygame.event.get()

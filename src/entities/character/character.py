@@ -27,6 +27,7 @@ class Player(MovableEntity):
         
     def __init__(self, pos: Tuple[float, float], game: 'Game', size=TILE_SIZE // 2, color=(0, 255, 0)):
         super().__init__(pos=pos, game=game, size=size, color=color)
+        self.speed = 300.0
         self.weapons = []
         self.current_weapon_idx = 0
         self.skill = None
