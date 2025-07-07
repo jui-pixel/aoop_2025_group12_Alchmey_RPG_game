@@ -41,6 +41,8 @@ class Player(MovableEntity):
         self.invulnerable = 0.0
         self.direction = (0.0, 0.0)
         self.max_energy = 100.0
+        self.base_defense = 10
+        self.eff_defense = self.base_defense
         self.energy = self.max_energy
         self.energy_regen_rate = 20.0
 
