@@ -45,7 +45,7 @@ class BasicEnemy(MovableEntity):
         if current_time - self.last_hit_time < self.hit_cooldown:
             return
         if self.rect.colliderect(self.game.player.rect):
-            self.game.player.health -= self.damage
+            self.game.player.take_damage(self.damage)
             self.last_hit_time = current_time
             if self.game.player.health <= 0:
                 print("Player died!")  # Future: Implement game over state

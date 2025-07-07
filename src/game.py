@@ -366,7 +366,7 @@ class Game:
                 if not bullet.update(dt):
                     self.enemy_bullet_group.remove(bullet)
                 elif bullet.shooter != self.player and self.player and self.player.invulnerable <= 0 and bullet.rect.colliderect(self.player.rect):
-                    self.player.health -= bullet.damage
+                    self.player.take_damage(bullet.damage)
                     self.enemy_bullet_group.remove(bullet)
                     if self.player.health <= 0:
                         print("Player died!")  # Future: Implement game over state
