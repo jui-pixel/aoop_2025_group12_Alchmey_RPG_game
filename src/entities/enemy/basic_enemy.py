@@ -12,7 +12,7 @@ class BasicEnemy(MovableEntity):
         self.speed = 100.0
         self.health = 50
         self.max_health = 50
-        self.damage = 10
+        self.coll_damage = 10
         self.last_hit_time = 0.0
         self.hit_cooldown = 1.0
         # Shooting attributes
@@ -45,7 +45,7 @@ class BasicEnemy(MovableEntity):
         if current_time - self.last_hit_time < self.hit_cooldown:
             return
         if self.rect.colliderect(self.game.player.rect):
-            self.game.player.take_damage(self.damage)
+            self.game.player.take_damage(self.coll_damage)
             self.last_hit_time = current_time
             if self.game.player.health <= 0:
                 print("Player died!")  # Future: Implement game over state
