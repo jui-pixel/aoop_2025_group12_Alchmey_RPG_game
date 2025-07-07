@@ -23,6 +23,8 @@ class MovableEntity(pygame.sprite.Sprite):
         self.speed = self.base_speed  # Effective speed after buffs
         self.base_health = 100
         self.health = self.base_health
+        self.base_defense = 0  # Base defense value
+        self.defense = self.base_defense  # Effective defense after buffs
         self.max_health = 100
         self.size = size
         self.image = pygame.Surface((self.size, self.size))
@@ -112,6 +114,7 @@ class MovableEntity(pygame.sprite.Sprite):
 
     def take_damage(self, damage: int) -> bool:
         """Apply damage to the entity. Returns True if entity is killed."""
+        damage = max(1, damage - self.defense)
         self.health -= damage
         if self.health <= 0:
             self.kill()

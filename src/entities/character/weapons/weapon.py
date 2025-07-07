@@ -1,4 +1,3 @@
-# src/weapons/weapon.py
 import pygame
 from typing import Tuple, Optional
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE
@@ -46,61 +45,31 @@ class Bullet(pygame.sprite.Sprite):
         return False
 
 class Weapon:
-    def __init__(self, name: str, fire_rate: float, bullet_speed: float, damage: int, max_ammo: int, is_melee: bool = False, melee_range: int = 1):
+    def __init__(self, name: str, fire_rate: float, bullet_speed: float, damage: int, energy_cost: float):
         self.name = name
         self.fire_rate = fire_rate
         self.bullet_speed = bullet_speed
         self.damage = damage
-        self.max_ammo = max_ammo
-        self.ammo = max_ammo if not is_melee else float('inf')
-        self.is_melee = is_melee
-        self.melee_range = melee_range  # Melee range in tiles
+        self.energy_cost = energy_cost
         self.last_fired = 0.0  # Last fired time
 
-    def can_fire(self, last_fired: float, current_time: float) -> bool:
-        return current_time - last_fired >= self.fire_rate and (self.is_melee or self.ammo > 0)
+    def can_fire(self, last_fired: float, current_time: float, player_energy: float) -> bool:
+        return current_time - last_fired >= self.fire_rate and (player_energy >= self.energy_cost)
 
     def fire(self, pos: Tuple[float, float], direction: Tuple[float, float], current_time: float, dungeon: Dungeon, shooter: Optional['pygame.sprite.Sprite'] = None) -> Optional['Bullet']:
-        if not self.can_fire(last_fired=self.last_fired, current_time=current_time):
+        if not self.can_fire(last_fired=self.last_fired, current_time=current_time, player_energy=shooter.energy if shooter else 0):
             return None
-        if self.is_melee:
-            self.apply_melee_damage(pos, dungeon, shooter)
-            return None
-        self.ammo -= 1
         self.last_fired = current_time
         return Bullet(pos, direction, self.bullet_speed, self.damage, current_time, dungeon, shooter)
 
-    def apply_melee_damage(self, pos: Tuple[float, float], dungeon: Dungeon, shooter: Optional['pygame.sprite.Sprite'] = None):
-        tile_x = int(pos[0] // TILE_SIZE)
-        tile_y = int(pos[1] // TILE_SIZE)
-        game = dungeon.game
-        if not game:
-            return
-        for dx in range(-self.melee_range, self.melee_range + 1):
-            for dy in range(-self.melee_range, self.melee_range + 1):
-                check_x = tile_x + dx
-                check_y = tile_y + dy
-                if 0 <= check_x < dungeon.grid_width and 0 <= check_y < dungeon.grid_height:
-                    # Check for enemies in range
-                    for enemy in game.enemy_group:
-                        enemy_tile_x = int(enemy.pos[0] // TILE_SIZE)
-                        enemy_tile_y = int(enemy.pos[1] // TILE_SIZE)
-                        if enemy_tile_x == check_x and enemy_tile_y == check_y:
-                            enemy.take_damage(self.damage)
-                            print(f"Melee hit enemy at ({check_x}, {check_y}) dealing {self.damage} damage")
-
 class Gun(Weapon):
     def __init__(self):
-        super().__init__(name="Gun", fire_rate=0.2, bullet_speed=400.0, damage=10, max_ammo=30)
+        super().__init__(name="Gun", fire_rate=0.2, bullet_speed=400.0, damage=10, energy_cost=5.0)
 
 class Bow(Weapon):
     def __init__(self):
-        super().__init__(name="Bow", fire_rate=0.5, bullet_speed=300.0, damage=15, max_ammo=20)
+        super().__init__(name="Bow", fire_rate=0.5, bullet_speed=300.0, damage=15, energy_cost=8.0)
 
 class Staff(Weapon):
     def __init__(self):
-        super().__init__(name="Staff", fire_rate=1.0, bullet_speed=200.0, damage=20, max_ammo=10)
-
-class Knife(Weapon):
-    def __init__(self):
-        super().__init__(name="Knife", fire_rate=0.1, bullet_speed=0.0, damage=8, max_ammo=0, is_melee=True, melee_range=2)
+        super().__init__(name="Staff", fire_rate=1.0, bullet_speed=200.0, damage=20, energy_cost=12.0)

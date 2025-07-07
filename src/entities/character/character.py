@@ -1,4 +1,3 @@
-# src/character/character.py
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 import pygame
@@ -16,6 +15,9 @@ class Player(MovableEntity):
     last_fired: float = 0.0
     invulnerable: float = 0.0
     direction: Tuple[float, float] = (0.0, 0.0)
+    max_energy: float = 100.0
+    energy: float = 100.0
+    energy_regen_rate: float = 20.0  # Energy points per second
 
     def __post_init__(self):
         super().__init__(pos=self.pos, game=self.game, size=TILE_SIZE // 2, color=(0, 255, 0))
@@ -24,6 +26,9 @@ class Player(MovableEntity):
         self.speed = 300.0
         self.health = 100
         self.max_health = 100
+        self.base_health = 100
+        self.base_defense = 0
+        self.energy = self.max_energy
         
     def __init__(self, pos: Tuple[float, float], game: 'Game', size=TILE_SIZE // 2, color=(0, 255, 0)):
         super().__init__(pos=pos, game=game, size=size, color=color)
@@ -35,12 +40,21 @@ class Player(MovableEntity):
         self.last_fired = 0.0
         self.invulnerable = 0.0
         self.direction = (0.0, 0.0)
-        
+        self.max_energy = 100.0
+        self.energy = self.max_energy
+        self.energy_regen_rate = 20.0
+
+    def update(self, dt: float, current_time: float) -> None:
+        super().update(dt, current_time)
+        # Regenerate energy
+        self.energy = min(self.max_energy, self.energy + self.energy_regen_rate * dt)
+
     def fire(self, direction: Tuple[float, float], current_time: float) -> Optional['Bullet']:
         weapon = self.weapons[self.current_weapon_idx] if self.weapons else None
-        if weapon and weapon.can_fire(self.last_fired, current_time) and self.game and self.dungeon:
+        if weapon and weapon.can_fire(self.last_fired, current_time, self.energy) and self.game and self.dungeon:
             bullet = weapon.fire(self.pos, direction, current_time, self.dungeon, self)
             if bullet:
                 self.last_fired = current_time
+                self.energy -= weapon.energy_cost
             return bullet
         return None

@@ -1,4 +1,3 @@
-# src/game.py
 import pygame
 import random
 import math
@@ -90,7 +89,7 @@ class Game:
         else:
             for i, weapon in enumerate(self.weapons_library):
                 count = self.selected_weapons.count(weapon)
-                text = font.render(f"{weapon.name} (Selected: {count}, Ammo: {weapon.max_ammo if not weapon.is_melee else '∞'}, Fire Rate: {weapon.fire_rate}s)", True, (255, 255, 255))
+                text = font.render(f"{weapon.name} (Selected: {count}, Energy Cost: {weapon.energy_cost}, Fire Rate: {weapon.fire_rate}s)", True, (255, 255, 255))
                 self.screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 100 + i * 40))
         selected_count = len(self.selected_weapons)
         count_text = font.render(f"Selected: {selected_count}/{max_weapons}", True, (255, 255, 255))
@@ -120,6 +119,7 @@ class Game:
             self.player.rect.x = center_x
             self.player.rect.y = center_y
             self.player.health = self.player.max_health
+            self.player.energy = self.player.max_energy
         self.player.skill = self.selected_skill
         if self.player.skill and self.player.skill.cooldown == 0:
             self.player.skill.use(self.player, self, self.current_time)
@@ -324,6 +324,7 @@ class Game:
                     dx /= length
                     dy /= length
                     self.player.move(dx, dy, dt)
+            self.player.update(dt, self.current_time)
             for event in events:
                 if event.type == pygame.KEYDOWN:
                     if event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4):
@@ -333,7 +334,6 @@ class Game:
                     if event.key == pygame.K_e and self.player.skill:
                         self.player.skill.use(self.player, self, self.current_time)
                     if event.key == pygame.K_c:
-                        # self.dungeon_clear_count += 1
                         if self.dungeon_clear_count >= self.dungeon_clear_goal:
                             self.state = "win"
                         else:
@@ -475,21 +475,23 @@ class Game:
                 self.screen.blit(self.fog_surface, (0, 0))
             # Draw UI
             font = pygame.font.SysFont(None, 36)
-            health_text = font.render(f"Health: {self.player.health}", True, (255, 255, 255))
+            health_text = font.render(f"Health: {self.player.health}/{self.player.max_health}", True, (255, 255, 255))
             self.screen.blit(health_text, (10, 10))
+            energy_text = font.render(f"Energy: {int(self.player.energy)}/{int(self.player.max_energy)}", True, (255, 255, 255))
+            self.screen.blit(energy_text, (10, 50))
             if self.player.weapons:
                 weapon = self.player.weapons[self.player.current_weapon_idx]
-                ammo_text = font.render(f"{weapon.name}: {weapon.ammo if not weapon.is_melee else '∞'}", True, (255, 255, 255))
-                self.screen.blit(ammo_text, (10, 50))
+                weapon_text = font.render(f"{weapon.name}: {weapon.energy_cost} Energy/Shot", True, (255, 255, 255))
+                self.screen.blit(weapon_text, (10, 90))
             if self.player.skill:
                 skill_text = font.render(f"Skill: {self.player.skill.name}", True, (255, 255, 255))
-                self.screen.blit(skill_text, (10, 90))
+                self.screen.blit(skill_text, (10, 130))
                 if self.player.skill.cooldown > 0:
                     cooldown = max(0, self.player.skill.cooldown - (self.current_time - self.player.skill.last_used))
                     cooldown_text = font.render(f"CD: {cooldown:.1f}s", True, (255, 255, 255))
-                    self.screen.blit(cooldown_text, (10, 130))
+                    self.screen.blit(cooldown_text, (10, 170))
             progress_text = font.render(f"Dungeon: {self.dungeon_clear_count+1}/{self.dungeon_clear_goal}", True, (255, 255, 0))
-            self.screen.blit(progress_text, (10, 170))
+            self.screen.blit(progress_text, (10, 210))
             self.draw_minimap()
         elif self.state == "win":
             self.draw_win()
