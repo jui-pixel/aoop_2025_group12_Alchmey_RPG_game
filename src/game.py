@@ -379,9 +379,8 @@ class Game:
                 tile_y = int(self.player.pos[1] / TILE_SIZE)
                 self.update_fog_map(tile_x, tile_y)
                 current_pos = (self.player.pos[0], self.player.pos[1])
-                if self.last_player_pos != current_pos:
-                    self.update_fog_surface()
-                    self.last_player_pos = current_pos
+                self.update_fog_surface()
+                self.last_player_pos = current_pos
             if self.enemy_group:
                 for enemy in self.enemy_group:
                     if enemy.health <= 0:

@@ -32,7 +32,7 @@ class BasicEnemy(MovableEntity):
         dy = player_pos[1] - self.pos[1]
         distance = (dx ** 2 + dy ** 2) ** 0.5
 
-        if distance <= self.vision_radius * TILE_SIZE:
+        if distance >= self.vision_radius * TILE_SIZE or distance <= 0:
             return
 
         # Use inherited move method
