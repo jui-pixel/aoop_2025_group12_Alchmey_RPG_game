@@ -58,7 +58,7 @@ def reveal_fog_effect(player: Player, game: 'Game') -> None:
     tile_x = int(player.pos[0] / TILE_SIZE)
     tile_y = int(player.pos[1] / TILE_SIZE)
     game.update_fog_map(tile_x, tile_y)
-    print(f"Skill 'Reveal Fog' used: Temporarily doubled vision radius to {original_radius * 100}")
+    print(f"Skill 'Reveal Fog' used: Temporarily doubled vision radius to {original_radius * 2}")
 
 
 SKILL_LIBRARY = [
