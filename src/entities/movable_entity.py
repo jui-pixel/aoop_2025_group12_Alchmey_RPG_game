@@ -3,15 +3,7 @@ import pygame
 from typing import Tuple, Optional, Dict, Callable
 from src.config import TILE_SIZE
 from src.dungeon.dungeon import Dungeon
-
-class Buff:
-    def __init__(self, name: str, duration: float, effects: Dict[str, float], on_apply: Optional[Callable[['MovableEntity'], None]] = None, on_remove: Optional[Callable[['MovableEntity'], None]] = None):
-        self.name = name
-        self.duration = duration  # Duration in seconds
-        self.remaining_time = duration
-        self.effects = effects  # e.g., {"speed_multiplier": 1.5, "health_regen_per_second": 5}
-        self.on_apply = on_apply  # Optional callback when buff is applied
-        self.on_remove = on_remove  # Optional callback when buff is removed
+from src.entities.buff import Buff
 
 class MovableEntity(pygame.sprite.Sprite):
     def __init__(self, pos: Tuple[float, float], game: 'Game', size: int, color: Tuple[int, int, int]):
@@ -32,6 +24,8 @@ class MovableEntity(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.pos)
         self.buffs: list[Buff] = []  # List of active buffs
         self.buff_modifiers: Dict[str, float] = {"speed_multiplier": 1.0}  # Tracks cumulative buff effects
+        self.base_vision_radius = 15  # Base vision radius
+        self.vision_radius = 15
 
     def apply_buff(self, buff: Buff) -> None:
         """Apply a buff to the entity."""
@@ -50,11 +44,10 @@ class MovableEntity(pygame.sprite.Sprite):
 
     def _update_modifiers(self) -> None:
         """Recalculate cumulative buff effects."""
-        speed_multiplier = 1.0
+        vision_radius_multiplier = 1.0
         for buff in self.buffs:
-            speed_multiplier *= buff.effects.get("speed_multiplier", 1.0)
-        self.buff_modifiers["speed_multiplier"] = speed_multiplier
-        self.speed = self.base_speed * self.buff_modifiers["speed_multiplier"]
+            vision_radius_multiplier *= buff.effects.get("vision_radius_multiplier", 1.0)
+        self.vision_radius = int(self.base_vision_radius * vision_radius_multiplier)
 
     def update_buffs(self, dt: float) -> None:
         """Update buff durations and apply ongoing effects."""

@@ -153,11 +153,11 @@ class Game:
 
     def update_fog_map(self, tile_x: int, tile_y: int):
         """Update fog map, marking explored tiles (for minimap)."""
-        for y in range(max(0, tile_y - self.vision_radius), min(self.dungeon.grid_height, tile_y + self.vision_radius + 1)):
-            for x in range(max(0, tile_x - self.vision_radius), min(self.dungeon.grid_width, tile_x + self.vision_radius + 1)):
+        for y in range(max(0, tile_y - self.player.vision_radius), min(self.dungeon.grid_height, tile_y + self.player.vision_radius + 1)):
+            for x in range(max(0, tile_x - self.player.vision_radius), min(self.dungeon.grid_width, tile_x + self.player.vision_radius + 1)):
                 distance = math.sqrt((x - tile_x) ** 2 + (y - tile_y) ** 2)
                 try:
-                    if distance <= self.vision_radius:
+                    if distance <= self.player.vision_radius:
                         self.fog_map[y][x] = True  # Mark as explored
                 except:
                     pass
@@ -379,10 +379,9 @@ class Game:
                 tile_y = int(self.player.pos[1] / TILE_SIZE)
                 self.update_fog_map(tile_x, tile_y)
                 current_pos = (self.player.pos[0], self.player.pos[1])
-                if self.last_player_pos != current_pos or self.last_vision_radius != self.vision_radius:
+                if self.last_player_pos != current_pos:
                     self.update_fog_surface()
                     self.last_player_pos = current_pos
-                    self.last_vision_radius = self.vision_radius
             if self.enemy_group:
                 for enemy in self.enemy_group:
                     if enemy.health <= 0:
@@ -404,7 +403,7 @@ class Game:
         self.fog_surface.fill((0,0, 0, 255))
         center_x = self.player.rect.centerx + self.camera_offset[0]
         center_y = self.player.rect.centery + self.camera_offset[1]
-        radius = int(self.vision_radius * TILE_SIZE)
+        radius = int(self.player.vision_radius * TILE_SIZE)
         layers = 100
         max_alpha = 255
         for i in range(layers, 0, -1):

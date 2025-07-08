@@ -3,6 +3,7 @@ from src.entities.character.skills.skill import Skill
 from src.entities.character.character import Player
 from src.dungeon.dungeon import Dungeon
 from src.config import TILE_SIZE
+from src.entities.buff import Buff
 import pygame
 
 
@@ -52,12 +53,11 @@ def time_slow_effect(player: Player, game: 'Game') -> None:
 
 def reveal_fog_effect(player: Player, game: 'Game') -> None:
     """臨時擴大玩家的迷霧揭示範圍"""
-    original_radius = game.vision_radius
-    game.vision_radius = original_radius * 100  # 擴大視野
+    original_radius = game.player.vision_radius
+    game.player.apply_buff(Buff("vision_radius", 2.0, {"vision_radius_multiplier" : 2.0}))  # 臨時加倍視野半徑
     tile_x = int(player.pos[0] / TILE_SIZE)
     tile_y = int(player.pos[1] / TILE_SIZE)
     game.update_fog_map(tile_x, tile_y)
-    game.vision_radius = original_radius  # 恢復原始視野
     print(f"Skill 'Reveal Fog' used: Temporarily doubled vision radius to {original_radius * 100}")
 
 

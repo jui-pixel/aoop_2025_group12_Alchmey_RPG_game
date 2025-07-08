@@ -45,6 +45,7 @@ class Player(MovableEntity):
         self.eff_defense = self.base_defense
         self.energy = self.max_energy
         self.energy_regen_rate = 20.0
+        self.vision_radius = 15
 
     def update(self, dt: float, current_time: float) -> None:
         super().update(dt, current_time)
