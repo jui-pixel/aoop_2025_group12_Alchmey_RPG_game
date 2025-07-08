@@ -176,6 +176,9 @@ class Game:
                 # Shift wall tile upward
                 wall_shift = int(TILE_SIZE * 0.65)  # Shift up by half tile size
                 wall_height = TILE_SIZE  # Height of the dark red face
+                # Draw dark red wall face below
+                pygame.draw.rect(self.screen, DARK_RED, (x, y, TILE_SIZE, wall_height))
+                pygame.draw.rect(self.screen, (255, 255, 255), (x, y, TILE_SIZE, wall_height), 1)
                 # Draw original wall tile shifted up
                 pygame.draw.rect(self.screen, color, (x, y - wall_shift, TILE_SIZE, TILE_SIZE))
                 pygame.draw.rect(self.screen, (255, 255, 255), (x, y - wall_shift, TILE_SIZE, TILE_SIZE), 1)
@@ -183,12 +186,7 @@ class Game:
                 pass
         else:
             if tile == 'Border_wall':
-                # Shift wall tile upward
-                wall_shift = int(TILE_SIZE * 0.65)  # Shift up by half tile size
-                wall_height = TILE_SIZE  # Height of the dark red face
-                # Draw dark red wall face below
-                pygame.draw.rect(self.screen, DARK_RED, (x, y, TILE_SIZE, wall_height))
-                pygame.draw.rect(self.screen, (255, 255, 255), (x, y, TILE_SIZE, wall_height), 1)
+                pass
             else:
                 # Draw flat tiles for non-walls
                 pygame.draw.rect(self.screen, color, (x, y, TILE_SIZE, TILE_SIZE))
@@ -379,8 +377,10 @@ class Game:
                 tile_y = int(self.player.pos[1] / TILE_SIZE)
                 self.update_fog_map(tile_x, tile_y)
                 current_pos = (self.player.pos[0], self.player.pos[1])
+                self.update_fog_map(tile_x, tile_y)
                 self.update_fog_surface()
                 self.last_player_pos = current_pos
+                self.last_vision_radius = self.player.vision_radius
             if self.enemy_group:
                 for enemy in self.enemy_group:
                     if enemy.health <= 0:
@@ -398,22 +398,55 @@ class Game:
         return True
 
     def update_fog_surface(self):
+        """更新迷霧表面，使用像素級光線投射實現平滑的光線遮擋效果。"""
+        # 創建迷霧表面，初始為全黑（不透明）
         self.fog_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        self.fog_surface.fill((0,0, 0, 255))
+        self.fog_surface.fill((0, 0, 0, 255))
+
+        # 玩家中心位置（屏幕坐標）
         center_x = self.player.rect.centerx + self.camera_offset[0]
         center_y = self.player.rect.centery + self.camera_offset[1]
         radius = int(self.player.vision_radius * TILE_SIZE)
-        layers = 100
-        max_alpha = 255
-        for i in range(layers, 0, -1):
-            alpha = int((i / layers) * max_alpha)
-            current_radius = int((i / layers) * radius)
-            pygame.draw.circle(
-                self.fog_surface,
-                (0, 0, 0, alpha),
-                (center_x, center_y),
-                current_radius
-            )
+
+        # 儲存光線交點，形成可見區域多邊形
+        points = []
+        angle_step = 1  # 每 1 度一條光線，增加精度以減少鋸齒
+        for angle in range(0, 360, angle_step):
+            rad = math.radians(angle)
+            dx = math.cos(rad)
+            dy = math.sin(rad)
+
+            # 沿光線方向計算與牆壁的交點
+            current_x = self.player.pos[0]
+            current_y = self.player.pos[1]
+            max_steps = int(radius / 2)  # 步長為像素級，精細檢查
+            hit_wall = False
+
+            for step in range(max_steps):
+                current_x += dx * 2  # 每次移動 2 像素
+                current_y += dy * 2
+                tile_x = int(current_x / TILE_SIZE)
+                tile_y = int(current_y / TILE_SIZE)
+
+                # 檢查是否在地圖範圍內
+                if (tile_x < 0 or tile_x >= self.dungeon.grid_width or
+                    tile_y < 0 or tile_y >= self.dungeon.grid_height):
+                    break
+
+                # 檢查是否撞到牆壁
+                if self.dungeon.dungeon_tiles[tile_y][tile_x] == 'Border_wall':
+                    hit_wall = True
+                    break
+
+            # 計算交點的屏幕坐標
+            screen_x = current_x + self.camera_offset[0]
+            screen_y = current_y + self.camera_offset[1]
+            points.append((screen_x, screen_y))
+
+        # 繪製可見區域多邊形（完全透明）
+        if points:
+            pygame.draw.polygon(self.fog_surface, (0, 0, 0, 0), points)
+            
 
     def draw_enemy(self, enemy):
         if enemy.health <= 0:
@@ -451,6 +484,15 @@ class Game:
             for enemy in self.enemy_group:
                 if enemy.health > 0 and enemy.pos[0] + self.camera_offset[0] >= 0 and enemy.pos[1] + self.camera_offset[1] >= 0:
                     self.draw_enemy(enemy)
+            # Draw player bullets
+            for bullet in self.player_bullet_group:
+                self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
+            # Draw enemy bullets
+            for bullet in self.enemy_bullet_group:
+                self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
+            # Apply fog of war
+            if self.fog_surface:
+                self.screen.blit(self.fog_surface, (0, 0))
             for row in range(view_top, view_bottom):
                 for col in range(view_left, view_right):
                     x = col * TILE_SIZE + self.camera_offset[0]
@@ -462,15 +504,18 @@ class Game:
                             self.draw_3d_walls(row, col, x, y, tile, True)
                     except:
                         continue
-            # Draw player bullets
-            for bullet in self.player_bullet_group:
-                self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
-            # Draw enemy bullets
-            for bullet in self.enemy_bullet_group:
-                self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
-            # Apply fog of war
-            if self.fog_surface:
-                self.screen.blit(self.fog_surface, (0, 0))
+            # vision = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+            # vision.fill((0,0, 0, 255))
+            # center_x = self.player.rect.centerx + self.camera_offset[0]
+            # center_y = self.player.rect.centery + self.camera_offset[1]
+            # radius = int(self.player.vision_radius * TILE_SIZE)
+            # pygame.draw.circle(
+            #     vision,
+            #     (0, 0, 0, 0),
+            #     (center_x, center_y),
+            #     radius
+            # )
+            # self.screen.blit(vision, (0, 0))
             # Draw UI
             font = pygame.font.SysFont(None, 36)
             health_text = font.render(f"Health: {self.player.health}/{self.player.max_health}", True, (255, 255, 255))
