@@ -1,3 +1,3 @@
 # src/weapons/weapon_library.py
 from src.entities.character.weapons.weapon import *
-WEAPON_LIBRARY = [Gun(), Bow(), Staff()]
+WEAPON_LIBRARY = [Gun(), Staff()]

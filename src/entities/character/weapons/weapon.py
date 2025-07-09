@@ -66,10 +66,6 @@ class Gun(Weapon):
     def __init__(self):
         super().__init__(name="Gun", fire_rate=0.2, bullet_speed=400.0, damage=10, energy_cost=5.0)
 
-class Bow(Weapon):
-    def __init__(self):
-        super().__init__(name="Bow", fire_rate=0.5, bullet_speed=300.0, damage=15, energy_cost=8.0)
-
 class Staff(Weapon):
     def __init__(self):
         super().__init__(name="Staff", fire_rate=1.0, bullet_speed=200.0, damage=20, energy_cost=12.0)
