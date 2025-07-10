@@ -8,9 +8,25 @@ import pygame
 
 
 def inf_energy(player: Player, game: 'Game') -> None:
-    """恢復所有非近戰武器的彈藥"""
+    """高速恢復玩家能量"""
+    def on_apply(entity: 'Player') -> None:
+        """Set high energy regeneration rate."""
+        entity.energy_regen_rate = 500.0  # 25x default rate
+        print(f"Skill 'Inf Energy' applied: Energy regeneration rate set to {entity.energy_regen_rate} for {buff.duration}s")
 
-    print(f"Skill 'Inf Energy' used: Restored ammo for {len(player.weapons)} weapons")
+    def on_remove(entity: 'Player') -> None:
+        """Restore original energy regeneration rate."""
+        entity.energy_regen_rate = entity.original_energy_regen_rate
+        print(f"Skill 'Inf Energy' ended: Energy regeneration rate reset to {entity.energy_regen_rate}")
+
+    buff = Buff(
+        name="InfEnergy",
+        duration=5.0,  # 5 second duration
+        effects={"energy_regen_per_second": 500.0},
+        on_apply=on_apply,
+        on_remove=on_remove
+    )
+    player.apply_buff(buff)
 
 
 def carry_more_weapons_effect(player: Player, game: 'Game') -> None:
@@ -104,7 +120,7 @@ def time_slow_effect(player: Player, game: 'Game') -> None:
         for weapon in player.weapons:
             weapon.fire_rate = weapon.original_fire_rate
         game.time_scale = 1.0
-        game.camera_lerp_factor = game.origional_camera_lerp_factor
+        game.camera_lerp_factor = game.original_camera_lerp_factor
         print(f"Skill 'Time Warp' ended: Time scale restored to 1.0, player speed and weapon cooldowns reset")
 
     # Create and apply the Time Warp buff to counteract time scale effects

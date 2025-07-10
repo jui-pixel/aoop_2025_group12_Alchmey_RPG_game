@@ -33,7 +33,7 @@ class Game:
         self.npc_menu_options = ["Select Skill", "Select Weapons", "Start Game"]
         self.selected_npc_menu_option = 0
         self.npc_group = pygame.sprite.Group()
-        self.origional_camera_lerp_factor = 1.5
+        self.original_camera_lerp_factor = 1.5
         self.camera_lerp_factor = 1.5
         self.current_room_id = 0
         self.skills_library = SKILL_LIBRARY

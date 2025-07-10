@@ -45,7 +45,7 @@ class Player(MovableEntity):
         self.base_defense = 10
         self.eff_defense = self.base_defense
         self.energy = self.max_energy
-        self.origional_energy_regen_rate = 20.0  # Original energy regeneration rate
+        self.original_energy_regen_rate = 20.0  # Original energy regeneration rate
         self.energy_regen_rate = 20.0
         self.vision_radius = 15
         self.fog = True  # Player starts with fog of war enabled
