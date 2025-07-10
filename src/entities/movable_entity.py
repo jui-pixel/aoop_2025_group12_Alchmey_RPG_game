@@ -45,10 +45,13 @@ class MovableEntity(pygame.sprite.Sprite):
     def _update_modifiers(self) -> None:
         """Recalculate cumulative buff effects."""
         vision_radius_multiplier = 1.0
+        speed_multiplier = 1.0
         for buff in self.buffs:
             vision_radius_multiplier *= buff.effects.get("vision_radius_multiplier", 1.0)
+            speed_multiplier *= buff.effects.get("speed_multiplier", 1.0)
         self.vision_radius = int(self.base_vision_radius * vision_radius_multiplier)
-
+        self.speed = self.base_speed * speed_multiplier
+        
     def update_buffs(self, dt: float) -> None:
         """Update buff durations and apply ongoing effects."""
         for buff in self.buffs[:]:  # Copy to avoid modifying list during iteration

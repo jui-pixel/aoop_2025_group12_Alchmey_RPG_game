@@ -32,6 +32,7 @@ class Player(MovableEntity):
         
     def __init__(self, pos: Tuple[float, float], game: 'Game', size=TILE_SIZE // 2, color=(0, 255, 0)):
         super().__init__(pos=pos, game=game, size=size, color=color)
+        self.base_speed = 300.0
         self.speed = 300.0
         self.weapons = []
         self.current_weapon_idx = 0
@@ -46,6 +47,7 @@ class Player(MovableEntity):
         self.energy = self.max_energy
         self.energy_regen_rate = 20.0
         self.vision_radius = 15
+        self.fog = True  # Player starts with fog of war enabled
 
     def update(self, dt: float, current_time: float) -> None:
         super().update(dt, current_time)
