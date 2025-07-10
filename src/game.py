@@ -473,45 +473,48 @@ class Game:
         center_x = self.player.rect.centerx + self.camera_offset[0]
         center_y = self.player.rect.centery + self.camera_offset[1]
         radius = int(self.player.vision_radius * TILE_SIZE)
+        if self.player.fog:
+            # 儲存光線交點，形成可見區域多邊形
+            points = []
+            angle_step = 1  # 每 1 度一條光線，增加精度以減少鋸齒
+            for angle in range(0, 360, angle_step):
+                rad = math.radians(angle)
+                dx = math.cos(rad)
+                dy = math.sin(rad)
 
-        # 儲存光線交點，形成可見區域多邊形
-        points = []
-        angle_step = 1  # 每 1 度一條光線，增加精度以減少鋸齒
-        for angle in range(0, 360, angle_step):
-            rad = math.radians(angle)
-            dx = math.cos(rad)
-            dy = math.sin(rad)
+                # 沿光線方向計算與牆壁的交點
+                current_x = self.player.pos[0]
+                current_y = self.player.pos[1]
+                max_steps = int(radius / 2)  # 步長為像素級，精細檢查
+                hit_wall = False
 
-            # 沿光線方向計算與牆壁的交點
-            current_x = self.player.pos[0]
-            current_y = self.player.pos[1]
-            max_steps = int(radius / 2)  # 步長為像素級，精細檢查
-            hit_wall = False
+                for step in range(max_steps):
+                    current_x += dx * 2  # 每次移動 2 像素
+                    current_y += dy * 2
+                    tile_x = int(current_x / TILE_SIZE)
+                    tile_y = int(current_y / TILE_SIZE)
 
-            for step in range(max_steps):
-                current_x += dx * 2  # 每次移動 2 像素
-                current_y += dy * 2
-                tile_x = int(current_x / TILE_SIZE)
-                tile_y = int(current_y / TILE_SIZE)
+                    # 檢查是否在地圖範圍內
+                    if (tile_x < 0 or tile_x >= self.dungeon.grid_width or
+                        tile_y < 0 or tile_y >= self.dungeon.grid_height):
+                        break
 
-                # 檢查是否在地圖範圍內
-                if (tile_x < 0 or tile_x >= self.dungeon.grid_width or
-                    tile_y < 0 or tile_y >= self.dungeon.grid_height):
-                    break
+                    # 檢查是否撞到牆壁
+                    if self.dungeon.dungeon_tiles[tile_y][tile_x] == 'Border_wall':
+                        hit_wall = True
+                        break
 
-                # 檢查是否撞到牆壁
-                if self.dungeon.dungeon_tiles[tile_y][tile_x] == 'Border_wall':
-                    hit_wall = True
-                    break
+                # 計算交點的屏幕坐標
+                screen_x = current_x + self.camera_offset[0]
+                screen_y = current_y + self.camera_offset[1]
+                points.append((screen_x, screen_y))
 
-            # 計算交點的屏幕坐標
-            screen_x = current_x + self.camera_offset[0]
-            screen_y = current_y + self.camera_offset[1]
-            points.append((screen_x, screen_y))
-
-        # 繪製可見區域多邊形（完全透明）
-        if points:
-            pygame.draw.polygon(self.fog_surface, (0, 0, 0, 0), points)
+            # 繪製可見區域多邊形（完全透明）
+            if points:
+                pygame.draw.polygon(self.fog_surface, (0, 0, 0, 0), points)
+        else:
+            # 如果玩家沒有開啟迷霧，則清除迷霧表面
+            self.fog_surface.fill((0, 0, 0, 0))
             
 
     def draw_enemy(self, enemy):
