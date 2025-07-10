@@ -55,6 +55,7 @@ class Bullet(pygame.sprite.Sprite):
 class Weapon:
     def __init__(self, name: str, fire_rate: float, bullet_speed: float, damage: int, energy_cost: float):
         self.name = name
+        self.original_fire_rate = fire_rate  # Store original fire rate for potential buffs
         self.fire_rate = fire_rate
         self.bullet_speed = bullet_speed
         self.damage = damage

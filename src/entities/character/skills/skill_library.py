@@ -87,10 +87,38 @@ def shadow_dash_effect(player: Player, game: 'Game') -> None:
 
 
 def time_slow_effect(player: Player, game: 'Game') -> None:
-    """減慢遊戲時間 2 秒"""
-    game.time_scale = 0.3
-    pygame.time.set_timer(pygame.USEREVENT, 2000)
-    print("Skill 'Time Warp' used: Time scale set to 0.3 for 2 seconds")
+    """減慢遊戲時間 2 秒，但不影響玩家移動與攻擊"""
+    time_scale = 0.3
+    duration = 2.0
+    game.time_scale = time_scale
+
+    def on_apply(entity: 'MovableEntity') -> None:
+        """Apply speed and attack rate compensation."""
+        # Counteract time scale reduction for movement and firing
+        speed_multiplier = 1.0 / time_scale
+        for weapon in player.weapons:
+            weapon.fire_rate = weapon.original_fire_rate * time_scale
+        print(f"Skill 'Time Warp' applied: Time scale set to {time_scale}, player speed multiplied by {speed_multiplier}, weapon cooldowns adjusted")
+
+    def on_remove(entity: 'MovableEntity') -> None:
+        """Restore original speed and weapon cooldowns."""
+        for weapon in player.weapons:
+            weapon.fire_rate = weapon.original_fire_rate
+        game.time_scale = 1.0
+        print(f"Skill 'Time Warp' ended: Time scale restored to 1.0, player speed and weapon cooldowns reset")
+
+    # Create and apply the Time Warp buff to counteract time scale effects
+    buff = Buff(
+        name="TimeWarpCompensate",
+        duration=duration,
+        effects={"speed_multiplier": 1.0 / time_scale},
+        on_apply=on_apply,
+        on_remove=on_remove
+    )
+    player.apply_buff(buff)
+
+    # Set a timer to ensure time scale is reset after duration
+    pygame.time.set_timer(pygame.USEREVENT, int(duration * 1000))
 
 
 def reveal_fog_effect(player: Player, game: 'Game') -> None:

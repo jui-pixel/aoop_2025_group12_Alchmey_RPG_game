@@ -256,9 +256,9 @@ class Game:
         for event in events:
             if event.type == pygame.QUIT:
                 return False
-            if event.type == pygame.USEREVENT and self.time_scale < 1.0:
-                self.time_scale = 1.0
-                pygame.time.set_timer(pygame.USEREVENT, 0)
+            # if event.type == pygame.USEREVENT and self.time_scale < 1.0:
+            #     self.time_scale = 1.0
+            #     pygame.time.set_timer(pygame.USEREVENT, 0)
         if self.state == "menu":
             for event in events:
                 if event.type == pygame.KEYDOWN:
