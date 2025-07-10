@@ -7,12 +7,10 @@ from src.entities.buff import Buff
 import pygame
 
 
-def restore_ammo_effect(player: Player, game: 'Game') -> None:
+def inf_energy(player: Player, game: 'Game') -> None:
     """恢復所有非近戰武器的彈藥"""
-    for weapon in player.weapons:
-        if not weapon.is_melee:
-            weapon.ammo = weapon.max_ammo
-    print(f"Skill 'Restore Ammo' used: Restored ammo for {len(player.weapons)} weapons")
+
+    print(f"Skill 'Inf Energy' used: Restored ammo for {len(player.weapons)} weapons")
 
 
 def carry_more_weapons_effect(player: Player, game: 'Game') -> None:
@@ -88,9 +86,10 @@ def shadow_dash_effect(player: Player, game: 'Game') -> None:
 
 def time_slow_effect(player: Player, game: 'Game') -> None:
     """減慢遊戲時間 2 秒，但不影響玩家移動與攻擊"""
-    time_scale = 0.3
-    duration = 2.0
+    time_scale = 0.1
+    duration = 0.5
     game.time_scale = time_scale
+    game.camera_lerp_factor /= time_scale
 
     def on_apply(entity: 'MovableEntity') -> None:
         """Apply speed and attack rate compensation."""
@@ -105,6 +104,7 @@ def time_slow_effect(player: Player, game: 'Game') -> None:
         for weapon in player.weapons:
             weapon.fire_rate = weapon.original_fire_rate
         game.time_scale = 1.0
+        game.camera_lerp_factor = game.origional_camera_lerp_factor
         print(f"Skill 'Time Warp' ended: Time scale restored to 1.0, player speed and weapon cooldowns reset")
 
     # Create and apply the Time Warp buff to counteract time scale effects
@@ -133,7 +133,7 @@ def reveal_fog_effect(player: Player, game: 'Game') -> None:
 
 
 SKILL_LIBRARY = [
-    Skill(name="Restore Ammo", cooldown=2.0, duration=0.0, effect=restore_ammo_effect),
+    Skill(name="Inf Energy", cooldown=2.0, duration=0.0, effect=inf_energy),
     Skill(name="Carry 10 Weapons", cooldown=0.0, duration=0.0, effect=carry_more_weapons_effect),
     Skill(name="Shadow Dash", cooldown=2.0, duration=1.0, effect=shadow_dash_effect),
     Skill(name="Time Warp", cooldown=2.0, duration=2.0, effect=time_slow_effect),
