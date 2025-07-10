@@ -11,6 +11,7 @@ class RoomType(Enum):
     TRAP = "trap"  # 陷阱房，包含危險陷阱
     REWARD = "reward"  # 獎勵房，包含寶藏或道具
     END = "end"  # 終點房間，包含傳送門
+    LOBBY = "lobby"  # 大廳房間，玩家可以在此選擇技能或武器
 
 # 定義房間數據結構，用於儲存房間的屬性和瓦片數據
 @dataclass

@@ -325,7 +325,7 @@ class Dungeon:
                         (rooms[id1].y + rooms[id1].height / 2 - rooms[id2].y - rooms[id2].height / 2) ** 2) ** 0.5)
             for i, id1 in enumerate(room_ids)
             for id2 in room_ids[i + 1:]
-            if end_room_id is None or (id1 != end_room_id and id2 != end_room_id)
+            if (id2 < len(room_ids)) and (end_room_id is None or (id1 != end_room_id and id2 != end_room_id))
         ]
         possible_pairs.sort(key=lambda x: x[2], reverse=True)
         available_pairs = [(id1, id2) for id1, id2, _ in possible_pairs if tuple(sorted([id1, id2])) not in connected_pairs]
@@ -501,3 +501,20 @@ class Dungeon:
         if 0 <= tile_y < self.grid_height and 0 <= tile_x < self.grid_width:
             return self.dungeon_tiles[tile_y][tile_x]
         return 'W'
+
+    def initialize_lobby(self) -> None:
+        self._initialize_grid()
+        self.rooms = []
+        self.bridges = []
+        self.next_room_id = 0
+        lobby_width = 10
+        lobby_height = 10
+        lobby_x = (self.grid_width - lobby_width) // 2
+        lobby_y = (self.grid_height - lobby_height) // 2
+        lobby_room = self.generate_room(lobby_x, lobby_y, lobby_width, lobby_height, self.next_room_id, RoomType.LOBBY)
+        self.next_room_id += 1
+        self.rooms.append(lobby_room)
+        self.total_appeared_rooms = len(self.rooms)
+        self._place_room(lobby_room)
+        self._add_walls()
+        print(f"初始化大廳：房間 {lobby_room.id} 在 ({lobby_x}, {lobby_y})")

@@ -4,7 +4,7 @@ from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE
 from src.dungeon.dungeon import Dungeon
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, pos: Tuple[float, float], direction: Tuple[float, float], speed: float, damage: int, fire_time: float, dungeon: Dungeon, shooter: Optional['pygame.sprite.Sprite'] = None):
+    def __init__(self, pos: Tuple[float, float], direction: Tuple[float, float], speed: float, damage: int, fire_time: float, dungeon: 'Dungeon', shooter: Optional['pygame.sprite.Sprite'] = None, lifetime: float = 2.0):
         super().__init__()
         self.pos = list(pos)  # Convert to list for modification
         self.direction = direction
@@ -13,11 +13,19 @@ class Bullet(pygame.sprite.Sprite):
         self.fire_time = fire_time
         self.dungeon = dungeon
         self.shooter = shooter
+        self.lifetime = lifetime  # Bullet lifetime in seconds
+        self.elapsed_time = 0.0   # Track elapsed time
         self.image = pygame.Surface((4, 5))
         self.image.fill((255, 255, 0))  # Yellow color for bullet
         self.rect = self.image.get_rect(center=self.pos)
 
     def update(self, dt: float) -> bool:
+        # Update elapsed time
+        self.elapsed_time += dt
+        # Check if bullet has exceeded its lifetime
+        if self.elapsed_time >= self.lifetime:
+            return False
+
         # Update bullet position
         new_x = self.pos[0] + self.direction[0] * self.speed * dt
         new_y = self.pos[1] + self.direction[1] * self.speed * dt

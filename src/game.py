@@ -11,6 +11,8 @@ from src.dungeon.dungeon import *
 from src.config import *
 from src.entities.character.character import *
 from src.entities.enemy.basic_enemy import BasicEnemy
+from src.entities.buff import Buff
+from src.entities.NPC import NPC
 
 class Game:
     def __init__(self, screen, pygame_clock):
@@ -26,8 +28,11 @@ class Game:
         self.state = "menu"
         self.selected_skill = None
         self.selected_weapons = []
-        self.menu_options = ["Start Game", "Exit"]
+        self.menu_options = ["Enter Lobby", "Exit"]
         self.selected_menu_option = 0
+        self.npc_menu_options = ["Select Skill", "Select Weapons", "Start Game"]
+        self.selected_npc_menu_option = 0
+        self.npc_group = pygame.sprite.Group()
         self.camera_lerp_factor = 1.5
         self.current_room_id = 0
         self.skills_library = SKILL_LIBRARY
@@ -46,12 +51,6 @@ class Game:
         self.last_vision_radius = None
         self.dungeon_clear_count = 0
         self.dungeon_clear_goal = 5
-        # 2.5D background setup
-        self.background_layers = [
-            {"color": (50, 50, 50), "scale": 0.5, "offset": 0.2},  # Distant layer
-            {"color": (80, 80, 80), "scale": 0.7, "offset": 0.4},  # Mid layer
-            {"color": (110, 110, 110), "scale": 0.9, "offset": 0.6}  # Near layer
-        ]
 
     def draw_menu(self):
         self.screen.fill((0, 0, 0))
@@ -61,7 +60,28 @@ class Game:
             text = font.render(option, True, color)
             self.screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 200 + i * 50))
         pygame.display.flip()
-
+        
+    def initialize_lobby(self):
+        """Initialize the lobby room with an NPC."""
+        self.dungeon.initialize_lobby()
+        self.current_room_id = 0
+        spawn_room = self.dungeon.get_room(self.current_room_id)
+        center_x = int(spawn_room.x + spawn_room.width // 2) * TILE_SIZE
+        center_y = int(spawn_room.y + spawn_room.height // 2) * TILE_SIZE
+        self.player = Player(pos=(center_x, center_y), game=self)
+        # Place NPC in the lobby
+        npc_pos = (center_x + 2 * TILE_SIZE, center_y)
+        self.npc_group.add(NPC(pos=npc_pos, game=self))
+        self.camera_offset = [-(self.player.pos[0] - SCREEN_WIDTH // 2),
+                              -(self.player.pos[1] - SCREEN_HEIGHT // 2)]
+        self.minimap_width = int(self.dungeon.grid_width * self.minimap_scale)
+        self.minimap_height = int(self.dungeon.grid_height * self.minimap_scale)
+        self.minimap_offset = (SCREEN_WIDTH - self.minimap_width - 10, 10)
+        self.fog_map = [[False for _ in range(self.dungeon.grid_width)] for _ in range(self.dungeon.grid_height)]
+        tile_x = int(self.player.pos[0] / TILE_SIZE)
+        tile_y = int(self.player.pos[1] / TILE_SIZE)
+        self.update_fog_map(tile_x, tile_y)
+        
     def draw_skill_selection(self):
         self.screen.fill((0, 0, 0))
         font = pygame.font.SysFont(None, 36)
@@ -247,20 +267,68 @@ class Game:
                     elif event.key == pygame.K_DOWN:
                         self.selected_menu_option = (self.selected_menu_option + 1) % len(self.menu_options)
                     elif event.key == pygame.K_RETURN:
-                        if self.menu_options[self.selected_menu_option] == "Start Game":
+                        if self.menu_options[self.selected_menu_option] == "Enter Lobby":
                             if self.skills_library:
-                                self.state = "select_skill"
-                                self.selected_skill = self.skills_library[0]
+                                self.state = "lobby"
+                                self.initialize_lobby()
                             else:
                                 print("No skills available, cannot start game")
                         else:
                             return False
+        if self.state == "lobby":
+            keys = pygame.key.get_pressed()
+            dx = dy = 0
+            if keys[pygame.K_a]:
+                dx -= 1
+            if keys[pygame.K_d]:
+                dx += 1
+            if keys[pygame.K_w]:
+                dy -= 1
+            if keys[pygame.K_s]:
+                dy += 1
+            if dx != 0 or dy != 0:
+                length = math.sqrt(dx**2 + dy**2)
+                if length > 0:
+                    dx /= length
+                    dy /= length
+                    self.player.move(dx, dy, dt)
+            for event in events:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_e:
+                        for npc in self.npc_group:
+                            if npc.can_interact(self.player.pos):
+                                self.state = "npc_menu"
+                                self.selected_npc_menu_option = 0
+                                break
+        elif self.state == "npc_menu":
+            for event in events:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        self.selected_npc_menu_option = (self.selected_npc_menu_option - 1) % len(self.npc_menu_options)
+                    elif event.key == pygame.K_DOWN:
+                        self.selected_npc_menu_option = (self.selected_npc_menu_option + 1) % len(self.npc_menu_options)
+                    elif event.key == pygame.K_RETURN:
+                        if self.npc_menu_options[self.selected_npc_menu_option] == "Select Skill":
+                            if self.skills_library:
+                                self.state = "select_skill"
+                                self.selected_skill = self.skills_library[0]
+                            else:
+                                print("No skills available")
+                        elif self.npc_menu_options[self.selected_npc_menu_option] == "Select Weapons":
+                            self.state = "select_weapons"
+                        elif self.npc_menu_options[self.selected_npc_menu_option] == "Start Game":
+                            if self.selected_weapons and self.selected_skill:
+                                self.start_game()
+                            else:
+                                print("Must select a skill and at least one weapon")
+                    elif event.key == pygame.K_ESCAPE:
+                        self.state = "lobby"
         elif self.state == "select_skill":
             for event in events:
                 if event.type == pygame.KEYDOWN:
                     if not self.skills_library:
                         if event.key == pygame.K_ESCAPE:
-                            self.state = "menu"
+                            self.state = "npc_menu"
                             self.selected_skill = None
                         continue
                     current_idx = self.skills_library.index(self.selected_skill) if self.selected_skill in self.skills_library else 0
@@ -272,16 +340,14 @@ class Game:
                         self.selected_skill = self.skills_library[current_idx]
                     elif event.key == pygame.K_RETURN:
                         if self.selected_skill:
-                            self.player = Player(pos=(0, 0), game=self)
+                            self.player.skill = self.selected_skill
                             if self.selected_skill.cooldown == 0:
                                 self.selected_skill.use(self.player, self, self.current_time)
-                            self.state = "select_weapons"
+                            self.state = "npc_menu"
                         else:
                             print("No skill selected")
                     elif event.key == pygame.K_ESCAPE:
-                        self.state = "menu"
-                        self.selected_skill = None
-                        self.player = None
+                        self.state = "npc_menu"
         elif self.state == "select_weapons":
             for event in events:
                 if event.type == pygame.KEYDOWN:
@@ -298,12 +364,12 @@ class Game:
                         print(f"Removed weapon: {removed_weapon.name}")
                     elif event.key == pygame.K_RETURN:
                         if self.selected_weapons:
-                            self.start_game()
+                            self.player.weapons = self.selected_weapons
+                            self.state = "npc_menu"
                         else:
                             print("At least one weapon must be selected")
                     elif event.key == pygame.K_ESCAPE:
-                        self.state = "select_skill"
-                        self.selected_weapons.clear()
+                        self.state = "npc_menu"
         elif self.state == "playing":
             keys = pygame.key.get_pressed()
             dx = dy = 0
@@ -459,6 +525,47 @@ class Game:
         self.screen.fill((0, 0, 0))
         if self.state == "menu":
             self.draw_menu()
+        elif self.state == "lobby":
+            view_left = max(0, int(-self.camera_offset[0] // TILE_SIZE - 1))
+            view_right = min(self.dungeon.grid_width, int((-self.camera_offset[0] + SCREEN_WIDTH) // TILE_SIZE + 1))
+            view_top = max(0, int(-self.camera_offset[1] // TILE_SIZE - 1))
+            view_bottom = min(self.dungeon.grid_height, int((-self.camera_offset[1] + SCREEN_HEIGHT) // TILE_SIZE + 1))
+            for row in range(view_top, view_bottom):
+                for col in range(view_left, view_right):
+                    x = col * TILE_SIZE + self.camera_offset[0]
+                    y = row * TILE_SIZE + self.camera_offset[1]
+                    try:
+                        tile = self.dungeon.dungeon_tiles[row][col]
+                        self.draw_3d_walls(row, col, x, y, tile)
+                    except:
+                        continue
+            self.screen.blit(self.player.image, (self.player.rect.x + self.camera_offset[0], self.player.rect.y + self.camera_offset[1]))
+            for npc in self.npc_group:
+                npc.draw(self.screen, self.camera_offset)
+                if npc.can_interact(self.player.pos):
+                    font = pygame.font.SysFont(None, 24)
+                    prompt = font.render("Press E to interact", True, (255, 255, 255))
+                    self.screen.blit(prompt, (npc.rect.centerx + self.camera_offset[0] - prompt.get_width() // 2, npc.rect.top + self.camera_offset[1] - 20))
+            if self.fog_surface:
+                self.screen.blit(self.fog_surface, (0, 0))
+            for row in range(view_top, view_bottom):
+                for col in range(view_left, view_right):
+                    x = col * TILE_SIZE + self.camera_offset[0]
+                    y = row * TILE_SIZE + self.camera_offset[1]
+                    try:
+                        tile = self.dungeon.dungeon_tiles[row][col]
+                        if tile == 'Border_wall':
+                            self.draw_3d_walls(row, col, x, y, tile, True)
+                    except:
+                        continue
+            font = pygame.font.SysFont(None, 36)
+            health_text = font.render(f"Health: {self.player.health}/{self.player.max_health}", True, (255, 255, 255))
+            self.screen.blit(health_text, (10, 10))
+            energy_text = font.render(f"Energy: {int(self.player.energy)}/{int(self.player.max_energy)}", True, (255, 255, 255))
+            self.screen.blit(energy_text, (10, 50))
+            self.draw_minimap()
+        elif self.state == "npc_menu":
+            self.draw_npc_menu()
         elif self.state == "select_skill":
             self.draw_skill_selection()
         elif self.state == "select_weapons":
@@ -539,7 +646,16 @@ class Game:
         elif self.state == "win":
             self.draw_win()
         pygame.display.flip()
-
+        
+    def draw_npc_menu(self):
+        self.screen.fill((0, 0, 0))
+        font = pygame.font.SysFont(None, 48)
+        for i, option in enumerate(self.npc_menu_options):
+            color = (255, 255, 0) if i == self.selected_npc_menu_option else (255, 255, 255)
+            text = font.render(option, True, color)
+            self.screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 200 + i * 50))
+        pygame.display.flip()
+        
     def draw_win(self):
         self.screen.fill((0, 0, 0))
         font = pygame.font.SysFont(None, 48)
