@@ -18,6 +18,9 @@ class DungeonConfig(Enum):
     MOMSTER_ROOM_RATIO = 0.3  # 怪物房間的比例（控制怪物房間的數量，增加遊戲挑戰性）
     TRAP_ROOM_RATIO = 0.2  # 陷阱房間的比例（控制陷阱房間的數量，增加遊戲危險性）
     REWARD_ROOM_RATIO = 0.2  # 獎勵房間的比例（控制獎勵房間的數量，增加遊戲獎勵）
+    LOBBY_WIDTH = 30 # 大廳的寬度（瓦片數，確保大廳有足夠空間）
+    LOBBY_HEIGHT = 20 # 大廳的高度（瓦片數，確保大廳有足夠空間）
+
 FPS = 60
 SCREEN_WIDTH = 1400
 SCREEN_HEIGHT = 750

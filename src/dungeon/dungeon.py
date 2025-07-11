@@ -25,6 +25,8 @@ class Dungeon:
     MOMSTER_ROOM_RATIO = DungeonConfig.MOMSTER_ROOM_RATIO.value
     TRAP_ROOM_RATIO = DungeonConfig.TRAP_ROOM_RATIO.value
     REWARD_ROOM_RATIO = DungeonConfig.REWARD_ROOM_RATIO.value
+    LOBBY_WIDTH = DungeonConfig.LOBBY_WIDTH.value
+    LOBBY_HEIGHT = DungeonConfig.LOBBY_HEIGHT.value
     game = None
 
     def __init__(self):
@@ -507,8 +509,8 @@ class Dungeon:
         self.rooms = []
         self.bridges = []
         self.next_room_id = 0
-        lobby_width = 10
-        lobby_height = 10
+        lobby_width = self.LOBBY_WIDTH
+        lobby_height = self.LOBBY_HEIGHT
         lobby_x = (self.grid_width - lobby_width) // 2
         lobby_y = (self.grid_height - lobby_height) // 2
         lobby_room = self.generate_room(lobby_x, lobby_y, lobby_width, lobby_height, self.next_room_id, RoomType.LOBBY)
