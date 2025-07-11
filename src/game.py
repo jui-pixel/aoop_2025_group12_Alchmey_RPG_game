@@ -27,7 +27,7 @@ class Game:
         self.current_time = 0.0
         self.state = "menu"
         self.selected_skill = None
-        self.selected_skills = []  # 儲存已選擇的技能及其按鍵綁定
+        self.selected_skills = []
         self.selected_weapons = []
         self.menu_options = ["Enter Lobby", "Exit"]
         self.selected_menu_option = 0
@@ -71,6 +71,8 @@ class Game:
         center_x = int(spawn_room.x + spawn_room.width // 2) * TILE_SIZE
         center_y = int(spawn_room.y + spawn_room.height // 2) * TILE_SIZE
         self.player = Player(pos=(center_x, center_y), game=self)
+        self.player.skills = [(skill, key) for skill, key in self.selected_skills]
+        self.player.weapons = self.selected_weapons
         npc_pos = (center_x + 2 * TILE_SIZE, center_y)
         self.npc_group.add(NPC(pos=npc_pos, game=self))
         self.camera_offset = [-(self.player.pos[0] - SCREEN_WIDTH // 2),
@@ -93,7 +95,6 @@ class Game:
             self.screen.blit(error_text, (SCREEN_WIDTH // 2 - error_text.get_width() // 2, 100))
         else:
             for i, skill in enumerate(self.skills_library):
-                # 檢查技能是否已綁定
                 bound_key = None
                 for s, k in self.selected_skills:
                     if s == skill:
@@ -292,6 +293,7 @@ class Game:
                     dx /= length
                     dy /= length
                     self.player.move(dx, dy, dt)
+            self.player.update(dt, self.current_time)
             for event in events:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_e:
@@ -300,7 +302,58 @@ class Game:
                                 self.state = "npc_menu"
                                 self.selected_npc_menu_option = 0
                                 break
+                    elif event.key == pygame.K_c:
+                        self.player.current_weapon_idx = (self.player.current_weapon_idx + 1) % len(self.player.weapons) if self.player.weapons else 0
+                    elif event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5,
+                                     pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9, pygame.K_0):
+                        key = str(event.key - pygame.K_0) if event.key == pygame.K_0 else str(event.key - pygame.K_1 + 1)
+                        for skill, bound_key in self.player.skills:
+                            if bound_key == key and skill.can_use(self.player, self.current_time):
+                                skill.use(self.player, self, self.current_time)
+                                print(f"Skill {skill.name} used with key {key}")
+            mouse_pos = pygame.mouse.get_pos()
+            direction = (mouse_pos[0] - (self.player.pos[0] + self.camera_offset[0]),
+                         mouse_pos[1] - (self.player.pos[1] + self.camera_offset[1]))
+            length = math.sqrt(direction[0]**2 + direction[1]**2)
+            if length > 0:
+                direction = (direction[0] / length, direction[1] / length)
+            if pygame.mouse.get_pressed()[0]:
+                bullet = self.player.fire(direction, self.current_time)
+                if bullet:
+                    self.player_bullet_group.add(bullet)
+            for bullet in self.player_bullet_group.copy():
+                if not bullet.update(dt):
+                    self.player_bullet_group.remove(bullet)
+                else:
+                    for enemy in self.enemy_group:
+                        if bullet.rect.colliderect(enemy.rect):
+                            enemy.take_damage(bullet.damage)
+                            self.player_bullet_group.remove(bullet)
+                            break
+            for bullet in self.enemy_bullet_group.copy():
+                if not bullet.update(dt):
+                    self.enemy_bullet_group.remove(bullet)
+                elif bullet.shooter != self.player and self.player and self.player.invulnerable <= 0 and bullet.rect.colliderect(self.player.rect):
+                    self.player.take_damage(bullet.damage)
+                    self.enemy_bullet_group.remove(bullet)
+                    if self.player.health <= 0:
+                        print("Player died!")
             self.update_camera(dt)
+            if self.player:
+                tile_x = int(self.player.pos[0] / TILE_SIZE)
+                tile_y = int(self.player.pos[1] / TILE_SIZE)
+                self.update_fog_map(tile_x, tile_y)
+                current_pos = (self.player.pos[0], self.player.pos[1])
+                self.update_fog_map(tile_x, tile_y)
+                self.update_fog_surface()
+                self.last_player_pos = current_pos
+                self.last_vision_radius = self.player.vision_radius
+            if self.enemy_group:
+                for enemy in self.enemy_group:
+                    if enemy.health <= 0:
+                        self.enemy_group.remove(enemy)
+                    else:
+                        enemy.update(dt, self.current_time)
         elif self.state == "npc_menu":
             for event in events:
                 if event.type == pygame.KEYDOWN:
@@ -324,6 +377,7 @@ class Game:
                                 print("Must select at least one skill and one weapon")
                     elif event.key == pygame.K_ESCAPE:
                         self.state = "lobby"
+                        self.player.skills = [(skill, key) for skill, key in self.selected_skills]
         elif self.state == "select_skill":
             for event in events:
                 if event.type == pygame.KEYDOWN:
@@ -343,7 +397,6 @@ class Game:
                                      pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9, pygame.K_0):
                         if len(self.selected_skills) < 10:
                             key = str(event.key - pygame.K_0) if event.key == pygame.K_0 else str(event.key - pygame.K_1 + 1)
-                            # 檢查是否已綁定該按鍵
                             for i, (skill, bound_key) in enumerate(self.selected_skills):
                                 if bound_key == key:
                                     self.selected_skills[i] = (self.selected_skill, key)
@@ -416,7 +469,7 @@ class Game:
                             if bound_key == key and skill.can_use(self.player, self.current_time):
                                 skill.use(self.player, self, self.current_time)
                                 print(f"Skill {skill.name} used with key {key}")
-                    elif event.key == pygame.K_c:
+                    elif event.key == pygame.K_r:
                         if self.dungeon_clear_count >= self.dungeon_clear_goal:
                             self.state = "win"
                         else:
@@ -444,7 +497,7 @@ class Game:
                             break
             for bullet in self.enemy_bullet_group.copy():
                 if not bullet.update(dt):
-                    self.enemy_bullet_group.remove(bullet)
+                    self.player_bullet_group.remove(bullet)
                 elif bullet.shooter != self.player and self.player and self.player.invulnerable <= 0 and bullet.rect.colliderect(self.player.rect):
                     self.player.take_damage(bullet.damage)
                     self.enemy_bullet_group.remove(bullet)
@@ -540,6 +593,15 @@ class Game:
                 font = pygame.font.SysFont(None, 24)
                 prompt = font.render("Press E to interact", True, (255, 255, 255))
                 self.screen.blit(prompt, (npc.rect.centerx + self.camera_offset[0] - prompt.get_width() // 2, npc.rect.top + self.camera_offset[1] - 20))
+        for enemy in self.enemy_group:
+            if enemy.health > 0 and enemy.pos[0] + self.camera_offset[0] >= 0 and enemy.pos[1] + self.camera_offset[1] >= 0:
+                self.draw_enemy(enemy)
+        for bullet in self.player_bullet_group:
+            self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
+        for bullet in self.enemy_bullet_group:
+            self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
+        if self.fog_surface:
+            self.screen.blit(self.fog_surface, (0, 0))
         for row in range(view_top, view_bottom):
             for col in range(view_left, view_right):
                 x = col * TILE_SIZE + self.camera_offset[0]
@@ -555,7 +617,20 @@ class Game:
         self.screen.blit(health_text, (10, 10))
         energy_text = font.render(f"Energy: {int(self.player.energy)}/{int(self.player.max_energy)}", True, (255, 255, 255))
         self.screen.blit(energy_text, (10, 50))
-        # self.draw_minimap()
+        if self.player.weapons:
+            weapon = self.player.weapons[self.player.current_weapon_idx]
+            weapon_text = font.render(f"{weapon.name}: {weapon.energy_cost} Energy/Shot", True, (255, 255, 255))
+            self.screen.blit(weapon_text, (10, 90))
+        y_offset = 130
+        for skill, key in self.player.skills:
+            skill_text = font.render(f"Skill {key}: {skill.name}", True, (255, 255, 255))
+            self.screen.blit(skill_text, (10, y_offset))
+            if skill.cooldown > 0:
+                cooldown = max(0, skill.cooldown - (self.current_time - skill.last_used))
+                cooldown_text = font.render(f"CD: {cooldown:.1f}s", True, (255, 255, 255))
+                self.screen.blit(cooldown_text, (150, y_offset))
+            y_offset += 40
+        self.draw_minimap()
     
     def draw_playing(self):
         view_left = max(0, int(-self.camera_offset[0] // TILE_SIZE - 1))
