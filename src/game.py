@@ -301,6 +301,10 @@ class Game:
                                 self.state = "npc_menu"
                                 self.selected_npc_menu_option = 0
                                 break
+            target_offset_x = -(self.player.pos[0] - SCREEN_WIDTH // 2)
+            target_offset_y = -(self.player.pos[1] - SCREEN_HEIGHT // 2)
+            self.camera_offset[0] += (target_offset_x - self.camera_offset[0]) * self.camera_lerp_factor * dt
+            self.camera_offset[1] += (target_offset_y - self.camera_offset[1]) * self.camera_lerp_factor * dt
         elif self.state == "npc_menu":
             for event in events:
                 if event.type == pygame.KEYDOWN:
