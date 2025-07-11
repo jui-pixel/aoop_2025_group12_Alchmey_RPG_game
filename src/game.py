@@ -2,7 +2,7 @@ import pygame
 import random
 import math
 from dataclasses import dataclass
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict
 from src.entities.character.weapons.weapon import *
 from src.entities.character.weapons.weapon_library import WEAPON_LIBRARY
 from src.entities.character.skills.skill import *
@@ -21,16 +21,17 @@ class Game:
         self.dungeon = Dungeon()
         self.dungeon.game = self
         self.player = None
-        self.player_bullet_group = pygame.sprite.Group()  # Player bullets
-        self.enemy_bullet_group = pygame.sprite.Group()  # Enemy bullets
+        self.player_bullet_group = pygame.sprite.Group()
+        self.enemy_bullet_group = pygame.sprite.Group()
         self.enemy_group = pygame.sprite.Group()
         self.current_time = 0.0
         self.state = "menu"
         self.selected_skill = None
+        self.selected_skills = []  # 儲存已選擇的技能及其按鍵綁定
         self.selected_weapons = []
         self.menu_options = ["Enter Lobby", "Exit"]
         self.selected_menu_option = 0
-        self.npc_menu_options = ["Select Skill", "Select Weapons", "Start Game"]
+        self.npc_menu_options = ["Select Skills", "Select Weapons", "Start Game"]
         self.selected_npc_menu_option = 0
         self.npc_group = pygame.sprite.Group()
         self.original_camera_lerp_factor = 1.5
@@ -70,7 +71,6 @@ class Game:
         center_x = int(spawn_room.x + spawn_room.width // 2) * TILE_SIZE
         center_y = int(spawn_room.y + spawn_room.height // 2) * TILE_SIZE
         self.player = Player(pos=(center_x, center_y), game=self)
-        # Place NPC in the lobby
         npc_pos = (center_x + 2 * TILE_SIZE, center_y)
         self.npc_group.add(NPC(pos=npc_pos, game=self))
         self.camera_offset = [-(self.player.pos[0] - SCREEN_WIDTH // 2),
@@ -86,16 +86,25 @@ class Game:
     def draw_skill_selection(self):
         self.screen.fill((0, 0, 0))
         font = pygame.font.SysFont(None, 36)
-        title = font.render("Select a Skill (UP/DOWN to navigate, ENTER to confirm, ESC to cancel)", True, (255, 255, 255))
+        title = font.render("Select a Skill and Bind to Key (1-9, 0) or ENTER to confirm, ESC to cancel", True, (255, 255, 255))
         self.screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 36))
         if not self.skills_library:
             error_text = font.render("No skills available!", True, (255, 0, 0))
             self.screen.blit(error_text, (SCREEN_WIDTH // 2 - error_text.get_width() // 2, 100))
         else:
             for i, skill in enumerate(self.skills_library):
+                # 檢查技能是否已綁定
+                bound_key = None
+                for s, k in self.selected_skills:
+                    if s == skill:
+                        bound_key = k
+                        break
                 color = (255, 255, 0) if skill == self.selected_skill else (255, 255, 255)
-                text = font.render(f"{skill.name} (Cooldown: {skill.cooldown}s)", True, color)
+                text = font.render(f"{skill.name} (Cooldown: {skill.cooldown}s, Key: {bound_key if bound_key else 'None'})", True, color)
                 self.screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 100 + i * 40))
+        selected_count = len(self.selected_skills)
+        count_text = font.render(f"Selected Skills: {selected_count}/10", True, (255, 255, 255))
+        self.screen.blit(count_text, (SCREEN_WIDTH // 2 - count_text.get_width() // 2, 400))
         pygame.display.flip()
 
     def draw_weapon_selection(self):
@@ -141,9 +150,10 @@ class Game:
             self.player.rect.y = center_y
             self.player.health = self.player.max_health
             self.player.energy = self.player.max_energy
-        self.player.skill = self.selected_skill
-        if self.player.skill and self.player.skill.cooldown == 0:
-            self.player.skill.use(self.player, self, self.current_time)
+        self.player.skills = [(skill, key) for skill, key in self.selected_skills]
+        for skill, _ in self.player.skills:
+            if skill.cooldown == 0:
+                skill.use(self.player, self, self.current_time)
         self.player.weapons = self.selected_weapons
         self.state = "playing"
         self.camera_offset = [-(self.player.pos[0] - SCREEN_WIDTH // 2),
@@ -157,7 +167,6 @@ class Game:
         self.last_vision_radius = None
         
     def _generate_new_enemies(self):
-        """Generate new enemies based on the number of rooms and difficulty."""
         if self.enemy_group:
             self.enemy_group.empty()
         if self.enemy_bullet_group:
@@ -173,18 +182,16 @@ class Game:
             self.enemy_group.add(enemy)
 
     def update_fog_map(self, tile_x: int, tile_y: int):
-        """Update fog map, marking explored tiles (for minimap)."""
         for y in range(max(0, tile_y - self.player.vision_radius), min(self.dungeon.grid_height, tile_y + self.player.vision_radius + 1)):
             for x in range(max(0, tile_x - self.player.vision_radius), min(self.dungeon.grid_width, tile_x + self.player.vision_radius + 1)):
                 distance = math.sqrt((x - tile_x) ** 2 + (y - tile_y) ** 2)
                 try:
                     if distance <= self.player.vision_radius:
-                        self.fog_map[y][x] = True  # Mark as explored
+                        self.fog_map[y][x] = True
                 except:
                     pass
 
     def draw_3d_walls(self, row, col, x, y, tile, wall=False):
-        """Draw walls with a 3D effect by shifting original tile up and adding a dark red face."""
         color = {
             'Room_floor': ROOM_FLOOR_COLOR,
             'Border_wall': BORDER_WALL_COLOR,
@@ -194,24 +201,13 @@ class Game:
         }.get(tile, OUTSIDE_COLOR)
         if wall:
             if tile == 'Border_wall':
-                # Shift wall tile upward
-                wall_shift = int(TILE_SIZE * 0.65)  # Shift up by half tile size
-                wall_height = TILE_SIZE  # Height of the dark red face
-                # Draw dark red wall face below
+                wall_shift = int(TILE_SIZE * 0.65)
+                wall_height = TILE_SIZE
                 pygame.draw.rect(self.screen, DARK_RED, (x, y, TILE_SIZE, wall_height))
-                # pygame.draw.rect(self.screen, (255, 255, 255), (x, y, TILE_SIZE, wall_height), 1)
-                # Draw original wall tile shifted up
                 pygame.draw.rect(self.screen, color, (x, y - wall_shift, TILE_SIZE, TILE_SIZE))
-                # pygame.draw.rect(self.screen, (255, 255, 255), (x, y - wall_shift, TILE_SIZE, TILE_SIZE), 1)
-            else:
-                pass
         else:
-            if tile == 'Border_wall':
-                pass
-            else:
-                # Draw flat tiles for non-walls
+            if tile != 'Border_wall':
                 pygame.draw.rect(self.screen, color, (x, y, TILE_SIZE, TILE_SIZE))
-                # pygame.draw.rect(self.screen, (255, 255, 255), (x, y, TILE_SIZE, TILE_SIZE), 1)
 
     def draw_minimap(self):
         minimap_surface = pygame.Surface((self.minimap_width, self.minimap_height))
@@ -249,7 +245,6 @@ class Game:
         self.screen.blit(minimap_surface, self.minimap_offset)
 
     def update_camera(self, dt: float) -> None:
-        """更新相機位置，使其平滑跟隨玩家"""
         target_offset_x = -(self.player.pos[0] - SCREEN_WIDTH // 2)
         target_offset_y = -(self.player.pos[1] - SCREEN_HEIGHT // 2)
         self.camera_offset[0] += (target_offset_x - self.camera_offset[0]) * self.camera_lerp_factor * dt
@@ -264,9 +259,6 @@ class Game:
         for event in events:
             if event.type == pygame.QUIT:
                 return False
-            # if event.type == pygame.USEREVENT and self.time_scale < 1.0:
-            #     self.time_scale = 1.0
-            #     pygame.time.set_timer(pygame.USEREVENT, 0)
         if self.state == "menu":
             for event in events:
                 if event.type == pygame.KEYDOWN:
@@ -317,7 +309,7 @@ class Game:
                     elif event.key == pygame.K_DOWN:
                         self.selected_npc_menu_option = (self.selected_npc_menu_option + 1) % len(self.npc_menu_options)
                     elif event.key == pygame.K_RETURN:
-                        if self.npc_menu_options[self.selected_npc_menu_option] == "Select Skill":
+                        if self.npc_menu_options[self.selected_npc_menu_option] == "Select Skills":
                             if self.skills_library:
                                 self.state = "select_skill"
                                 self.selected_skill = self.skills_library[0]
@@ -326,10 +318,10 @@ class Game:
                         elif self.npc_menu_options[self.selected_npc_menu_option] == "Select Weapons":
                             self.state = "select_weapons"
                         elif self.npc_menu_options[self.selected_npc_menu_option] == "Start Game":
-                            if self.selected_weapons and self.selected_skill:
+                            if self.selected_weapons and self.selected_skills:
                                 self.start_game()
                             else:
-                                print("Must select a skill and at least one weapon")
+                                print("Must select at least one skill and one weapon")
                     elif event.key == pygame.K_ESCAPE:
                         self.state = "lobby"
         elif self.state == "select_skill":
@@ -347,14 +339,29 @@ class Game:
                     elif event.key == pygame.K_DOWN:
                         current_idx = (current_idx + 1) % len(self.skills_library)
                         self.selected_skill = self.skills_library[current_idx]
-                    elif event.key == pygame.K_RETURN:
-                        if self.selected_skill:
-                            self.player.skill = self.selected_skill
-                            if self.selected_skill.cooldown == 0:
-                                self.selected_skill.use(self.player, self, self.current_time)
-                            self.state = "npc_menu"
+                    elif event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5,
+                                     pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9, pygame.K_0):
+                        if len(self.selected_skills) < 10:
+                            key = str(event.key - pygame.K_0) if event.key == pygame.K_0 else str(event.key - pygame.K_1 + 1)
+                            # 檢查是否已綁定該按鍵
+                            for i, (skill, bound_key) in enumerate(self.selected_skills):
+                                if bound_key == key:
+                                    self.selected_skills[i] = (self.selected_skill, key)
+                                    print(f"Skill {self.selected_skill.name} rebound to key {key}")
+                                    break
+                            else:
+                                self.selected_skills.append((self.selected_skill, key))
+                                print(f"Skill {self.selected_skill.name} bound to key {key}")
                         else:
-                            print("No skill selected")
+                            print("Maximum 10 skills can be bound")
+                    elif event.key == pygame.K_BACKSPACE:
+                        for i, (skill, _) in enumerate(self.selected_skills):
+                            if skill == self.selected_skill:
+                                self.selected_skills.pop(i)
+                                print(f"Skill {skill.name} unbound")
+                                break
+                    elif event.key == pygame.K_RETURN:
+                        self.state = "npc_menu"
                     elif event.key == pygame.K_ESCAPE:
                         self.state = "npc_menu"
         elif self.state == "select_weapons":
@@ -400,13 +407,16 @@ class Game:
             self.player.update(dt, self.current_time)
             for event in events:
                 if event.type == pygame.KEYDOWN:
-                    if event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4):
-                        idx = event.key - pygame.K_1
-                        if idx < len(self.player.weapons):
-                            self.player.current_weapon_idx = idx
-                    if event.key == pygame.K_e and self.player.skill:
-                        self.player.skill.use(self.player, self, self.current_time)
                     if event.key == pygame.K_c:
+                        self.player.current_weapon_idx = (self.player.current_weapon_idx + 1) % len(self.player.weapons)
+                    elif event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5,
+                                     pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9, pygame.K_0):
+                        key = str(event.key - pygame.K_0) if event.key == pygame.K_0 else str(event.key - pygame.K_1 + 1)
+                        for skill, bound_key in self.player.skills:
+                            if bound_key == key and skill.can_use(self.player, self.current_time):
+                                skill.use(self.player, self, self.current_time)
+                                print(f"Skill {skill.name} used with key {key}")
+                    elif event.key == pygame.K_c:
                         if self.dungeon_clear_count >= self.dungeon_clear_goal:
                             self.state = "win"
                         else:
@@ -423,18 +433,15 @@ class Game:
                 bullet = self.player.fire(direction, self.current_time)
                 if bullet:
                     self.player_bullet_group.add(bullet)
-            # Update player bullets
             for bullet in self.player_bullet_group.copy():
                 if not bullet.update(dt):
                     self.player_bullet_group.remove(bullet)
                 else:
-                    # Check for collisions with enemies
                     for enemy in self.enemy_group:
                         if bullet.rect.colliderect(enemy.rect):
                             enemy.take_damage(bullet.damage)
                             self.player_bullet_group.remove(bullet)
-                            break  # Bullet can only hit one enemy
-            # Update enemy bullets
+                            break
             for bullet in self.enemy_bullet_group.copy():
                 if not bullet.update(dt):
                     self.enemy_bullet_group.remove(bullet)
@@ -442,7 +449,7 @@ class Game:
                     self.player.take_damage(bullet.damage)
                     self.enemy_bullet_group.remove(bullet)
                     if self.player.health <= 0:
-                        print("Player died!")  # Future: Implement game over state
+                        print("Player died!")
             self.update_camera(dt)
             if self.player:
                 tile_x = int(self.player.pos[0] / TILE_SIZE)
@@ -470,58 +477,40 @@ class Game:
         return True
 
     def update_fog_surface(self):
-        """更新迷霧表面，使用像素級光線投射實現平滑的光線遮擋效果。"""
-        # 創建迷霧表面，初始為全黑（不透明）
         self.fog_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         self.fog_surface.fill((0, 0, 0, 255))
-
-        # 玩家中心位置（屏幕坐標）
         center_x = self.player.rect.centerx + self.camera_offset[0]
         center_y = self.player.rect.centery + self.camera_offset[1]
         radius = int(self.player.vision_radius * TILE_SIZE)
         if self.player.fog:
-            # 儲存光線交點，形成可見區域多邊形
             points = []
-            angle_step = 1  # 每 1 度一條光線，增加精度以減少鋸齒
+            angle_step = 1
             for angle in range(0, 360, angle_step):
                 rad = math.radians(angle)
                 dx = math.cos(rad)
                 dy = math.sin(rad)
-
-                # 沿光線方向計算與牆壁的交點
                 current_x = self.player.pos[0]
                 current_y = self.player.pos[1]
-                max_steps = int(radius / 2)  # 步長為像素級，精細檢查
+                max_steps = int(radius / 2)
                 hit_wall = False
-
                 for step in range(max_steps):
-                    current_x += dx * 2  # 每次移動 2 像素
+                    current_x += dx * 2
                     current_y += dy * 2
                     tile_x = int(current_x / TILE_SIZE)
                     tile_y = int(current_y / TILE_SIZE)
-
-                    # 檢查是否在地圖範圍內
                     if (tile_x < 0 or tile_x >= self.dungeon.grid_width or
                         tile_y < 0 or tile_y >= self.dungeon.grid_height):
                         break
-
-                    # 檢查是否撞到牆壁
                     if self.dungeon.dungeon_tiles[tile_y][tile_x] == 'Border_wall':
                         hit_wall = True
                         break
-
-                # 計算交點的屏幕坐標
                 screen_x = current_x + self.camera_offset[0]
                 screen_y = current_y + self.camera_offset[1]
                 points.append((screen_x, screen_y))
-
-            # 繪製可見區域多邊形（完全透明）
             if points:
                 pygame.draw.polygon(self.fog_surface, (0, 0, 0, 0), points)
         else:
-            # 如果玩家沒有開啟迷霧，則清除迷霧表面
             self.fog_surface.fill((0, 0, 0, 0))
-            
 
     def draw_enemy(self, enemy):
         if enemy.health <= 0:
@@ -551,8 +540,6 @@ class Game:
                 font = pygame.font.SysFont(None, 24)
                 prompt = font.render("Press E to interact", True, (255, 255, 255))
                 self.screen.blit(prompt, (npc.rect.centerx + self.camera_offset[0] - prompt.get_width() // 2, npc.rect.top + self.camera_offset[1] - 20))
-        # if self.fog_surface:
-        #     self.screen.blit(self.fog_surface, (0, 0))
         for row in range(view_top, view_bottom):
             for col in range(view_left, view_right):
                 x = col * TILE_SIZE + self.camera_offset[0]
@@ -575,7 +562,6 @@ class Game:
         view_right = min(self.dungeon.grid_width, int((-self.camera_offset[0] + SCREEN_WIDTH) // TILE_SIZE + 1))
         view_top = max(0, int(-self.camera_offset[1] // TILE_SIZE - 1))
         view_bottom = min(self.dungeon.grid_height, int((-self.camera_offset[1] + SCREEN_HEIGHT) // TILE_SIZE + 1))
-        # Draw map tiles
         for row in range(view_top, view_bottom):
             for col in range(view_left, view_right):
                 x = col * TILE_SIZE + self.camera_offset[0]
@@ -585,18 +571,14 @@ class Game:
                     self.draw_3d_walls(row, col, x, y, tile)
                 except:
                     continue
-        # Draw player
         self.screen.blit(self.player.image, (self.player.rect.x + self.camera_offset[0], self.player.rect.y + self.camera_offset[1]))
         for enemy in self.enemy_group:
             if enemy.health > 0 and enemy.pos[0] + self.camera_offset[0] >= 0 and enemy.pos[1] + self.camera_offset[1] >= 0:
                 self.draw_enemy(enemy)
-        # Draw player bullets
         for bullet in self.player_bullet_group:
             self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
-        # Draw enemy bullets
         for bullet in self.enemy_bullet_group:
             self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
-        # Apply fog of war
         if self.fog_surface:
             self.screen.blit(self.fog_surface, (0, 0))
         for row in range(view_top, view_bottom):
@@ -606,23 +588,9 @@ class Game:
                 try:
                     tile = self.dungeon.dungeon_tiles[row][col]
                     if tile == 'Border_wall':
-                        # Draw 3D walls
                         self.draw_3d_walls(row, col, x, y, tile, True)
                 except:
                     continue
-        # vision = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        # vision.fill((0,0, 0, 255))
-        # center_x = self.player.rect.centerx + self.camera_offset[0]
-        # center_y = self.player.rect.centery + self.camera_offset[1]
-        # radius = int(self.player.vision_radius * TILE_SIZE)
-        # pygame.draw.circle(
-        #     vision,
-        #     (0, 0, 0, 0),
-        #     (center_x, center_y),
-        #     radius
-        # )
-        # self.screen.blit(vision, (0, 0))
-        # Draw UI
         font = pygame.font.SysFont(None, 36)
         health_text = font.render(f"Health: {self.player.health}/{self.player.max_health}", True, (255, 255, 255))
         self.screen.blit(health_text, (10, 10))
@@ -632,15 +600,17 @@ class Game:
             weapon = self.player.weapons[self.player.current_weapon_idx]
             weapon_text = font.render(f"{weapon.name}: {weapon.energy_cost} Energy/Shot", True, (255, 255, 255))
             self.screen.blit(weapon_text, (10, 90))
-        if self.player.skill:
-            skill_text = font.render(f"Skill: {self.player.skill.name}", True, (255, 255, 255))
-            self.screen.blit(skill_text, (10, 130))
-            if self.player.skill.cooldown > 0:
-                cooldown = max(0, self.player.skill.cooldown - (self.current_time - self.player.skill.last_used))
+        y_offset = 130
+        for skill, key in self.player.skills:
+            skill_text = font.render(f"Skill {key}: {skill.name}", True, (255, 255, 255))
+            self.screen.blit(skill_text, (10, y_offset))
+            if skill.cooldown > 0:
+                cooldown = max(0, skill.cooldown - (self.current_time - skill.last_used))
                 cooldown_text = font.render(f"CD: {cooldown:.1f}s", True, (255, 255, 255))
-                self.screen.blit(cooldown_text, (10, 170))
+                self.screen.blit(cooldown_text, (150, y_offset))
+            y_offset += 40
         progress_text = font.render(f"Dungeon: {self.dungeon_clear_count+1}/{self.dungeon_clear_goal}", True, (255, 255, 0))
-        self.screen.blit(progress_text, (10, 210))
+        self.screen.blit(progress_text, (10, y_offset))
         self.draw_minimap()
     
     def draw(self):
