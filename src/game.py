@@ -528,50 +528,127 @@ class Game:
         enemy_x = enemy.rect.x + self.camera_offset[0]
         enemy_y = enemy.rect.y + self.camera_offset[1]
         self.screen.blit(enemy.image, (enemy_x, enemy_y))
+        
+    def draw_lobby(self):
+        view_left = max(0, int(-self.camera_offset[0] // TILE_SIZE - 1))
+        view_right = min(self.dungeon.grid_width, int((-self.camera_offset[0] + SCREEN_WIDTH) // TILE_SIZE + 1))
+        view_top = max(0, int(-self.camera_offset[1] // TILE_SIZE - 1))
+        view_bottom = min(self.dungeon.grid_height, int((-self.camera_offset[1] + SCREEN_HEIGHT) // TILE_SIZE + 1))
+        for row in range(view_top, view_bottom):
+            for col in range(view_left, view_right):
+                x = col * TILE_SIZE + self.camera_offset[0]
+                y = row * TILE_SIZE + self.camera_offset[1]
+                try:
+                    tile = self.dungeon.dungeon_tiles[row][col]
+                    self.draw_3d_walls(row, col, x, y, tile)
+                except:
+                    continue
+        self.screen.blit(self.player.image, (self.player.rect.x + self.camera_offset[0], self.player.rect.y + self.camera_offset[1]))
+        for npc in self.npc_group:
+            npc.draw(self.screen, self.camera_offset)
+            if npc.can_interact(self.player.pos):
+                font = pygame.font.SysFont(None, 24)
+                prompt = font.render("Press E to interact", True, (255, 255, 255))
+                self.screen.blit(prompt, (npc.rect.centerx + self.camera_offset[0] - prompt.get_width() // 2, npc.rect.top + self.camera_offset[1] - 20))
+        # if self.fog_surface:
+        #     self.screen.blit(self.fog_surface, (0, 0))
+        for row in range(view_top, view_bottom):
+            for col in range(view_left, view_right):
+                x = col * TILE_SIZE + self.camera_offset[0]
+                y = row * TILE_SIZE + self.camera_offset[1]
+                try:
+                    tile = self.dungeon.dungeon_tiles[row][col]
+                    if tile == 'Border_wall':
+                        self.draw_3d_walls(row, col, x, y, tile, True)
+                except:
+                    continue
+        font = pygame.font.SysFont(None, 36)
+        health_text = font.render(f"Health: {self.player.health}/{self.player.max_health}", True, (255, 255, 255))
+        self.screen.blit(health_text, (10, 10))
+        energy_text = font.render(f"Energy: {int(self.player.energy)}/{int(self.player.max_energy)}", True, (255, 255, 255))
+        self.screen.blit(energy_text, (10, 50))
+        # self.draw_minimap()
+    
+    def draw_playing(self):
+        # Draw 2.5D background
+        view_left = max(0, int(-self.camera_offset[0] // TILE_SIZE - 1))
+        view_right = min(self.dungeon.grid_width, int((-self.camera_offset[0] + SCREEN_WIDTH) // TILE_SIZE + 1))
+        view_top = max(0, int(-self.camera_offset[1] // TILE_SIZE - 1))
+        view_bottom = min(self.dungeon.grid_height, int((-self.camera_offset[1] + SCREEN_HEIGHT) // TILE_SIZE + 1))
+        # Draw map tiles with 2.5D effect
+        for row in range(view_top, view_bottom):
+            for col in range(view_left, view_right):
+                x = col * TILE_SIZE + self.camera_offset[0]
+                y = row * TILE_SIZE + self.camera_offset[1]
+                try:
+                    tile = self.dungeon.dungeon_tiles[row][col]
+                    self.draw_3d_walls(row, col, x, y, tile)
+                except:
+                    continue
+        # Draw player
+        self.screen.blit(self.player.image, (self.player.rect.x + self.camera_offset[0], self.player.rect.y + self.camera_offset[1]))
+        for enemy in self.enemy_group:
+            if enemy.health > 0 and enemy.pos[0] + self.camera_offset[0] >= 0 and enemy.pos[1] + self.camera_offset[1] >= 0:
+                self.draw_enemy(enemy)
+        # Draw player bullets
+        for bullet in self.player_bullet_group:
+            self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
+        # Draw enemy bullets
+        for bullet in self.enemy_bullet_group:
+            self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
+        # Apply fog of war
+        if self.fog_surface:
+            self.screen.blit(self.fog_surface, (0, 0))
+        for row in range(view_top, view_bottom):
+            for col in range(view_left, view_right):
+                x = col * TILE_SIZE + self.camera_offset[0]
+                y = row * TILE_SIZE + self.camera_offset[1]
+                try:
+                    tile = self.dungeon.dungeon_tiles[row][col]
+                    if tile == 'Border_wall':
+                        # Draw 3D walls
+                        self.draw_3d_walls(row, col, x, y, tile, True)
+                except:
+                    continue
+        # vision = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        # vision.fill((0,0, 0, 255))
+        # center_x = self.player.rect.centerx + self.camera_offset[0]
+        # center_y = self.player.rect.centery + self.camera_offset[1]
+        # radius = int(self.player.vision_radius * TILE_SIZE)
+        # pygame.draw.circle(
+        #     vision,
+        #     (0, 0, 0, 0),
+        #     (center_x, center_y),
+        #     radius
+        # )
+        # self.screen.blit(vision, (0, 0))
+        # Draw UI
+        font = pygame.font.SysFont(None, 36)
+        health_text = font.render(f"Health: {self.player.health}/{self.player.max_health}", True, (255, 255, 255))
+        self.screen.blit(health_text, (10, 10))
+        energy_text = font.render(f"Energy: {int(self.player.energy)}/{int(self.player.max_energy)}", True, (255, 255, 255))
+        self.screen.blit(energy_text, (10, 50))
+        if self.player.weapons:
+            weapon = self.player.weapons[self.player.current_weapon_idx]
+            weapon_text = font.render(f"{weapon.name}: {weapon.energy_cost} Energy/Shot", True, (255, 255, 255))
+            self.screen.blit(weapon_text, (10, 90))
+        if self.player.skill:
+            skill_text = font.render(f"Skill: {self.player.skill.name}", True, (255, 255, 255))
+            self.screen.blit(skill_text, (10, 130))
+            if self.player.skill.cooldown > 0:
+                cooldown = max(0, self.player.skill.cooldown - (self.current_time - self.player.skill.last_used))
+                cooldown_text = font.render(f"CD: {cooldown:.1f}s", True, (255, 255, 255))
+                self.screen.blit(cooldown_text, (10, 170))
+        progress_text = font.render(f"Dungeon: {self.dungeon_clear_count+1}/{self.dungeon_clear_goal}", True, (255, 255, 0))
+        self.screen.blit(progress_text, (10, 210))
+        self.draw_minimap()
     
     def draw(self):
         self.screen.fill((0, 0, 0))
         if self.state == "menu":
             self.draw_menu()
         elif self.state == "lobby":
-            view_left = max(0, int(-self.camera_offset[0] // TILE_SIZE - 1))
-            view_right = min(self.dungeon.grid_width, int((-self.camera_offset[0] + SCREEN_WIDTH) // TILE_SIZE + 1))
-            view_top = max(0, int(-self.camera_offset[1] // TILE_SIZE - 1))
-            view_bottom = min(self.dungeon.grid_height, int((-self.camera_offset[1] + SCREEN_HEIGHT) // TILE_SIZE + 1))
-            for row in range(view_top, view_bottom):
-                for col in range(view_left, view_right):
-                    x = col * TILE_SIZE + self.camera_offset[0]
-                    y = row * TILE_SIZE + self.camera_offset[1]
-                    try:
-                        tile = self.dungeon.dungeon_tiles[row][col]
-                        self.draw_3d_walls(row, col, x, y, tile)
-                    except:
-                        continue
-            self.screen.blit(self.player.image, (self.player.rect.x + self.camera_offset[0], self.player.rect.y + self.camera_offset[1]))
-            for npc in self.npc_group:
-                npc.draw(self.screen, self.camera_offset)
-                if npc.can_interact(self.player.pos):
-                    font = pygame.font.SysFont(None, 24)
-                    prompt = font.render("Press E to interact", True, (255, 255, 255))
-                    self.screen.blit(prompt, (npc.rect.centerx + self.camera_offset[0] - prompt.get_width() // 2, npc.rect.top + self.camera_offset[1] - 20))
-            if self.fog_surface:
-                self.screen.blit(self.fog_surface, (0, 0))
-            for row in range(view_top, view_bottom):
-                for col in range(view_left, view_right):
-                    x = col * TILE_SIZE + self.camera_offset[0]
-                    y = row * TILE_SIZE + self.camera_offset[1]
-                    try:
-                        tile = self.dungeon.dungeon_tiles[row][col]
-                        if tile == 'Border_wall':
-                            self.draw_3d_walls(row, col, x, y, tile, True)
-                    except:
-                        continue
-            font = pygame.font.SysFont(None, 36)
-            health_text = font.render(f"Health: {self.player.health}/{self.player.max_health}", True, (255, 255, 255))
-            self.screen.blit(health_text, (10, 10))
-            energy_text = font.render(f"Energy: {int(self.player.energy)}/{int(self.player.max_energy)}", True, (255, 255, 255))
-            self.screen.blit(energy_text, (10, 50))
-            self.draw_minimap()
+            self.draw_lobby()
         elif self.state == "npc_menu":
             self.draw_npc_menu()
         elif self.state == "select_skill":
@@ -579,78 +656,7 @@ class Game:
         elif self.state == "select_weapons":
             self.draw_weapon_selection()
         elif self.state == "playing":
-            # Draw 2.5D background
-            view_left = max(0, int(-self.camera_offset[0] // TILE_SIZE - 1))
-            view_right = min(self.dungeon.grid_width, int((-self.camera_offset[0] + SCREEN_WIDTH) // TILE_SIZE + 1))
-            view_top = max(0, int(-self.camera_offset[1] // TILE_SIZE - 1))
-            view_bottom = min(self.dungeon.grid_height, int((-self.camera_offset[1] + SCREEN_HEIGHT) // TILE_SIZE + 1))
-            # Draw map tiles with 2.5D effect
-            for row in range(view_top, view_bottom):
-                for col in range(view_left, view_right):
-                    x = col * TILE_SIZE + self.camera_offset[0]
-                    y = row * TILE_SIZE + self.camera_offset[1]
-                    try:
-                        tile = self.dungeon.dungeon_tiles[row][col]
-                        self.draw_3d_walls(row, col, x, y, tile)
-                    except:
-                        continue
-            # Draw player
-            self.screen.blit(self.player.image, (self.player.rect.x + self.camera_offset[0], self.player.rect.y + self.camera_offset[1]))
-            for enemy in self.enemy_group:
-                if enemy.health > 0 and enemy.pos[0] + self.camera_offset[0] >= 0 and enemy.pos[1] + self.camera_offset[1] >= 0:
-                    self.draw_enemy(enemy)
-            # Draw player bullets
-            for bullet in self.player_bullet_group:
-                self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
-            # Draw enemy bullets
-            for bullet in self.enemy_bullet_group:
-                self.screen.blit(bullet.image, (bullet.rect.x + self.camera_offset[0], bullet.rect.y + self.camera_offset[1]))
-            # Apply fog of war
-            if self.fog_surface:
-                self.screen.blit(self.fog_surface, (0, 0))
-            for row in range(view_top, view_bottom):
-                for col in range(view_left, view_right):
-                    x = col * TILE_SIZE + self.camera_offset[0]
-                    y = row * TILE_SIZE + self.camera_offset[1]
-                    try:
-                        tile = self.dungeon.dungeon_tiles[row][col]
-                        if tile == 'Border_wall':
-                            # Draw 3D walls
-                            self.draw_3d_walls(row, col, x, y, tile, True)
-                    except:
-                        continue
-            # vision = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-            # vision.fill((0,0, 0, 255))
-            # center_x = self.player.rect.centerx + self.camera_offset[0]
-            # center_y = self.player.rect.centery + self.camera_offset[1]
-            # radius = int(self.player.vision_radius * TILE_SIZE)
-            # pygame.draw.circle(
-            #     vision,
-            #     (0, 0, 0, 0),
-            #     (center_x, center_y),
-            #     radius
-            # )
-            # self.screen.blit(vision, (0, 0))
-            # Draw UI
-            font = pygame.font.SysFont(None, 36)
-            health_text = font.render(f"Health: {self.player.health}/{self.player.max_health}", True, (255, 255, 255))
-            self.screen.blit(health_text, (10, 10))
-            energy_text = font.render(f"Energy: {int(self.player.energy)}/{int(self.player.max_energy)}", True, (255, 255, 255))
-            self.screen.blit(energy_text, (10, 50))
-            if self.player.weapons:
-                weapon = self.player.weapons[self.player.current_weapon_idx]
-                weapon_text = font.render(f"{weapon.name}: {weapon.energy_cost} Energy/Shot", True, (255, 255, 255))
-                self.screen.blit(weapon_text, (10, 90))
-            if self.player.skill:
-                skill_text = font.render(f"Skill: {self.player.skill.name}", True, (255, 255, 255))
-                self.screen.blit(skill_text, (10, 130))
-                if self.player.skill.cooldown > 0:
-                    cooldown = max(0, self.player.skill.cooldown - (self.current_time - self.player.skill.last_used))
-                    cooldown_text = font.render(f"CD: {cooldown:.1f}s", True, (255, 255, 255))
-                    self.screen.blit(cooldown_text, (10, 170))
-            progress_text = font.render(f"Dungeon: {self.dungeon_clear_count+1}/{self.dungeon_clear_goal}", True, (255, 255, 0))
-            self.screen.blit(progress_text, (10, 210))
-            self.draw_minimap()
+            self.draw_playing()
         elif self.state == "win":
             self.draw_win()
         pygame.display.flip()
