@@ -199,10 +199,10 @@ class Game:
                 wall_height = TILE_SIZE  # Height of the dark red face
                 # Draw dark red wall face below
                 pygame.draw.rect(self.screen, DARK_RED, (x, y, TILE_SIZE, wall_height))
-                pygame.draw.rect(self.screen, (255, 255, 255), (x, y, TILE_SIZE, wall_height), 1)
+                # pygame.draw.rect(self.screen, (255, 255, 255), (x, y, TILE_SIZE, wall_height), 1)
                 # Draw original wall tile shifted up
                 pygame.draw.rect(self.screen, color, (x, y - wall_shift, TILE_SIZE, TILE_SIZE))
-                pygame.draw.rect(self.screen, (255, 255, 255), (x, y - wall_shift, TILE_SIZE, TILE_SIZE), 1)
+                # pygame.draw.rect(self.screen, (255, 255, 255), (x, y - wall_shift, TILE_SIZE, TILE_SIZE), 1)
             else:
                 pass
         else:
@@ -211,7 +211,7 @@ class Game:
             else:
                 # Draw flat tiles for non-walls
                 pygame.draw.rect(self.screen, color, (x, y, TILE_SIZE, TILE_SIZE))
-                pygame.draw.rect(self.screen, (255, 255, 255), (x, y, TILE_SIZE, TILE_SIZE), 1)
+                # pygame.draw.rect(self.screen, (255, 255, 255), (x, y, TILE_SIZE, TILE_SIZE), 1)
 
     def draw_minimap(self):
         minimap_surface = pygame.Surface((self.minimap_width, self.minimap_height))
@@ -248,6 +248,13 @@ class Game:
             pygame.draw.circle(minimap_surface, (0, 255, 0), (player_minimap_x, player_minimap_y), 3)
         self.screen.blit(minimap_surface, self.minimap_offset)
 
+    def update_camera(self, dt: float) -> None:
+        """更新相機位置，使其平滑跟隨玩家"""
+        target_offset_x = -(self.player.pos[0] - SCREEN_WIDTH // 2)
+        target_offset_y = -(self.player.pos[1] - SCREEN_HEIGHT // 2)
+        self.camera_offset[0] += (target_offset_x - self.camera_offset[0]) * self.camera_lerp_factor * dt
+        self.camera_offset[1] += (target_offset_y - self.camera_offset[1]) * self.camera_lerp_factor * dt
+    
     def update(self, dt: float):
         self.current_time += dt * self.time_scale
         dt *= self.time_scale
@@ -301,10 +308,7 @@ class Game:
                                 self.state = "npc_menu"
                                 self.selected_npc_menu_option = 0
                                 break
-            target_offset_x = -(self.player.pos[0] - SCREEN_WIDTH // 2)
-            target_offset_y = -(self.player.pos[1] - SCREEN_HEIGHT // 2)
-            self.camera_offset[0] += (target_offset_x - self.camera_offset[0]) * self.camera_lerp_factor * dt
-            self.camera_offset[1] += (target_offset_y - self.camera_offset[1]) * self.camera_lerp_factor * dt
+            self.update_camera(dt)
         elif self.state == "npc_menu":
             for event in events:
                 if event.type == pygame.KEYDOWN:
@@ -439,10 +443,7 @@ class Game:
                     self.enemy_bullet_group.remove(bullet)
                     if self.player.health <= 0:
                         print("Player died!")  # Future: Implement game over state
-            target_offset_x = -(self.player.pos[0] - SCREEN_WIDTH // 2)
-            target_offset_y = -(self.player.pos[1] - SCREEN_HEIGHT // 2)
-            self.camera_offset[0] += (target_offset_x - self.camera_offset[0]) * self.camera_lerp_factor * dt
-            self.camera_offset[1] += (target_offset_y - self.camera_offset[1]) * self.camera_lerp_factor * dt
+            self.update_camera(dt)
             if self.player:
                 tile_x = int(self.player.pos[0] / TILE_SIZE)
                 tile_y = int(self.player.pos[1] / TILE_SIZE)
@@ -570,12 +571,11 @@ class Game:
         # self.draw_minimap()
     
     def draw_playing(self):
-        # Draw 2.5D background
         view_left = max(0, int(-self.camera_offset[0] // TILE_SIZE - 1))
         view_right = min(self.dungeon.grid_width, int((-self.camera_offset[0] + SCREEN_WIDTH) // TILE_SIZE + 1))
         view_top = max(0, int(-self.camera_offset[1] // TILE_SIZE - 1))
         view_bottom = min(self.dungeon.grid_height, int((-self.camera_offset[1] + SCREEN_HEIGHT) // TILE_SIZE + 1))
-        # Draw map tiles with 2.5D effect
+        # Draw map tiles
         for row in range(view_top, view_bottom):
             for col in range(view_left, view_right):
                 x = col * TILE_SIZE + self.camera_offset[0]

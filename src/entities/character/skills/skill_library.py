@@ -29,12 +29,6 @@ def inf_energy(player: Player, game: 'Game') -> None:
     player.apply_buff(buff)
 
 
-def carry_more_weapons_effect(player: Player, game: 'Game') -> None:
-    """增加玩家可攜帶的武器數量至 10"""
-    player.max_weapons = 10
-    print(f"Skill 'Carry 10 Weapons' used: Player max_weapons set to {player.max_weapons}")
-
-
 def shadow_dash_effect(player: Player, game: 'Game') -> None:
     """Apply a Shadow Dash buff to the player, increasing speed and granting invulnerability for 1 second."""
     
@@ -150,7 +144,6 @@ def reveal_fog_effect(player: Player, game: 'Game') -> None:
 
 SKILL_LIBRARY = [
     Skill(name="Inf Energy", cooldown=2.0, duration=0.0, effect=inf_energy),
-    Skill(name="Carry 10 Weapons", cooldown=0.0, duration=0.0, effect=carry_more_weapons_effect),
     Skill(name="Shadow Dash", cooldown=2.0, duration=1.0, effect=shadow_dash_effect),
     Skill(name="Time Warp", cooldown=2.0, duration=2.0, effect=time_slow_effect),
     Skill(name="Reveal Fog", cooldown=5.0, duration=5.0, effect=reveal_fog_effect),
