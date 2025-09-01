@@ -68,7 +68,7 @@ def shadow_dash_effect(player: Player, game: 'Game') -> None:
     # Create and apply the Shadow Dash buff
     buff = Buff(
         name="ShadowDash",
-        duration=1.0,  # 1 second duration
+        duration=0.1,  # 1 second duration
         effects={"speed_multiplier": 3.0},
         on_apply=on_apply,
         on_remove=on_remove
@@ -144,7 +144,7 @@ def reveal_fog_effect(player: Player, game: 'Game') -> None:
 
 SKILL_LIBRARY = [
     Skill(name="Inf Energy", cooldown=2.0, duration=0.0, effect=inf_energy),
-    Skill(name="Shadow Dash", cooldown=2.0, duration=1.0, effect=shadow_dash_effect),
+    Skill(name="Shadow Dash", cooldown=0.5, duration=0.1, effect=shadow_dash_effect),
     Skill(name="Time Warp", cooldown=2.0, duration=2.0, effect=time_slow_effect),
     Skill(name="Reveal Fog", cooldown=5.0, duration=5.0, effect=reveal_fog_effect),
 ]

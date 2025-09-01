@@ -8,3 +8,13 @@ class Buff:
         self.effects = effects  # e.g., {"speed_multiplier": 1.5, "health_regen_per_second": 5}
         self.on_apply = on_apply  # Optional callback when buff is applied
         self.on_remove = on_remove  # Optional callback when buff is removed
+    
+    def deepcopy(self) -> 'Buff':
+        """Create a deep copy of the buff."""
+        return Buff(
+            name=self.name,
+            duration=self.duration,
+            effects=self.effects.copy(),
+            on_apply=self.on_apply,
+            on_remove=self.on_remove
+        )

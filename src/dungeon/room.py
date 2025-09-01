@@ -2,7 +2,7 @@
 from typing import List, Tuple
 from dataclasses import dataclass
 from enum import Enum
-
+import random
 # 定義房間類型枚舉，表示地牢中房間的不同功能
 class RoomType(Enum):
     EMPTY = "empty"  # 空房間，沒有特殊功能
@@ -34,15 +34,93 @@ class Room:
         self._configure_tiles()
 
     def _configure_tiles(self) -> None:
-        """根據房間類型配置瓦片"""
+        """Configure tiles based on room type with optimized item placement"""
+        # Calculate usable floor area (excluding walls)
+        floor_width = int(self.width) - 2
+        floor_height = int(self.height) - 2
+        center_x = int(self.width) // 2
+        center_y = int(self.height) // 2
+
         if self.room_type == RoomType.END:
-            # 終點房間：設置內部為 End_room_floor，中間放置傳送門
             for row in range(1, int(self.height) - 1):
                 for col in range(1, int(self.width) - 1):
                     self.tiles[row][col] = 'End_room_floor'
-            center_x = int(self.width) // 2
-            center_y = int(self.height) // 2
             self.tiles[center_y][center_x] = 'End_room_portal'
+
+        elif self.room_type == RoomType.START:
+            for row in range(int(self.height)):
+                for col in range(int(self.width)):
+                    self.tiles[row][col] = 'Start_room_floor'
+            self.tiles[center_y][center_x] = 'Player_spawn'
+
+        elif self.room_type == RoomType.LOBBY:
+            for row in range(int(self.height)):
+                for col in range(int(self.width)):
+                    self.tiles[row][col] = 'Lobby_room_floor'
+            self.tiles[center_y][center_x-2] = 'Player_spawn'
+            self.tiles[center_y][center_x+2] = 'NPC_spawn'
+
+        elif self.room_type == RoomType.MONSTER:
+            # Monster room: Scale number of monsters based on room size
+            for row in range(int(self.height)):
+                for col in range(int(self.width)):
+                    self.tiles[row][col] = 'Monster_room_floor'
+            
+            # Calculate number of monsters (1 monster per ~72 tiles, min 1, max 15)
+            floor_area = floor_width * floor_height
+            num_monsters = max(1, min(15, floor_area // 72))
+            
+            # Define available spawn points (excluding walls)
+            spawn_points = [(r, c) for r in range(1, int(self.height) - 1)
+                          for c in range(1, int(self.width) - 1)]
+            # Shuffle and select spawn points
+            random.shuffle(spawn_points)
+            for i in range(min(num_monsters, len(spawn_points))):
+                row, col = spawn_points[i]
+                self.tiles[row][col] = 'Monster_spawn'
+
+        elif self.room_type == RoomType.TRAP:
+            # Trap room: Random trap placement with NPC in center
+            for row in range(int(self.height)):
+                for col in range(int(self.width)):
+                    self.tiles[row][col] = 'Trap_room_floor'
+            
+            # Place NPC in center
+            self.tiles[center_y][center_x] = 'NPC_spawn'
+            
+            # Calculate number of traps (1 trap per ~16 tiles, min 1, max 50)
+            floor_area = floor_width * floor_height
+            num_traps = max(1, min(50, floor_area // 16))
+            
+            # Define available spawn points (excluding walls and NPC)
+            spawn_points = [(r, c) for r in range(1, int(self.height) - 1)
+                          for c in range(1, int(self.width) - 1)
+                          if (r, c) != (center_y, center_x)]
+            # Shuffle and select spawn points for traps
+            random.shuffle(spawn_points)
+            for i in range(min(num_traps, len(spawn_points))):
+                row, col = spawn_points[i]
+                self.tiles[row][col] = 'Trap_spawn'
+
+        elif self.room_type == RoomType.REWARD:
+            # Reward room: Place 1-5 treasure chests in center area
+            for row in range(int(self.height)):
+                for col in range(int(self.width)):
+                    self.tiles[row][col] = 'Reward_room_floor'
+            
+            # Calculate number of chests based on room size (1-5)
+            floor_area = floor_width * floor_height
+            num_chests = max(1, min(5, floor_area // 20))
+            
+            # Define center area for chest placement (±2 tiles from center)
+            center_area = [(r, c) for r in range(center_y - 2, center_y + 3)
+                         for c in range(center_x - 2, center_x + 3)
+                         if 1 <= r < int(self.height) - 1 and 1 <= c < int(self.width) - 1]
+            # Shuffle and select spawn points for chests
+            random.shuffle(center_area)
+            for i in range(min(num_chests, len(center_area))):
+                row, col = center_area[i]
+                self.tiles[row][col] = 'Reward_spawn'
         # 未來可為其他房間類型（如 MONSTER、TRAP、REWARD）添加特殊瓦片邏輯
 
     @property

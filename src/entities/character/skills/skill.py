@@ -1,6 +1,6 @@
 # src/skills/skill.py
 from dataclasses import dataclass
-from typing import Optional, Callable
+from typing import Optional, Callable, Tuple
 # from src.character.player import Player
 
 
@@ -19,7 +19,7 @@ class Skill:
             return True
         return (current_time - self.last_used) >= self.cooldown
 
-    def use(self, player: 'Player', game: 'Game', current_time: float) -> bool:
+    def use(self, player: 'Player', game: 'Game', current_time: float, direction: Optional[Tuple[float, float]] = None) -> bool:
         """使用技能，調用效果並更新冷卻和持續時間"""
         if not self.can_use(player, current_time):
             return False

@@ -1,7 +1,7 @@
 # src/dungeon/dungeon.py
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
-from src.config import DungeonConfig
+from src.config import *
 from src.dungeon.room import Room, RoomType
 from src.dungeon.bridge import Bridge
 from src.dungeon.BSPnode import BSPNode
@@ -9,24 +9,24 @@ import random
 
 # 地牢生成類，負責生成 BSP 地牢並管理房間與走廊
 class Dungeon:
-    ROOM_WIDTH = DungeonConfig.ROOM_WIDTH.value
-    ROOM_HEIGHT = DungeonConfig.ROOM_HEIGHT.value
-    GRID_WIDTH = DungeonConfig.GRID_WIDTH.value
-    GRID_HEIGHT = DungeonConfig.GRID_HEIGHT.value
-    MIN_ROOM_SIZE = DungeonConfig.MIN_ROOM_SIZE.value
-    TILE_SIZE = DungeonConfig.TILE_SIZE.value
-    ROOM_GAP = DungeonConfig.ROOM_GAP.value
-    BIAS_RATIO = DungeonConfig.BIAS_RATIO.value
-    BIAS_STRENGTH = DungeonConfig.BIAS_STRENGTH.value
-    MIN_BRIDGE_WIDTH = DungeonConfig.MIN_BRIDGE_WIDTH.value
-    MAX_BRIDGE_WIDTH = DungeonConfig.MAX_BRIDGE_WIDTH.value
-    MAX_SPLIT_DEPTH = DungeonConfig.MAX_SPLIT_DEPTH.value
-    EXTRA_BRIDGE_RATIO = DungeonConfig.EXTRA_BRIDGE_RATIO.value
-    MOMSTER_ROOM_RATIO = DungeonConfig.MOMSTER_ROOM_RATIO.value
-    TRAP_ROOM_RATIO = DungeonConfig.TRAP_ROOM_RATIO.value
-    REWARD_ROOM_RATIO = DungeonConfig.REWARD_ROOM_RATIO.value
-    LOBBY_WIDTH = DungeonConfig.LOBBY_WIDTH.value
-    LOBBY_HEIGHT = DungeonConfig.LOBBY_HEIGHT.value
+    ROOM_WIDTH = ROOM_WIDTH
+    ROOM_HEIGHT = ROOM_HEIGHT
+    GRID_WIDTH = GRID_WIDTH
+    GRID_HEIGHT = GRID_HEIGHT
+    MIN_ROOM_SIZE = MIN_ROOM_SIZE
+    TILE_SIZE = TILE_SIZE
+    ROOM_GAP = ROOM_GAP
+    BIAS_RATIO = BIAS_RATIO
+    BIAS_STRENGTH = BIAS_STRENGTH
+    MIN_BRIDGE_WIDTH = MIN_BRIDGE_WIDTH
+    MAX_BRIDGE_WIDTH = MAX_BRIDGE_WIDTH
+    MAX_SPLIT_DEPTH = MAX_SPLIT_DEPTH
+    EXTRA_BRIDGE_RATIO = EXTRA_BRIDGE_RATIO
+    MOMSTER_ROOM_RATIO = MOMSTER_ROOM_RATIO
+    TRAP_ROOM_RATIO = TRAP_ROOM_RATIO
+    REWARD_ROOM_RATIO = REWARD_ROOM_RATIO
+    LOBBY_WIDTH = LOBBY_WIDTH
+    LOBBY_HEIGHT = LOBBY_HEIGHT
     game = None
 
     def __init__(self):
@@ -385,7 +385,7 @@ class Dungeon:
         """為地牢中的地板瓦片添加邊界牆壁"""
         for y in range(self.grid_height):
             for x in range(self.grid_width):
-                if self.dungeon_tiles[y][x] in ['Room_floor', 'Bridge_floor']:
+                if self.dungeon_tiles[y][x] in PASSABLE_TILES:
                     if self._is_border_tile(x, y):
                         self.dungeon_tiles[y][x] = 'Border_wall'
 
