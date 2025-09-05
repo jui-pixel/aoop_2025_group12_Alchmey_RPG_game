@@ -12,27 +12,55 @@ import heapq
 地牢生成與管理模組
 ====================
 
-此檔案實作整個地牢的生成流程與資料結構，核心特色如下：
+此模組實作基於 BSP（二元空間分割）的完整地牢生成系統，包含以下核心功能：
 
-1) 使用 BSP（二元空間分割）切割整張地圖，於各葉節點嘗試放置房間。
-2) 房間類型分配：先固定挑選 5 種（start, end, monster, reward, npc），
-   剩餘房間再依 8:1:1 比例分配（monster:reward:npc）。
-3) 將房間放上地圖後，於每個房間外圍加上一圈 Border_wall（不覆蓋房內地板）。
-4) 節點建圖：對每個房間取「四角指向中心」的四個中點，
-   並在水平或垂直軸隨機抖動 1 格，以這些點建立完全圖，邊權重為歐式距離。
-5) 以克魯斯克爾演算法（Kruskal）求最小生成樹（MST），再隨機加回 10% 的邊。
-6) 路徑鋪設：用 A* 演算法從邊的兩端點尋路。Outside 權重=1，其它=10。
-   把沿途 Outside 覆蓋為 Bridge_floor。
-7) 橋道擴張：對 Bridge_floor 進行一圈鄰接 Outside 的膨脹（變為 Bridge_floor）。
-8) 門生成：將 Bridge_floor 鄰近一格的 Border_wall 改為 Door。
+【地牢生成流程】
+1) BSP 空間分割：遞迴地將地圖空間分割成較小的區域，在葉節點生成房間
+2) 房間類型分配：固定選擇 5 種特殊房間（start, end, monster, reward, npc），
+   其餘房間按 8:1:1 比例分配為 monster:reward:npc
+3) 房間邊界處理：為每個房間外圍添加一圈 Border_wall，避免房間直接相鄰
+4) 圖形建構：為每個房間計算四個中點（四角到中心的連線中點），
+   並加入隨機抖動，建立完全加權圖，邊權重為歐式距離
+5) 最小生成樹：使用 Kruskal 演算法求 MST，確保所有房間連通
+6) 額外連接：隨機添加少量額外邊，增加路徑多樣性但避免過度連接
+7) 路徑生成：使用 A* 演算法在房間間尋路，Outside 成本=1，其他=2，
+   沿途將 Outside 瓦片替換為 Bridge_floor
+8) 橋道處理：對 Bridge_floor 進行膨脹，將鄰接的 Outside 也轉為 Bridge_floor
+9) 門生成：將鄰接 Bridge_floor 的 Border_wall 轉換為 Door
 
-備註：
-- 本檔案中的「瓦片」皆以字串標記，如 'Outside'、'Room_floor'、'Bridge_floor' 等。
-- 地圖以二維陣列 self.dungeon_tiles[y][x] 儲存。
+【技術細節】
+- 瓦片系統：使用字串標記不同瓦片類型（'Outside', 'Room_floor', 'Bridge_floor' 等）
+- 地圖儲存：以二維陣列 self.dungeon_tiles[y][x] 儲存整個地牢
+- 房間管理：每個房間包含位置、尺寸、瓦片數據和類型資訊
+- 路徑演算法：A* 使用曼哈頓距離作為啟發式函數，適合 4 向移動
+
+【設計理念】
+- 確保連通性：透過 MST 保證所有房間都能到達
+- 避免過度連接：限制額外邊的數量，保持地牢的探索性
+- 自然路徑：使用 A* 生成符合直覺的走廊路徑
+- 視覺完整性：透過邊界牆和門的處理，創造完整的地牢外觀
 """
 
-# 地牢生成類，負責生成 BSP 地牢並管理房間與走廊
 class Dungeon:
+    """
+    地牢生成與管理類
+    
+    此類負責整個地牢的生成、管理和維護，包含以下主要功能：
+    - BSP 空間分割與房間生成
+    - 房間類型分配與配置
+    - 圖形建構與路徑生成
+    - 地牢瓦片管理與渲染
+    
+    屬性說明：
+    - ROOM_WIDTH/HEIGHT: 房間的最大寬度/高度（瓦片數）
+    - GRID_WIDTH/HEIGHT: 地牢網格的總寬度/高度（瓦片數）
+    - MIN_ROOM_SIZE: 房間的最小尺寸限制
+    - TILE_SIZE: 每個瓦片的像素大小
+    - ROOM_GAP: 房間間的最小間距
+    - MAX_SPLIT_DEPTH: BSP 分割的最大深度
+    - 其他比例常數用於房間類型分配和橋接生成
+    """
+    # 從配置檔案載入的常數
     ROOM_WIDTH = ROOM_WIDTH
     ROOM_HEIGHT = ROOM_HEIGHT
     GRID_WIDTH = GRID_WIDTH
@@ -51,30 +79,72 @@ class Dungeon:
     REWARD_ROOM_RATIO = REWARD_ROOM_RATIO
     LOBBY_WIDTH = LOBBY_WIDTH
     LOBBY_HEIGHT = LOBBY_HEIGHT
-    game = None
+    game = None  # 遊戲實例引用，用於與遊戲系統整合
 
     def __init__(self):
-        """初始化地牢資料結構，不做實際地圖生成。"""
-        self.rooms: List[Room] = []
-        self.bridges: List[Bridge] = []
-        self.current_room_id = 0
-        self.dungeon_tiles: List[List[str]] = []
-        self.grid_width = 0
-        self.grid_height = 0
-        self.next_room_id = 0
-        self.total_appeared_rooms = 0
-        self.bsp_tree: Optional[BSPNode] = None
+        """
+        初始化地牢資料結構
+        
+        建立地牢生成所需的所有資料結構，但不進行實際的地圖生成。
+        實際生成需要呼叫 initialize_dungeon() 方法。
+        
+        實例變數說明：
+        - rooms: 所有房間的列表，包含位置、尺寸、類型等資訊
+        - bridges: 房間間橋接的列表（舊式系統，新式使用 A* 路徑）
+        - current_room_id: 當前玩家所在房間的 ID
+        - dungeon_tiles: 二維瓦片陣列，儲存整個地牢的瓦片類型
+        - grid_width/height: 地牢網格的實際寬度/高度
+        - next_room_id: 下一個房間的 ID 計數器
+        - total_appeared_rooms: 總共出現的房間數量
+        - bsp_tree: BSP 分割樹的根節點
+        """
+        self.rooms: List[Room] = []  # 房間列表
+        self.bridges: List[Bridge] = []  # 橋接列表（舊式系統）
+        self.current_room_id = 0  # 當前房間 ID
+        self.dungeon_tiles: List[List[str]] = []  # 地牢瓦片陣列
+        self.grid_width = 0  # 網格寬度
+        self.grid_height = 0  # 網格高度
+        self.next_room_id = 0  # 下一個房間 ID
+        self.total_appeared_rooms = 0  # 總房間數
+        self.bsp_tree: Optional[BSPNode] = None  # BSP 樹根節點
 
     def _initialize_grid(self) -> None:
-        """初始化地牢網格，建立填滿 'Outside' 的空白地圖。"""
+        """
+        初始化地牢網格
+        
+        建立一個填滿 'Outside' 瓦片的空白地圖網格。
+        這是地牢生成的起始點，後續所有房間和路徑都會覆蓋在這個網格上。
+        
+        步驟：
+        1. 設定網格尺寸為配置中定義的寬度和高度
+        2. 建立二維陣列，所有位置都初始化為 'Outside'
+        3. 輸出初始化資訊供除錯使用
+        """
         self.grid_width = self.GRID_WIDTH
         self.grid_height = self.GRID_HEIGHT
+        # 建立二維陣列，所有瓦片都設為 'Outside'
         self.dungeon_tiles = [['Outside' for _ in range(self.grid_width)] for _ in range(self.grid_height)]
         print(f"初始化地牢網格：寬度={self.grid_width}, 高度={self.grid_height}")
 
     def generate_room(self, x: float, y: float, width: float, height: float, room_id: int, room_type: RoomType = RoomType.EMPTY) -> Room:
-        """生成單個房間物件（含內部地板瓦片），尚未放置到全域地圖。"""
+        """
+        生成單個房間物件
+        
+        建立一個房間物件，包含其內部瓦片數據，但尚未放置到全域地圖上。
+        房間的實際瓦片配置會根據房間類型在 Room 類中處理。
+        
+        參數：
+        - x, y: 房間左上角座標（瓦片單位）
+        - width, height: 房間寬度和高度（瓦片單位）
+        - room_id: 房間的唯一識別碼
+        - room_type: 房間類型，預設為 EMPTY
+        
+        回傳：
+        - Room 物件，包含位置、尺寸、瓦片數據和類型資訊
+        """
+        # 建立房間內部瓦片陣列，預設為 'Room_floor'
         tiles = [['Room_floor' for _ in range(int(width))] for _ in range(int(height))]
+        # 建立房間物件
         room = Room(id=room_id, x=x, y=y, width=width, height=height, tiles=tiles, room_type=room_type)
         print(f"生成房間 {room_id} 在 ({x}, {y}), 尺寸=({width}, {height}), 房間類型={room_type}")
         return room
@@ -89,18 +159,44 @@ class Dungeon:
         tiles[center_y][center_x] = 'End_room_portal'
 
     def _split_bsp(self, node: BSPNode, depth: int, max_depth: int = MAX_SPLIT_DEPTH) -> None:
-        """遞迴地以 BSP 分割地圖，當不可再分或達深度時，在節點嘗試造房。"""
+        """
+        遞迴執行 BSP（二元空間分割）
+        
+        這是地牢生成的核心演算法，透過遞迴分割空間來創造房間。
+        分割會持續進行直到達到最大深度或空間太小無法再分割。
+        
+        演算法流程：
+        1. 計算最小分割尺寸（房間最小尺寸 + 間距）
+        2. 檢查是否應該停止分割（深度限制或空間太小）
+        3. 如果停止，嘗試在當前節點生成房間
+        4. 如果繼續，選擇分割方向（水平或垂直）
+        5. 執行分割，創建左右子節點
+        6. 遞迴處理左右子節點
+        
+        參數：
+        - node: 當前要處理的 BSP 節點
+        - depth: 當前分割深度
+        - max_depth: 最大分割深度限制
+        """
+        # 計算最小分割尺寸：房間最小尺寸 + 兩倍間距
         min_split_size = self.MIN_ROOM_SIZE + self.ROOM_GAP * 2
+        
+        # 檢查是否應該停止分割
         if self._should_stop_splitting(node, depth, max_depth, min_split_size):
             self._try_generate_room(node, min_split_size)
             return
 
+        # 選擇分割方向
         split_direction = self._choose_split_direction(node, min_split_size)
         if not split_direction:
+            # 無法分割，嘗試生成房間
             self._try_generate_room(node, min_split_size)
             return
 
+        # 執行分割
         self._perform_split(node, split_direction, min_split_size)
+        
+        # 遞迴處理左右子節點
         if node.left:
             self._split_bsp(node.left, depth + 1, max_depth)
         if node.right:
@@ -425,36 +521,59 @@ class Dungeon:
         return False
 
     def _assign_room_types(self) -> None:
-        """分配房間類型（依需求）
-        1. 先選定 5 個房間：start, monster, reward, end, npc
-        2. 剩餘房間依 8:1:1 分配為 monster:reward:npc
+        """
+        分配房間類型
+        
+        根據需求分配房間類型，確保地牢具有適當的挑戰性和多樣性。
+        
+        分配策略：
+        1. 固定選擇 5 種特殊房間：
+           - START: 玩家起始房間（隨機選擇）
+           - END: 終點房間（距離起始房間最遠）
+           - REWARD: 獎勵房間（隨機選擇一個）
+           - NPC: NPC 房間（隨機選擇一個）
+           - MONSTER: 怪物房間（隨機選擇一個）
+        2. 剩餘房間按 8:1:1 比例分配：
+           - 80% 為 MONSTER 房間（增加挑戰性）
+           - 10% 為 REWARD 房間（提供獎勵）
+           - 10% 為 NPC 房間（提供互動）
+        
+        異常：
+        - ValueError: 如果沒有房間可分配
         """
         if not self.rooms:
             raise ValueError("無房間可分配類型")
 
         room_list = self.rooms[:]
-        # 1) 選 start
+        
+        # 1) 隨機選擇起始房間
         start_room = random.choice(room_list)
         self.current_room_id = start_room.id
         start_room.room_type = RoomType.START
-        # 2) 選 end 為與 start 曼哈頓距離最遠
+        
+        # 2) 選擇終點房間（與起始房間曼哈頓距離最遠）
         start_center = (start_room.x + start_room.width / 2, start_room.y + start_room.height / 2)
         end_room = max(
             (r for r in room_list if r.id != start_room.id),
             key=lambda r: abs(r.x + r.width / 2 - start_center[0]) + abs(r.y + r.height / 2 - start_center[1])
         ) if len(room_list) > 1 else start_room
         end_room.room_type = RoomType.END
-        # 3) 從剩餘挑一個 reward, 一個 npc, 一個 monster（確保至少各 1）
+        
+        # 3) 從剩餘房間中確保每種特殊類型至少有一個
         remaining = [r for r in room_list if r.room_type == RoomType.EMPTY]
         random.shuffle(remaining)
+        
+        # 確保至少有一個獎勵房間
         if remaining:
             remaining.pop(0).room_type = RoomType.REWARD
+        # 確保至少有一個 NPC 房間
         if remaining:
             remaining.pop(0).room_type = RoomType.NPC
+        # 確保至少有一個怪物房間
         if remaining:
             remaining.pop(0).room_type = RoomType.MONSTER
 
-        # 4) 其餘依 8:1:1 分配（monster:reward:npc）。
+        # 4) 其餘房間按 8:1:1 比例分配（monster:reward:npc）
         for r in remaining:
             r.room_type = random.choices(
                 [RoomType.MONSTER, RoomType.REWARD, RoomType.NPC],
@@ -462,10 +581,37 @@ class Dungeon:
             )[0]
     
     def initialize_dungeon(self) -> None:
-        """初始化整個地牢，生成房間、走廊和牆壁"""
+        """
+        初始化整個地牢生成流程
+        
+        這是地牢生成的主要入口點，執行完整的 BSP 地牢生成流程。
+        包含房間生成、類型分配、路徑連接和邊界處理等所有步驟。
+        
+        生成流程：
+        1. 初始化空白網格
+        2. 建立 BSP 樹並進行空間分割
+        3. 收集所有生成的房間
+        4. 分配房間類型（固定 5 種 + 8:1:1 分配）
+        5. 將房間放置到地圖上
+        6. 為每個房間添加邊界牆
+        7. 建立房間間的圖形連接
+        8. 使用 Kruskal 演算法求最小生成樹
+        9. 添加少量額外連接
+        10. 使用 A* 演算法生成路徑
+        11. 處理橋道膨脹和門生成
+        12. 完成邊界牆處理
+        
+        異常：
+        - ValueError: 如果未生成任何房間
+        """
+        # 步驟 1: 初始化空白網格
         self._initialize_grid()
+        
+        # 步驟 2: 建立 BSP 樹並進行空間分割
         self.bsp_tree = BSPNode(0, 0, self.grid_width, self.grid_height)
         self._split_bsp(self.bsp_tree, 0)
+        
+        # 步驟 3: 收集所有生成的房間
         self.rooms = []
         self.bridges = []
         self.next_room_id = 0
@@ -474,30 +620,41 @@ class Dungeon:
         if not self.rooms:
             raise ValueError("未生成任何房間")
 
+        # 步驟 4: 分配房間類型
         self._assign_room_types()
 
+        # 步驟 5: 將房間放置到地圖上
         self._place_rooms()
-        # 每個房間外圈加一圈 Border_wall（僅覆蓋 Outside，避免破壞房內地板）
+        
+        # 步驟 6: 為每個房間添加邊界牆（僅覆蓋 Outside，避免破壞房內地板）
         for room in self.rooms:
             self._add_room_border(room)
-        # 建立節點與加權邊：節點為各房四個中點；邊權重為兩點距離
+            
+        # 步驟 7: 建立節點與加權邊（節點為各房四個中點；邊權重為兩點距離）
         nodes, edges = self._build_graph_nodes_edges()
-        # Kruskal MST：用並查集合併成最小生成樹
+        
+        # 步驟 8: Kruskal MST（用並查集合併成最小生成樹）
         mst_edges = self._kruskal_mst(len(nodes), edges)
-        # 加回 20% 的邊：隨機挑選非 MST 的候選邊
+        
+        # 步驟 9: 加回 1% 的邊（只連接附近且未連接的房間）
         final_edges = self._add_extra_edges(mst_edges, edges, ratio=0.01)
-        # 以 A* 連線路徑：Outside 成本 1，其它 2；沿途把 Outside 貼成 Bridge_floor
+        
+        # 步驟 10: A* 路徑生成（Outside=1，其他=2，沿途鋪設 Bridge_floor）
         for u, v, _w in final_edges:
             sx, sy = nodes[u]
             gx, gy = nodes[v]
             path = self._astar_path((sx, sy), (gx, gy))
             self._paint_path(path)
-        # 橋道膨脹：對 Bridge_floor 外圍一圈 Outside 也轉成 Bridge_floor
+            
+        # 步驟 11: 橋道膨脹（Bridge_floor 外圍一圈 Outside 轉為 Bridge_floor）
         self._dilate_bridges()
-        # 開門：將鄰接 Bridge_floor 的 Border_wall 變成 Door
+        
+        # 步驟 12: 開門（鄰接 Bridge_floor 的 Border_wall 變為 Door）
         self._convert_border_to_doors()
-        # 對 PASSABLE_TILES 外圍一圈 Outside 轉成 Border_wall
+        
+        # 步驟 13: 邊界牆（鄰接可通行區域的 Outside 轉為 Border_wall）
         self._convert_outside_to_border_wall()
+        
         print(f"初始化地牢：{len(self.rooms)} 個房間，{len(self.bridges)} 個橋接")
 
     def _place_rooms(self) -> None:
@@ -586,10 +743,31 @@ class Dungeon:
         return nodes, edges
 
     def _kruskal_mst(self, num_nodes: int, edges: List[Tuple[int, int, float]]) -> List[Tuple[int, int, float]]:
-        """以 Kruskal 演算法計算最小生成樹。
-
-        使用並查集（Union-Find）避免形成環，將邊依權重由小到大挑選。
-        回傳的為 MST 邊集合（u, v, w）。
+        """
+        使用 Kruskal 演算法計算最小生成樹
+        
+        這是確保地牢連通性的核心演算法。最小生成樹保證所有房間都能到達，
+        同時使用最少的連接邊，避免過度連接。
+        
+        演算法原理：
+        1. 將所有邊按權重（距離）由小到大排序
+        2. 依序檢查每條邊，如果不會形成環就加入 MST
+        3. 使用並查集（Union-Find）高效檢測環
+        4. 當 MST 包含 n-1 條邊時停止（n 為節點數）
+        
+        並查集優化：
+        - 路徑壓縮：在查找時將節點直接連到根節點
+        - 按秩合併：總是將較小的樹合併到較大的樹下
+        
+        參數：
+        - num_nodes: 節點總數
+        - edges: 邊列表，格式為 (u, v, weight)
+        
+        回傳：
+        - MST 邊列表，格式為 (u, v, weight)
+        
+        時間複雜度：O(E log E)，其中 E 為邊數
+        空間複雜度：O(V)，其中 V 為節點數
         """
         parent = list(range(num_nodes))
         rank = [0] * num_nodes
@@ -710,11 +888,32 @@ class Dungeon:
         return 0.0
 
     def _astar_path(self, start: Tuple[int, int], goal: Tuple[int, int]) -> List[Tuple[int, int]]:
-        """使用 A* 演算法在網格上尋路（4 向鄰接），返回點列路徑。
-
-        - 啟發式：曼哈頓距離，以符合 4 向移動。
-        - 成本：呼叫 _tile_cost，Outside=1，其它=2。
-        - 若找不到路徑，回傳空陣列。
+        """
+        使用 A* 演算法在網格上尋路
+        
+        這是地牢路徑生成的核心演算法，用於在房間間建立走廊連接。
+        A* 演算法結合了最佳優先搜尋和 Dijkstra 演算法的優點，
+        能夠在保證最短路徑的同時提高搜尋效率。
+        
+        演算法特點：
+        - 啟發式函數：使用曼哈頓距離，適合 4 向移動
+        - 成本函數：Outside=1，其他地形=2，越界=∞
+        - 搜尋策略：優先探索最有希望的路徑
+        - 路徑重建：從目標節點回溯到起始節點
+        
+        參數：
+        - start: 起始座標 (x, y)
+        - goal: 目標座標 (x, y)
+        
+        回傳：
+        - 路徑點列表，從起始點到目標點
+        - 空列表表示找不到路徑
+        
+        實作細節：
+        1. 使用優先佇列管理待探索節點
+        2. 維護 g_score（實際成本）和 f_score（總成本）
+        3. 使用 came_from 字典重建路徑
+        4. 避免重複探索已訪問的節點
         """
         sx, sy = start
         gx, gy = goal
