@@ -11,6 +11,7 @@ class RoomType(Enum):
     TRAP = "trap"  # 陷阱房，包含危險陷阱
     REWARD = "reward"  # 獎勵房，包含寶藏或道具
     END = "end"  # 終點房間，包含傳送門
+    NPC = "npc"  # NPC房間，包含NPC
     LOBBY = "lobby"  # 大廳房間，玩家可以在此選擇技能或武器
 
 # 定義房間數據結構，用於儲存房間的屬性和瓦片數據
@@ -121,6 +122,11 @@ class Room:
             for i in range(min(num_chests, len(center_area))):
                 row, col = center_area[i]
                 self.tiles[row][col] = 'Reward_spawn'
+        elif self.room_type == RoomType.NPC:
+            for row in range(int(self.height)):
+                for col in range(int(self.width)):
+                    self.tiles[row][col] = 'NPC_room_floor'
+            self.tiles[center_y][center_x] = 'NPC_spawn'
         # 未來可為其他房間類型（如 MONSTER、TRAP、REWARD）添加特殊瓦片邏輯
 
     @property

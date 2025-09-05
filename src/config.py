@@ -1,18 +1,18 @@
 # src/config.py
 from enum import Enum
 
-ROOM_WIDTH = 300  # 單個房間的最大寬度（瓦片數，控制房間的最大尺寸）
-ROOM_HEIGHT = 300 # 單個房間的最大高度（瓦片數，控制房間的最大尺寸）
-GRID_WIDTH = 300  # 地牢網格的寬度（瓦片數，定義地牢的總寬度）
-GRID_HEIGHT = 300  # 地牢網格的高度（瓦片數，定義地牢的總高度）
-MIN_ROOM_SIZE = 30  # 房間的最小尺寸（寬度和高度，確保房間不會太小）
-TILE_SIZE = 32  # 每個瓦片的像素大小
+ROOM_WIDTH = 20  # 單個房間的最大寬度（瓦片數，控制房間的最大尺寸）
+ROOM_HEIGHT = 20 # 單個房間的最大高度（瓦片數，控制房間的最大尺寸）
+GRID_WIDTH = 120  # 地牢網格的寬度（瓦片數，定義地牢的總寬度）
+GRID_HEIGHT = 100  # 地牢網格的高度（瓦片數，定義地牢的總高度）
+MIN_ROOM_SIZE = 15  # 房間的最小尺寸（寬度和高度，確保房間不會太小）
+TILE_SIZE = 40  # 每個瓦片的像素大小
 ROOM_GAP = 2  # 房間之間的最小間距（瓦片數，防止房間互相重疊）
 BIAS_RATIO = 0.6  # 房間大小偏向比例（控制房間大小的隨機性）
 BIAS_STRENGTH = 0.3  # 偏向強度（控制房間位置的隨機偏移）
 MIN_BRIDGE_WIDTH = 2  # 走廊（橋接）的最小寬度（瓦片數，確保走廊不會太窄）
 MAX_BRIDGE_WIDTH = 4  # 走廊（橋接）的最大寬度（瓦片數，控制走廊的最大寬度）
-MAX_SPLIT_DEPTH = 15  # BSP 分割的最大深度（控制生成房間的數量，深度越大房間越多）
+MAX_SPLIT_DEPTH = 6  # BSP 分割的最大深度（控制生成房間的數量，深度越大房間越多）
 EXTRA_BRIDGE_RATIO = 0.0  # 額外走廊的比例（增加連通性，生成更多非必要走廊）
 MOMSTER_ROOM_RATIO = 0.8  # 怪物房間的比例（控制怪物房間的數量，增加遊戲挑戰性）
 TRAP_ROOM_RATIO = 0.1  # 陷阱房間的比例（控制陷阱房間的數量，增加遊戲危險性）
@@ -35,6 +35,7 @@ WHITE       = (255, 255, 255)       # ⬜ 白色 - 用於文字或高亮
 GRAY        = (100, 100, 100)       # ◼ 灰色 - 中性地板或裝飾
 LIGHT_GRAY  = (180, 180, 180)       # ◽ 淺灰 - 走廊或次要結構
 DARK_GRAY   = (40, 40, 40)          # ◾ 深灰 - 牆面或陰影
+IRON_GRAY   = (98, 97, 81)          # 鐵灰 - 門
 
 # ====== 紅色系 ======
 RED       = (255, 0, 0)             # 🟥 紅色 - 怪物或危險區域
@@ -89,6 +90,8 @@ ROOM_FLOOR_COLORS = {
     'Trap_spawn': AMBER,             # 陷阱出生點 - 琥
     'Reward_spawn': GOLD,            # 獎勵出生點 - 金黃，吸引目光
     'Outside': OUTSIDE_COLOR,  # 地圖外部 - 黑色
+    'Door': IRON_GRAY,  # 門 - 使用與橋相近的顏色
+    'NPC_room_floor': PALE_RED,  # NPC房間地板 - 淡紅，柔和感
 }
 
 PASSABLE_TILES = {
@@ -106,4 +109,6 @@ PASSABLE_TILES = {
     'Monster_spawn',
     'Trap_spawn',
     'Reward_spawn',
+    'Door',
+    'NPC_room_floor',
 }
