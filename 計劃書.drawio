@@ -797,7 +797,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="EL-J6e7zm5udkv3IP_3d" name="設定">
-    <mxGraphModel dx="719" dy="429" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1489" dy="889" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -936,7 +936,7 @@
         <mxCell id="ItTHbVke5TpWKFvnRpEX-76" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="ItTHbVke5TpWKFvnRpEX-25" target="ItTHbVke5TpWKFvnRpEX-25" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="PFSR1fNM4kXNKZIR-PrS-19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="ItTHbVke5TpWKFvnRpEX-86" target="PFSR1fNM4kXNKZIR-PrS-18" edge="1">
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ItTHbVke5TpWKFvnRpEX-86" target="m-WHTV40wFsUhOOpvvqp-2">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="ItTHbVke5TpWKFvnRpEX-86" value="生成演算法" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
@@ -1115,42 +1115,6 @@
         </mxCell>
         <mxCell id="ItTHbVke5TpWKFvnRpEX-153" value="寶箱怪" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="627" y="2363" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="beWRwuH25hUKvxezczko-176" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="PFSR1fNM4kXNKZIR-PrS-18" target="beWRwuH25hUKvxezczko-174" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="PFSR1fNM4kXNKZIR-PrS-18" value="BSP分割製造房間" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="850" y="1330" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="PFSR1fNM4kXNKZIR-PrS-23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="PFSR1fNM4kXNKZIR-PrS-20" target="PFSR1fNM4kXNKZIR-PrS-22" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="PFSR1fNM4kXNKZIR-PrS-20" value="分配剩餘房間" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="1210" y="1330" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="PFSR1fNM4kXNKZIR-PrS-25" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="PFSR1fNM4kXNKZIR-PrS-22" target="PFSR1fNM4kXNKZIR-PrS-24" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="PFSR1fNM4kXNKZIR-PrS-22" value="將房間放置至map上，並在每個房間外圍加上一圈牆" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="1410" y="1330" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="PFSR1fNM4kXNKZIR-PrS-27" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="PFSR1fNM4kXNKZIR-PrS-24" target="PFSR1fNM4kXNKZIR-PrS-26" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="PFSR1fNM4kXNKZIR-PrS-24" value="將所有房間四角至房間中心的四個中點加上隨機位移(上下左右限一單位)，連線成圖，權重為兩點間的距離" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="1610" y="1315" width="120" height="90" as="geometry" />
-        </mxCell>
-        <mxCell id="PFSR1fNM4kXNKZIR-PrS-30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="PFSR1fNM4kXNKZIR-PrS-26" target="PFSR1fNM4kXNKZIR-PrS-29" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="PFSR1fNM4kXNKZIR-PrS-26" value="使用克魯斯克爾演算法製造最小生成樹" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="1810" y="1330" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="beWRwuH25hUKvxezczko-180" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="PFSR1fNM4kXNKZIR-PrS-29" target="beWRwuH25hUKvxezczko-179" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="PFSR1fNM4kXNKZIR-PrS-29" value="重新隨機加回去20%的邊" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="2010" y="1330" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="PFSR1fNM4kXNKZIR-PrS-84" value="" style="group" parent="1" vertex="1" connectable="0">
           <mxGeometry x="1140" y="920" width="720" height="370" as="geometry" />
@@ -1412,35 +1376,11 @@
         <mxCell id="beWRwuH25hUKvxezczko-171" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.517;entryY=0.009;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="beWRwuH25hUKvxezczko-162" target="beWRwuH25hUKvxezczko-91" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="beWRwuH25hUKvxezczko-177" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="beWRwuH25hUKvxezczko-174" target="PFSR1fNM4kXNKZIR-PrS-20" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="beWRwuH25hUKvxezczko-174" value="隨機選定五個房間，確保每種房間各一" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="1030" y="1330" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="beWRwuH25hUKvxezczko-182" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="beWRwuH25hUKvxezczko-179" target="beWRwuH25hUKvxezczko-181" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="beWRwuH25hUKvxezczko-179" value="使用A*演算法將兩點間連成道路，虛空的權重為1，其他的10，並使用道路覆蓋路上的虛空格" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="2200" y="1315" width="120" height="90" as="geometry" />
-        </mxCell>
-        <mxCell id="fD35nCo-Vv7RsBiMH8JD-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="beWRwuH25hUKvxezczko-181" target="fD35nCo-Vv7RsBiMH8JD-5">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="beWRwuH25hUKvxezczko-181" value="把道路擴大一格" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="2400" y="1330" width="120" height="60" as="geometry" />
-        </mxCell>
         <mxCell id="hib4fgLlT0tweXI06uwH-1" value="BUFF五選一" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="827" y="2363" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="hib4fgLlT0tweXI06uwH-3" value="錢換BUFF" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="826" y="1996" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="fD35nCo-Vv7RsBiMH8JD-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="OlVgcbefuDAM3bQlQZbO-1" target="PFSR1fNM4kXNKZIR-PrS-20">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="OlVgcbefuDAM3bQlQZbO-1" value="8:1:1 =&amp;nbsp;monster:reward:npc" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="1175.5" y="1440" width="189" height="30" as="geometry" />
         </mxCell>
         <mxCell id="BXO9EhslKQZ-C1DbQJFZ-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="BXO9EhslKQZ-C1DbQJFZ-9" target="BXO9EhslKQZ-C1DbQJFZ-11">
           <mxGeometry relative="1" as="geometry" />
@@ -1463,14 +1403,80 @@
         <mxCell id="BXO9EhslKQZ-C1DbQJFZ-14" value="地牢渲染" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="870" y="320" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="fD35nCo-Vv7RsBiMH8JD-4" value="道路外圍虛空區設置為牆" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="2770" y="1330" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="fD35nCo-Vv7RsBiMH8JD-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="fD35nCo-Vv7RsBiMH8JD-5" target="fD35nCo-Vv7RsBiMH8JD-4">
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="m-WHTV40wFsUhOOpvvqp-2" target="m-WHTV40wFsUhOOpvvqp-4">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="fD35nCo-Vv7RsBiMH8JD-5" value="道路外圍的牆設置為門" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="2600" y="1330" width="120" height="60" as="geometry" />
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-2" value="初始化空白網格" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="846" y="1330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="m-WHTV40wFsUhOOpvvqp-4" target="m-WHTV40wFsUhOOpvvqp-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-4" value="建立 BSP 樹並進行空間分割" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1046" y="1330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="m-WHTV40wFsUhOOpvvqp-6" target="m-WHTV40wFsUhOOpvvqp-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-6" value="收集所有生成的房間" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1246" y="1330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="m-WHTV40wFsUhOOpvvqp-8" target="m-WHTV40wFsUhOOpvvqp-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-8" value="分配房間類型（固定 5 種 + 8:1:1 分配）" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1446" y="1330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="m-WHTV40wFsUhOOpvvqp-10" target="m-WHTV40wFsUhOOpvvqp-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-10" value="將房間放置到地圖上" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1646" y="1330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="m-WHTV40wFsUhOOpvvqp-12" target="m-WHTV40wFsUhOOpvvqp-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-12" value="為每個房間添加邊界牆" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1846" y="1330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="m-WHTV40wFsUhOOpvvqp-14" target="m-WHTV40wFsUhOOpvvqp-16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-14" value="建立房間間的圖形連接" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="2046" y="1330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="m-WHTV40wFsUhOOpvvqp-16" target="m-WHTV40wFsUhOOpvvqp-18">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-16" value="使用 Kruskal 演算法求最小生成樹" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="2246" y="1330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="m-WHTV40wFsUhOOpvvqp-18" target="m-WHTV40wFsUhOOpvvqp-20">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-18" value="添加少量額外連接" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="2446" y="1330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="m-WHTV40wFsUhOOpvvqp-20" target="m-WHTV40wFsUhOOpvvqp-22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-20" value="使用 A* 演算法生成路徑" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="2646" y="1330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-25" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="m-WHTV40wFsUhOOpvvqp-22" target="m-WHTV40wFsUhOOpvvqp-24">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-22" value="處理橋道膨脹和門生成" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="2846" y="1330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-24" value="完成邊界牆處理" style="whiteSpace=wrap;html=1;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="3046" y="1330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="m-WHTV40wFsUhOOpvvqp-27" target="ItTHbVke5TpWKFvnRpEX-75">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m-WHTV40wFsUhOOpvvqp-27" value="Map[y][x]" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="290" y="825" width="60" height="30" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
