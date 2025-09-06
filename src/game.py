@@ -14,7 +14,8 @@ from src.entities.enemy.basic_enemy import BasicEnemy
 from src.entities.buff import Buff
 from src.entities.NPC import NPC
 from src.entities.damage_text import DamageText
-
+from src.menu.menu_manager import MenuManager
+from src.menu.menu import Main_Menu
 
 class Game:
     def __init__(self, screen, pygame_clock):
@@ -37,6 +38,9 @@ class Game:
         self.selected_skill = None
         self.selected_skills = []
         self.selected_weapons = []
+        self.menu_manager = MenuManager(self.screen)
+        self.menu_manager.register_menu("Main", Main_Menu, self)
+        self.menu_manager.current_menu("Main")
         self.menu_options = ["Enter Lobby", "Exit"]
         self.selected_menu_option = 0
         self.npc_menu_options = ["Select Skills", "Select Weapons", "Start Game"]

@@ -1400,7 +1400,10 @@
         <mxCell id="BXO9EhslKQZ-C1DbQJFZ-13" value="特殊選單" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="670" y="320" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="BXO9EhslKQZ-C1DbQJFZ-14" value="地牢渲染" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="SS28420f34RuHSQPg51D-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="BXO9EhslKQZ-C1DbQJFZ-14" target="SS28420f34RuHSQPg51D-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="BXO9EhslKQZ-C1DbQJFZ-14" value="UI" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="870" y="320" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="m-WHTV40wFsUhOOpvvqp-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="m-WHTV40wFsUhOOpvvqp-2" target="m-WHTV40wFsUhOOpvvqp-4">
@@ -1477,6 +1480,9 @@
         </mxCell>
         <mxCell id="m-WHTV40wFsUhOOpvvqp-27" value="Map[y][x]" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="290" y="825" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="SS28420f34RuHSQPg51D-1" value="地牢渲染" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="320" width="120" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
@@ -2302,7 +2308,7 @@
         <mxCell id="2bbk_57wXDg58f-VCYDC-16" value="對X屬抗性" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="1010" y="1645" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="2bbk_57wXDg58f-VCYDC-17" value="大小" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="2bbk_57wXDg58f-VCYDC-17" value="大小(w,h)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="1010" y="682" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="2bbk_57wXDg58f-VCYDC-18" value="圖像" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
