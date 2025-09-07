@@ -30,6 +30,7 @@ class BasicComponent(ComponentInterface):
         self.image: Optional[pygame.Surface] = None
         self.shape: str = "rectangle"
         self.game: Optional[object] = None
+        self.dungeon: Optional[object] = None
     
     def init(self) -> None:
         """Initialize basic component properties."""
@@ -39,6 +40,7 @@ class BasicComponent(ComponentInterface):
         self.image = self.entity.image
         self.shape = self.entity.shape
         self.game = self.entity.game
+        self.dungeon = self.entity.game.dungeon_manager.get_dungeon()
     
     def update(self, dt: float, current_time: float) -> None:
         """Update basic component (position synchronization)."""

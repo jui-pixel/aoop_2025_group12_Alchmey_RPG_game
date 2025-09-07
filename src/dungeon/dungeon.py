@@ -4,7 +4,7 @@ from typing import List, Tuple, Optional, Dict, Set
 from src.config import *
 from src.dungeon.room import Room, RoomType
 from src.dungeon.bridge import Bridge
-from src.dungeon.BSPnode import BSPNode
+from src.dungeon.bsp_node import BSPNode
 import random
 import heapq
 

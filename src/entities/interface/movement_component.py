@@ -6,7 +6,7 @@ Handles movement-related properties like velocity, speed, friction, and movement
 from typing import Tuple, Optional
 import math
 from .entity_interface import ComponentInterface
-
+from config import TILE_SIZE, PASSABLE_TILES
 
 class MovementComponent(ComponentInterface):
     """
@@ -34,6 +34,7 @@ class MovementComponent(ComponentInterface):
         
         # State flags
         self.on_ice: bool = False  # Whether entity is on ice surface
+        self.pass_wall: bool = False
     
     def init(self) -> None:
         """Initialize movement component with default values."""
@@ -120,7 +121,33 @@ class MovementComponent(ComponentInterface):
         if self.entity.basic_component:
             new_x = self.entity.x + self.velocity[0] * dt
             new_y = self.entity.y + self.velocity[1] * dt
-            self.entity.basic_component.set_position(new_x, new_y)
+            if not self.pass_wall:
+                tile_x, tile_y = int(new_x // TILE_SIZE), int(new_y // TILE_SIZE)
+                if 0 <= tile_x < self.dungeon.grid_width and 0 <= tile_y < self.dungeon.grid_height:
+                    tile = self.dungeon.dungeon_tiles[tile_y][tile_x]
+                if tile in PASSABLE_TILES:
+                    self.pos = [new_x, new_y]
+                    self.rect.center = self.pos
+                else:
+                    # 嘗試沿X或Y軸滑動
+                    y_allowed = 0 <= int(new_y // TILE_SIZE) < self.dungeon.grid_height and \
+                                self.dungeon.dungeon_tiles[int(new_y // TILE_SIZE)][int(self.pos[0] // TILE_SIZE)] in PASSABLE_TILES
+                    x_allowed = 0 <= int(new_x // TILE_SIZE) < self.dungeon.grid_width and \
+                                self.dungeon.dungeon_tiles[int(self.pos[1] // TILE_SIZE)][int(new_x // TILE_SIZE)] in PASSABLE_TILES
+
+                    if y_allowed:
+                        self.pos[1] = new_y
+                        self.rect.centery = new_y
+                        self.velocity[1] *= max(0, 1 - self.deceleration * dt / self.speed)
+                    if x_allowed:
+                        self.pos[0] = new_x
+                        self.rect.centerx = new_x
+                        self.velocity[0] *= max(0, 1 - self.deceleration * dt / self.speed)
+                    if not (x_allowed or y_allowed):
+                        self.velocity = [self.velocity[0] * max(0, 1 - self.deceleration * dt / self.speed),
+                                        self.velocity[1] * max(0, 1 - self.deceleration * dt / self.speed)]
+            else:
+                self.entity.basic_component.set_position(new_x, new_y)
     
     def set_max_speed(self, new_speed: float) -> None:
         """Set new maximum speed."""
@@ -140,6 +167,10 @@ class MovementComponent(ComponentInterface):
     def set_on_ice(self, on_ice: bool) -> None:
         """Set whether the entity is on ice surface."""
         self.on_ice = on_ice
+    
+    def set_pass_wall(self, pass_wall: bool) -> None:
+        """Set whether the entity won't blocked by wall."""
+        self.pass_wall = pass_wall
     
     def get_speed(self) -> float:
         """Get current effective speed."""

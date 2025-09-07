@@ -19,7 +19,8 @@ class DamageCalculator:
     
     @staticmethod
     def calculate_damage(attacker: EntityInterface, target: EntityInterface, 
-                        base_damage: int, element: str) -> Tuple[bool, int]:
+                        base_damage: int = 0, element: str = "untyped", max_hp_percentage_damage: int = 0,
+                        current_hp_percentage_damage: int = 0, lose_hp_percentage_damage: int = 0, cause_death: bool = True) -> Tuple[bool, int]:
         """
         Calculate damage dealt from attacker to target.
         
@@ -47,14 +48,22 @@ class DamageCalculator:
             element, target.combat_component.element
         )
         
-        # 3. Apply elemental resistance
+        # 3. Calculate total predef damage
+        if max_hp_percentage_damage > 0:
+            base_damage += target.combat_component.max_hp * max_hp_percentage_damage / 100
+        if current_hp_percentage_damage > 0:
+            base_damage += target.combat_component.current_hp * current_hp_percentage_damage / 100
+        if lose_hp_percentage_damage > 0:
+            base_damage += (target.combat_component.max_hp - target.combat_component.current_hp) * lose_hp_percentage_damage / 100
+        
+        # 4. Apply elemental resistance
         resistance = target.combat_component.resistances.get(element, 0.0)
         final_damage = max(1, int(base_damage * affinity_multiplier * (1.0 - resistance)))
         
         print(f"Damage calculation: {base_damage} -> {final_damage} "
               f"(affinity: {affinity_multiplier:.2f}, resistance: {resistance:.2f})")
         
-        # 4. Apply damage to shield first
+        # 5. Apply damage to shield first
         if target.combat_component.current_shield > 0:
             shield_damage = min(final_damage, target.combat_component.current_shield)
             target.combat_component.current_shield -= shield_damage
@@ -62,13 +71,15 @@ class DamageCalculator:
             
             print(f"Shield absorbed {shield_damage} damage, remaining shield: {target.combat_component.current_shield}")
             
-            # 5. If shield is depleted, remaining damage is lost
+            # 6. If shield is depleted, remaining damage is lost
             if target.combat_component.current_shield <= 0:
                 final_damage = 0
                 print("Shield depleted, remaining damage lost")
         
-        # 6. Apply remaining damage to HP
+        # 7. Apply remaining damage to HP
         if final_damage > 0:
+            if not cause_death and target.combat_component.current_hp - final_damage <= 0:
+                final_damage = target.combat_component.current_hp - 1
             target.combat_component.current_hp -= final_damage
             print(f"Applied {final_damage} damage to HP, remaining HP: {target.combat_component.current_hp}")
         
