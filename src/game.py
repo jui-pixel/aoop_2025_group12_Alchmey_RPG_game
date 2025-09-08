@@ -1,5 +1,5 @@
 import pygame
-from src.dungeon.dungeon_manager import DungeonManager
+from src.dungeon_manager import DungeonManager
 from src.event_manager import EventManager
 from src.audio_manager import AudioManager
 from src.render_manager import RenderManager

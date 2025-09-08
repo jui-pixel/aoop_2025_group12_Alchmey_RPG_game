@@ -1,7 +1,7 @@
 import pygame
 from typing import List, Dict
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT
-from src.entities.character.skills.skill import Skill
+from src.entities.skill import Skill
 import math
 
 class EventManager:
