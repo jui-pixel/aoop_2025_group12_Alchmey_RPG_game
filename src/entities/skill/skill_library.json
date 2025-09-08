@@ -1,0 +1,53 @@
+[
+    {
+        "name": "Fireball",
+        "type": "shooting",
+        "element": "fire",
+        "energy_cost": 20,
+        "damage": 10,
+        "bullet_speed": 400,
+        "bullet_size": 5,
+        "effect": {
+            "type": "explode",
+            "radius": 50,
+            "damage": 5
+        }
+    },
+    {
+        "name": "Piercing Bolt",
+        "type": "shooting",
+        "element": "electric",
+        "energy_cost": 25,
+        "damage": 8,
+        "bullet_speed": 500,
+        "bullet_size": 5,
+        "effect": {
+            "type": "pierce",
+            "max_hits": 3
+        }
+    },
+    {
+        "name": "Shield Aura",
+        "type": "defense",
+        "element": "light",
+        "energy_cost": 30,
+        "buff": "Shield",
+        "buff_duration": 5.0,
+        "effect": {
+            "type": "buff",
+            "multipliers": {"damage_reduction": 0.5}
+        }
+    },
+    {
+        "name": "Swift Dash",
+        "type": "movement",
+        "element": "wind",
+        "energy_cost": 15,
+        "buff": "SpeedBoost",
+        "buff_duration": 3.0,
+        "effect": {
+            "type": "buff",
+            "multipliers": {"speed_multiplier": 2.0}
+        }
+    }
+]

@@ -22,6 +22,7 @@ class HealthEntity(BasicEntity):
                  max_shield: int = 0,
                  dodge_rate: float = 0.0,
                  element: str = "untyped",
+                 defense: int = 0,
                  resistances: Optional[Dict[str, float]] = None,
                  invulnerable: bool = False):
         super().__init__(x, y, w, h, image, shape, game, tag)
@@ -37,6 +38,8 @@ class HealthEntity(BasicEntity):
         self._element: str = element
         self._base_dodge_rate: float = dodge_rate
         self._dodge_rate: float = dodge_rate
+        self._base_defense: int = defense
+        self._defense = defense
         self._invulnerable: bool = invulnerable
         
         # Elemental Resistances (compatible with buff system)
@@ -59,6 +62,14 @@ class HealthEntity(BasicEntity):
     @property
     def current_hp(self) -> int:
         return self._current_hp
+    
+    @property
+    def base_defense(self) -> int:
+        return self._base_defense
+    
+    @property
+    def defense(self) -> int:
+        return self._defense
     
     @property
     def max_shield(self) -> int:
@@ -85,6 +96,14 @@ class HealthEntity(BasicEntity):
         return self._resistances
 
     # Setters
+    @defense.setter
+    def defense(self, value: int) -> None:
+        self._defense = max(0, value)
+        
+    @defense.setter
+    def base_defense(self, value: int) -> None:
+        self.set_base_defense(value)
+    
     @max_hp.setter
     def max_hp(self, value: int) -> None:
         self.set_max_hp(value)
@@ -134,7 +153,7 @@ class HealthEntity(BasicEntity):
             base_damage += (self.max_hp - self.current_hp) * lose_hp_percentage_damage / 100
         
         resistance = self.resistances.get(element, 0.0)
-        final_damage = max(1, int(base_damage * affinity_multiplier * (1.0 - resistance) * factor))
+        final_damage = max(1, int(base_damage * affinity_multiplier * (1.0 - resistance) * factor - self.defense))
         
         if self.current_shield > 0:
             shield_damage = min(final_damage, self.current_shield)
@@ -197,6 +216,9 @@ class HealthEntity(BasicEntity):
     def is_alive(self) -> bool:
         return self.current_hp > 0
 
+    def set_base_defense(self, value: int) -> None:
+        self._base_defense = max(0, value)
+        self._defense = self._base_defense  # Reset defense to base when updating base_defense
 
 
 # Example: Enemy class that inherits from all three (multiple inheritance)
