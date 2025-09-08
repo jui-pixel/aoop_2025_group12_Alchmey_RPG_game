@@ -2,6 +2,38 @@ from typing import Dict, List, Optional
 import pygame
 from basic_entity import BasicEntity
 from buff import Buff
+from elements import ELEMENTS
+
+class BuffSynthesizer:
+    """Handles buff synthesis and combination logic."""
+    
+    def __init__(self):
+        self.synthesis_rules = {
+            # Define synthesis rules here
+            # e.g., ('Humid', 'Cold'): 'Freeze',
+            #       ('Humid', 'Dust'): 'Mud',
+            #       ('Mud', 'Burn'): 'Petrochemical'
+        }
+    
+    def synthesize_buffs(self, buffs: List['Buff'], entity: 'BuffableEntity') -> None:
+        """Check for and apply buff synthesis rules."""
+        buff_names = [buff.name for buff in buffs]
+        
+        for (buff1, buff2), result in self.synthesis_rules.items():
+            if buff1 in buff_names and buff2 in buff_names:
+                # Find the buffs to remove
+                buff1_obj = next((b for b in buffs if b.name == buff1), None)
+                buff2_obj = next((b for b in buffs if b.name == buff2), None)
+                
+                if buff1_obj and buff2_obj:
+                    # Remove the original buffs
+                    entity.remove_buff(buff1_obj)
+                    entity.remove_buff(buff2_obj)
+                    
+                    # Add the synthesized buff
+                    # Note: This requires a Buff class instance; implementation depends on your Buff class
+                    print(f"Synthesized {buff1} + {buff2} = {result}")
+                    break  # Only apply one synthesis per update
 
 class BuffableEntity(BasicEntity):
     """
@@ -22,21 +54,29 @@ class BuffableEntity(BasicEntity):
                  game: 'Game' = None,
                  tag: str = ""):
         super().__init__(x, y, w, h, image, shape, game, tag)
-        self.buffable: bool = True
         self.buffs: List['Buff'] = []
         self.modifiers: Dict[str, float] = {
             'speed_multiplier': 1.0,
             'health_multiplier': 1.0,
             'defense_multiplier': 1.0,
             'damage_multiplier': 1.0,
-            'vision_radius_multiplier': 1.0
+            'vision_radius_multiplier': 1.0,
+            'can_attack_multiplier': 1.0,
+            'all_resistance_multiplier' : 0.0,
         }
+        for element in ELEMENTS:
+            self.modifiers[f'{element}_resistance_multiplier'] = 0.0
         self.buff_synthesizer: Optional['BuffSynthesizer'] = BuffSynthesizer()
     
     def init(self) -> None:
         """Initialize buff-related properties."""
         self.buffs = []
-        self.modifiers = {key: 1.0 for key in self.modifiers}
+        multiplier_keys = [k for k in self.modifiers if 'resistance' not in k.lower()]
+        resistance_keys = [k for k in self.modifiers if 'resistance' in k.lower()]
+        for key in multiplier_keys:
+            self.modifiers[key] = 1.0
+        for key in resistance_keys:
+            self.modifiers[key] = 0.0
     
     def update(self, dt: float, current_time: float) -> None:
         """Update all active buffs and recalculate modifiers."""
@@ -119,16 +159,21 @@ class BuffableEntity(BasicEntity):
     
     def _update_modifiers(self) -> None:
         """Recalculate all modifiers based on active buffs."""
-        for key in self.modifiers:
+        # Reset multipliers to 1.0, additives to 0.0
+        multiplier_keys = [k for k in self.modifiers if 'resistance' not in k.lower()]
+        resistance_keys = [k for k in self.modifiers if 'resistance' in k.lower()]
+        for key in multiplier_keys:
             self.modifiers[key] = 1.0
+        for key in resistance_keys:
+            self.modifiers[key] = 0.0
         
         for buff in self.buffs:
             for modifier_name, value in buff.multipliers.items():
                 if modifier_name in self.modifiers:
-                    if 'multiplier' in modifier_name:
-                        self.modifiers[modifier_name] *= value
+                    if 'resistance' in modifier_name:
+                        self.modifiers[modifier_name] += value  # 加法 for resistance
                     else:
-                        self.modifiers[modifier_name] += value
+                        self.modifiers[modifier_name] *= value  # 乘法 for others
         
         self._apply_modifiers_to_entity()
     
@@ -142,10 +187,26 @@ class BuffableEntity(BasicEntity):
             health_mult = self.modifiers.get('health_multiplier', 1.0)
             new_max_hp = int(self.base_max_hp * health_mult)
             self.set_max_hp(new_max_hp)
+        
+        # Apply resistance modifiers (assuming self._resistances from HealthEntity or similar)
+        if hasattr(self, '_resistances'):
+            for element in ELEMENTS:
+                mod_key = f'{element}_resistance_multiplier'
+                add = self.modifiers.get(mod_key, 0.0)
+                self._resistances[element] += add
+            
+            # Apply all_resistance_multiplier
+            all_add = self.modifiers.get('all_resistance_multiplier', 0.0)
+            for element in ELEMENTS:
+                self._resistances[element] += all_add
+            
+            # Clamp resistances to 0.0 - 1.0
+            for element in self._resistances:
+                self._resistances[element] = max(0.0, min(1.0, self._resistances[element]))
     
     def get_modifier(self, name: str) -> float:
         """Get a specific modifier value."""
-        return self.modifiers.get(name, 1.0)
+        return self.modifiers.get(name, 1.0 if 'resistance' not in name.lower() else 0.0)
     
     def get_active_buffs(self) -> List[str]:
         """Get list of active buff names."""
@@ -154,38 +215,3 @@ class BuffableEntity(BasicEntity):
     def get_buff_count(self) -> int:
         """Get number of active buffs."""
         return len(self.buffs)
-
-
-class BuffSynthesizer:
-    """Handles buff synthesis and combination logic."""
-    
-    def __init__(self):
-        self.synthesis_rules = {
-            ('Humid', 'Cold'): 'Freeze',
-            ('Humid', 'Dust'): 'Mud',
-            ('Mud', 'Burn'): 'Petrochemical'
-        }
-    
-    def synthesize_buffs(self, buffs: List['Buff'], entity: 'BuffableEntity') -> None:
-        """Check for and apply buff synthesis rules."""
-        buff_names = [buff.name for buff in buffs]
-        
-        for (buff1, buff2), result in self.synthesis_rules.items():
-            if buff1 in buff_names and buff2 in buff_names:
-                buff1_obj = next((b for b in buffs if b.name == buff1), None)
-                buff2_obj = next((b for b in buffs if b.name == buff2), None)
-                
-                if buff1_obj and buff2_obj:
-                    entity.remove_buff(buff1_obj)
-                    entity.remove_buff(buff2_obj)
-                    
-                    # Create a new synthesized buff (example implementation)
-                    synthesized_buff = Buff(
-                        name=result,
-                        duration=max(buff1_obj.duration, buff2_obj.duration),
-                        element='untyped',
-                        multipliers={'health_regen_per_second': 5.0}  # Example effect
-                    )
-                    entity.add_buff(synthesized_buff)
-                    print(f"Synthesized {buff1} + {buff2} = {result}")
-                    break

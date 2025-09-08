@@ -32,7 +32,7 @@ class AttackEntity(BasicEntity):
         super().__init__(x, y, w, h, image, shape, game, tag)
         
         # Attack Properties
-        self._can_attack: bool = can_attack
+        self.can_attack: bool = can_attack
         self._damage_to_element: Dict[str, float] = damage_to_element if damage_to_element is not None else {
             'untyped': 1.0, 'light': 1.0, 'dark': 1.0, 'metal': 1.0, 'wood': 1.0,
             'water': 1.0, 'fire': 1.0, 'earth': 1.0, 'ice': 1.0, 'electric': 1.0, 'wind': 1.0
@@ -63,7 +63,7 @@ class AttackEntity(BasicEntity):
     # Getters
     @property
     def can_attack(self) -> bool:
-        return self._can_attack
+        return self.can_attack
     
     @property
     def damage_to_element(self) -> Dict[str, float]:
@@ -72,7 +72,7 @@ class AttackEntity(BasicEntity):
     # Setters
     @can_attack.setter
     def can_attack(self, value: bool) -> None:
-        self._can_attack = value
+        self.can_attack = value
 
     def set_damage_multiplier(self, element: str, multiplier: float) -> None:
         if element in self._damage_to_element:

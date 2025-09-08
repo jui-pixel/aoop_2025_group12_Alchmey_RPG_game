@@ -1,15 +1,9 @@
 from typing import Dict, List, Optional, Callable
 from buff import Buff
 from buffable_entity import BuffableEntity
-
+from ulits.elements import WEAKTABLE
 # Elemental affinities based on the game's interaction table (derived from combat_entity cycle and special affinities)
-ELEMENT_CYCLE = ['metal', 'wood', 'earth', 'water', 'fire']  # Sequential weakness: metal -> wood -> earth -> water -> fire -> metal
-SPECIAL_AFFINITIES = [
-    ('earth', 'electric'),
-    ('wood', 'wind'),
-    ('fire', 'ice')
-]
-OPPOSITE_ELEMENTS = {'light': 'dark', 'dark': 'light'}
+
 
 # Base multipliers for elemental interactions (1.5x damage to weak element, 0.5x to resistant)
 AFFINITY_MULTIPLIER_WEAK = 1.5
@@ -27,10 +21,9 @@ class ElementBuff(Buff):
                  on_apply: Optional[Callable[["BuffableEntity"], None]] = None,
                  on_remove: Optional[Callable[["BuffableEntity"], None]] = None,
                  strength: float = 1.0,  # Buff strength modifier for elemental effects
-                 mergeable_elements: Optional[List[str]] = None):
+                 ):
         super().__init__(name, duration, element, multipliers, effect_per_second, on_apply, on_remove)
         self.strength = strength  # Amplifies effect based on elemental interaction
-        self.mergeable_elements = mergeable_elements or []  # Elements this buff can merge with
     
     def deepcopy(self) -> 'ElementBuff':
         """Create a deep copy of the elemental buff."""
@@ -43,7 +36,6 @@ class ElementBuff(Buff):
             on_apply=self.on_apply,
             on_remove=self.on_remove,
             strength=self.strength,
-            mergeable_elements=self.mergeable_elements.copy()
         )
     
     def get_affinity_multiplier(self, target_element: str) -> float:
@@ -53,188 +45,202 @@ class ElementBuff(Buff):
         """
         if self.element == 'untyped' or target_element == 'untyped':
             return NEUTRAL_MULTIPLIER
-        
-        # Opposite elements (light/dark)
-        if (self.element == 'light' and target_element == 'dark') or \
-           (self.element == 'dark' and target_element == 'light'):
-            return AFFINITY_MULTIPLIER_WEAK
-        
+             
         # Cycle-based interactions
-        if self.element in ELEMENT_CYCLE and target_element in ELEMENT_CYCLE:
-            self_idx = ELEMENT_CYCLE.index(self.element)
-            target_idx = ELEMENT_CYCLE.index(target_element)
-            # If attacker beats defender (next in cycle)
-            if (self_idx + 1) % len(ELEMENT_CYCLE) == target_idx:
-                return AFFINITY_MULTIPLIER_WEAK
-            # If defender resists attacker (previous in cycle)
-            elif (target_idx + 1) % len(ELEMENT_CYCLE) == self_idx:
-                return AFFINITY_MULTIPLIER_RESIST
-        
-        # Special affinities
-        for attacker, defender in SPECIAL_AFFINITIES:
-            if (self.element == attacker and target_element == defender):
-                return AFFINITY_MULTIPLIER_WEAK
-            elif (self.element == defender and target_element == attacker):
-                return AFFINITY_MULTIPLIER_RESIST
+        if (self.element, target_element) in WEAKTABLE:
+            return AFFINITY_MULTIPLIER_WEAK
+        if (target_element, self.element) in WEAKTABLE:
+            return AFFINITY_MULTIPLIER_RESIST
         
         return NEUTRAL_MULTIPLIER
-    
-    def can_merge_with(self, other_buff: 'ElementBuff') -> bool:
-        """
-        Check if this buff can merge with another based on mergeable_elements.
-        """
-        return other_buff.element in self.mergeable_elements or self.element in other_buff.mergeable_elements
 
 
-class ElementalBuffSynthesizer:
-    """
-    Handles synthesis and merging of elemental buffs based on the interaction table.
-    Extends BuffSynthesizer to include elemental-specific merge rules.
-    """
-    
-    def __init__(self):
-        self.merge_rules = {
-            # Example merge rules based on cycle and special affinities
-            # Format: (element1, element2) -> new_element, new_multipliers
-            ('fire', 'water'): ('steam', {'damage_multiplier': 0.8, 'speed_multiplier': 1.2}),  # Fire + Water = Steam (reduced damage, increased speed)
-            ('earth', 'water'): ('mud', {'defense_multiplier': 1.5, 'speed_multiplier': 0.8}),  # Earth + Water = Mud (increased defense, reduced speed)
-            ('fire', 'wood'): ('ash', {'health_multiplier': 0.7, 'damage_multiplier': 1.3}),   # Fire beats Wood -> Ash (reduced health, increased damage)
-            ('light', 'dark'): ('balance', {'all_multipliers': 1.0}),  # Neutralizes opposites
-            # Add more based on full interaction table
-        }
-        self.cycle_merge_bonus = 1.2  # Bonus multiplier for cycle-based merges
-    
-    def synthesize_elemental_buffs(self, buffs: List[ElementBuff], entity: BuffableEntity) -> None:
-        """
-        Synthesize elemental buffs based on merge rules.
-        Checks for pairs that can merge and creates a new combined buff.
-        """
-        for i, buff1 in enumerate(buffs):
-            for j, buff2 in enumerate(buffs[i+1:], i+1):
-                if buff1.can_merge_with(buff2):
-                    key = tuple(sorted([buff1.element, buff2.element]))
-                    if key in self.merge_rules:
-                        new_element, new_multipliers = self.merge_rules[key]
-                        
-                        # Calculate combined duration and strength
-                        combined_duration = max(buff1.duration, buff2.duration)
-                        combined_strength = (buff1.strength + buff2.strength) * self.cycle_merge_bonus if key[0] in ELEMENT_CYCLE and key[1] in ELEMENT_CYCLE else (buff1.strength + buff2.strength) / 2
-                        
-                        # Create synthesized buff
-                        synthesized_buff = ElementBuff(
-                            name=f"{new_element}_merged",
-                            duration=combined_duration,
-                            element=new_element,
-                            multipliers={
-                                **new_multipliers,  # Base from rule
-                                'strength': combined_strength  # Apply strength
-                            },
-                            effect_per_second=lambda e: self._apply_merged_effect(e, new_element),
-                            on_apply=lambda e: print(f"Applied merged {new_element} buff to {e.tag}"),
-                            on_remove=lambda e: print(f"Removed merged {new_element} buff from {e.tag}"),
-                            strength=combined_strength,
-                            mergeable_elements=[elem for elem in ELEMENT_CYCLE if elem != new_element]  # Can merge with non-same elements
-                        )
-                        
-                        # Remove original buffs and add synthesized one
-                        entity.remove_buff(buff1)
-                        entity.remove_buff(buff2)
-                        entity.add_buff(synthesized_buff)
-                        print(f"Merged {buff1.element} + {buff2.element} into {new_element}")
-                        return  # Only one merge per update to avoid chains
-    
-    def _apply_merged_effect(self, entity: BuffableEntity, element: str) -> None:
-        """
-        Apply special effect for merged elemental buffs.
-        """
-        if element == 'steam':
-            # Example: Steam reduces visibility or adds slipperiness (reduce speed temporarily)
-            entity.modifiers['speed_multiplier'] *= 0.9
-        elif element == 'mud':
-            # Mud increases defense but slows movement
-            entity.modifiers['defense_multiplier'] *= 1.1
-        elif element == 'ash':
-            # Ash causes ongoing damage over time
-            if hasattr(entity, 'take_damage'):
-                entity.take_damage(base_damage=5, element='fire', cause_death=False)
-        # Add more merged effects based on interaction table
-
+# take_damage(self, factor: float = 1.0, element: str = "untyped", base_damage: int = 0, 
+#                    max_hp_percentage_damage: int = 0, current_hp_percentage_damage: int = 0, 
+#                    lose_hp_percentage_damage: int = 0, cause_death: bool = True)
 
 # Predefined Elemental Buffs based on interaction table
 ELEMENTAL_BUFFS = {
     'fire': ElementBuff(
-        name='FireBurn',
+        name='Burn',
         duration=3.0,
         element='fire',
-        multipliers={'damage_multiplier': 1.2, 'health_regen_per_second': -2.0},  # Damage over time
-        effect_per_second=lambda e: e.take_damage(base_damage=10, element='fire') if hasattr(e, 'take_damage') else None,
-        mergeable_elements=['water', 'wood', 'ice']
+        multipliers={},
+        effect_per_second=lambda e: e.take_damage(current_hp_percentage_damage=5, element='fire', cause_death = False) if hasattr(e, 'take_damage') else None,
+        on_apply=None,
+        on_remove=None,
     ),
     'water': ElementBuff(
-        name='WaterSoak',
-        duration=4.0,
-        element='water',
-        multipliers={'defense_multiplier': 1.1, 'speed_multiplier': 0.9},
-        mergeable_elements=['fire', 'earth']
+        name='Burn',
+        duration=3.0,
+        element='Humid',
+        multipliers={'electric_resistance_multiplier': -0.2, 'wood_resistance_multiplier': -0.2},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
     ),
     'earth': ElementBuff(
-        name='EarthBind',
-        duration=5.0,
+        name='Dist',
+        duration=3.0,
         element='earth',
-        multipliers={'defense_multiplier': 1.3, 'speed_multiplier': 0.7},
-        effect_per_second=lambda e: print(f"{e.tag} is bound by earth!") if hasattr(e, 'tag') else None,
-        mergeable_elements=['water', 'electric']
+        multipliers={'speed_multiplier': 0.9, 'vision_radius_multiplier': 0.9},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
     ),
     'wood': ElementBuff(
-        name='WoodGrowth',
-        duration=6.0,
+        nname='Entangled',
+        duration=3.0,
         element='wood',
-        multipliers={'health_multiplier': 1.2, 'damage_multiplier': 1.1},
-        mergeable_elements=['fire', 'metal']
+        multipliers={'speed_multiplier': 0.0,},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
     ),
     'metal': ElementBuff(
-        name='MetalArmor',
-        duration=4.0,
+        name='Tear',
+        duration=3.0,
         element='metal',
-        multipliers={'defense_multiplier': 1.4},
-        mergeable_elements=['wood']
+        multipliers={'defense_multiplier': 0.8,},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
     ),
     'ice': ElementBuff(
-        name='IceFreeze',
+        name='Cold',
         duration=3.0,
         element='ice',
-        multipliers={'speed_multiplier': 0.5},
-        effect_per_second=lambda e: e.set_max_speed(e.base_max_speed * 0.8) if hasattr(e, 'set_max_speed') else None,
-        mergeable_elements=['fire']
+        multipliers={'speed_multiplier': 0.6,},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
     ),
     'electric': ElementBuff(
-        name='ElectricShock',
-        duration=2.0,
+        name='Burn',
+        duration=3.0,
         element='electric',
-        multipliers={'damage_multiplier': 1.5},
-        mergeable_elements=['earth']
+        multipliers={'speed_multiplier': 0.0, 'can_attack_multiplier': 0.0},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
     ),
     'wind': ElementBuff(
-        name='WindGust',
+        name='Disorder',
         duration=3.0,
         element='wind',
-        multipliers={'speed_multiplier': 1.3},
-        mergeable_elements=['wood']
+        multipliers={},
+        effect_per_second=lambda e: [setattr(b, 'duration', b.duration + 0.5) for b in e.buffs] if hasattr(e, 'buffs') else None,
+        on_apply=None,
+        on_remove=None,
     ),
     'light': ElementBuff(
-        name='LightBless',
-        duration=5.0,
+        name='Blind',
+        duration=3.0,
         element='light',
-        multipliers={'all_multipliers': 1.1},  # Boost all stats
-        mergeable_elements=['dark']
+        multipliers={'vision_radius_multiplier': 0.7},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
     ),
     'dark': ElementBuff(
-        name='DarkCurse',
-        duration=4.0,
+        name='Erosion',
+        duration=3.0,
         element='dark',
-        multipliers={'damage_multiplier': 1.4, 'health_multiplier': 0.8},
-        mergeable_elements=['light']
-    )
+        multipliers={},
+        effect_per_second=lambda e: e.take_damage(max_hp_percentage_damage=5, element='dark') if hasattr(e, 'take_damage') else None,
+        on_apply=None,
+        on_remove=None,
+    ),
+    'Mud': ElementBuff(
+        name='Mud',
+        duration=3.0,
+        element='earth',
+        multipliers={'speed_multiplier': 0.1,},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
+    ),
+    'Freeze': ElementBuff(
+        name='Freeze',
+        duration=3.0,
+        element='ice',
+        multipliers={'speed_multiplier': 0.0,'can_attack_multiplier':0.0},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
+    ),
+    'Petrochemical': ElementBuff(
+        name='Petrochemical',
+        duration=3.0,
+        element='earth',
+        multipliers={'speed_multiplier': 0.0,'can_attack_multiplier':0.0, 'all_resistance_multiplier': 0.9,},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
+    ),
+    'Fog': ElementBuff(
+        name='Fog',
+        duration=3.0,
+        element='water',
+        multipliers={'vision_radius_multiplier': 0.1},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
+    ),
+    'Vulnerable': ElementBuff(
+        name='Vulnerable',
+        duration=3.0,
+        element='untyped',
+        multipliers={'all_resistance_multiplier': -0.5,},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
+    ),
+    'Taser': ElementBuff(
+        name='Taser',
+        duration=3.0,
+        element='electric',
+        multipliers={'speed_multiplier': 0.0,'can_attack_multiplier': 0.0,},
+        effect_per_second=lambda e: e.take_damage(max_hp_percentage_damage=10, element='electric') if hasattr(e, 'take_damage') else None,
+        on_apply=None,
+        on_remove=None,
+    ),
+    'Sandstorm': ElementBuff(
+        name='Sandstorm',
+        duration=3.0,
+        element='earth',
+        multipliers={'speed_multiplier': 0.7, 'vision_radius_multiplier': 0.5},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
+    ),
+    'Bleeding': ElementBuff(
+        name='Bleeding',
+        duration=3.0,
+        element='untyped',
+        multipliers={},
+        effect_per_second=lambda e: e.take_damage(lose_hp_percentage_damage=10, element='untyped') if hasattr(e, 'take_damage') else None,
+        on_apply=None,
+        on_remove=None,
+    ),
+    'Backdraft ': ElementBuff(
+        name='Backdraft ',
+        duration=3.0,
+        element='fire',
+        multipliers={},
+        effect_per_second=None,
+        on_apply=lambda e: e.take_damage(max_hp_percentage_damage=20, element='fire') if hasattr(e, 'take_damage') else None,
+        on_remove=None,
+    ),
+    'Annihilation': ElementBuff(
+        name='Annihilation',
+        duration=3.0,
+        element='untyped',
+        multipliers={},
+        effect_per_second=None,
+        on_apply=lambda e: e.take_damage(max_hp_percentage_damage=20, element='untyped') if hasattr(e, 'take_damage') else None,
+        on_remove=None,
+    ),
 }
 
 

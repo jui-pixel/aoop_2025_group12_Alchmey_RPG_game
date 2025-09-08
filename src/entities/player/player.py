@@ -14,9 +14,10 @@ class Player(CombatEntity):
         super().__init__(x, y, w, h, image, shape, game, tag, base_max_hp, max_shield, 
                          dodge_rate, max_speed, element, resistances, damage_to_element,
                          can_move, can_attack, invulnerable)
-        self.max_energy = 100.0
+        self.base_max_energy = 100.0
+        self.max_energy = self.base_max_energy
         self.energy = self.max_energy
-        self.original_energy_regen_rate = 20.0
+        self.base_energy_regen_rate = 20.0
         self.energy_regen_rate = 20.0
         
     def update(self, dt: float, current_time: float) -> None:
