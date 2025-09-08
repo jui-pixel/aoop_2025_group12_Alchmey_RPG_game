@@ -1,6 +1,6 @@
 from typing import *
-from basic_entity import BasicEntity
-from config import *
+from .basic_entity import BasicEntity
+from ..config import *
 import pygame
 import math
 import random

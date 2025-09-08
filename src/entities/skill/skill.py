@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Tuple
-from buff.element_buff import ElementBuff, apply_elemental_buff
-from entities.bullet.bullet import Bullet
+from ..buff.element_buff import ElementBuff, apply_elemental_buff
+from ...entities.bullet.bullet import Bullet
 import math
 
 class Skill:

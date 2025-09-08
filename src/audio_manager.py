@@ -3,9 +3,10 @@ import pygame
 class AudioManager:
     def __init__(self, game: 'Game'):
         self.game = game
-        pygame.mixer.init()  # Initialize pygame mixer
+        pygame.mixer.init()
         self.background_music = None
         self.sound_effects = {}
+        self.load_sound_effect("skill_activate", "src/asserts/sounds/skill.wav")  # Default sound effect
 
     def load_background_music(self, file_path: str) -> None:
         """Load background music."""
@@ -17,7 +18,7 @@ class AudioManager:
     def play_background_music(self) -> None:
         """Play background music."""
         if self.background_music:
-            self.background_music.play(-1)  # Loop indefinitely
+            self.background_music.play(-1)
 
     def stop_background_music(self) -> None:
         """Stop background music."""

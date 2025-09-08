@@ -1,8 +1,8 @@
 from typing import Dict, List, Optional
 import pygame
-from basic_entity import BasicEntity
-from buff import Buff
-from elements import ELEMENTS
+from .basic_entity import BasicEntity
+from .buff.buff import Buff
+from ..ulits.elements import ELEMENTS
 
 class BuffSynthesizer:
     """Handles buff synthesis and combination logic."""

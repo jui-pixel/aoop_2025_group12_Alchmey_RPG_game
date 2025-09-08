@@ -1,8 +1,8 @@
 import pygame
 from typing import Optional
-from src.entities.character.character import Player
-from src.entities.enemy.basic_enemy import BasicEnemy
-from src.entities.NPC import NPC
+from src.entities.player.player import Player
+from src.entities.enemy.enemy1 import enemy1
+# from src.entities.npc.crucible import NPC
 from src.entities.damage_text import DamageText
 from src.config import TILE_SIZE
 

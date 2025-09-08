@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Callable
-from buff import Buff
-from buffable_entity import BuffableEntity
-from ulits.elements import WEAKTABLE
+from .buff import Buff
+from ..buffable_entity import BuffableEntity
+from ...ulits.elements import WEAKTABLE
 # Elemental affinities based on the game's interaction table (derived from combat_entity cycle and special affinities)
 
 
@@ -89,7 +89,7 @@ ELEMENTAL_BUFFS = {
         on_remove=None,
     ),
     'wood': ElementBuff(
-        nname='Entangled',
+        name='Entangled',
         duration=3.0,
         element='wood',
         multipliers={'speed_multiplier': 0.0,},

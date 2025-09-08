@@ -1,10 +1,10 @@
 from typing import List, Tuple, Optional, Dict
-from src.entities.attack_entity import AttackEntity
-from src.entities.buffable_entity import BuffableEntity
-from src.entities.health_entity import HealthEntity
-from src.entities.movement_entity import MovementEntity
-from src.entities.skill import Skill
-from src.config import TILE_SIZE, MAX_SKILLS_DEFAULT
+from ..attack_entity import AttackEntity
+from ..buffable_entity import BuffableEntity
+from ..health_entity import HealthEntity
+from ..movement_entity import MovementEntity
+from ..skill.skill import Skill
+from ...config import TILE_SIZE, MAX_SKILLS_DEFAULT
 import pygame
 import math
 
@@ -12,14 +12,17 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
     def __init__(self, x: float = 0.0, y: float = 0.0, w: int = TILE_SIZE // 2, h: int = TILE_SIZE // 2, 
                  image: Optional[pygame.Surface] = None, shape: str = "rect", game: 'Game' = None, tag: str = "",
                  base_max_hp: int = 100, max_shield: int = 0, dodge_rate: float = 0.0, max_speed: float = 5 * TILE_SIZE,
-                 element: str = "untyped", resistances: Optional[Dict[str, float]] = None, 
+                 element: str = "untyped", defense: int = 10, resistances: Optional[Dict[str, float]] = None, 
                  damage_to_element: Optional[Dict[str, float]] = None, can_move: bool = True, can_attack: bool = True, 
-                 invulnerable: bool = False):       
+                 invulnerable: bool = False):
+        # Initialize BasicEntity (base for all parent classes)
+        BasicEntity.__init__(self, x, y, w, h, image, shape, game, tag)
+        
         # Initialize MovementEntity
         MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move)
         
         # Initialize HealthEntity
-        HealthEntity.__init__(self, x, y, w, h, image, shape, game, tag, base_max_hp, max_shield, dodge_rate, element, resistances, invulnerable)
+        HealthEntity.__init__(self, x, y, w, h, image, shape, game, tag, base_max_hp, max_shield, dodge_rate, element, defense, resistances, invulnerable)
         
         # Initialize AttackEntity
         AttackEntity.__init__(self, x, y, w, h, image, shape, game, tag, can_attack, damage_to_element, 
@@ -41,8 +44,6 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         self.energy = self.max_energy
         self.energy_regen_rate = 20.0
         self.original_energy_regen_rate = 20.0
-        self.base_defense = 10.0
-        self.eff_defense = self.base_defense
         self.fog = True
 
     def update(self, dt: float, current_time: float) -> None:
@@ -98,6 +99,7 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             return
 
         skill.activate(self, self.game, target_position, current_time)
+        self.energy -= skill.energy_cost
 
         # Auto-switch to next skill in chain
         if len(self.skill_chain[self.current_skill_chain_idx]) > 1:

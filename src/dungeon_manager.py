@@ -1,6 +1,7 @@
-from typing import Tuple, List
-from src.dungeon.dungeon import Dungeon
-from src.config import TILE_SIZE
+from typing import Tuple
+from .dungeon.dungeon import Dungeon
+from .dungeon.room import Room
+from .config import TILE_SIZE
 
 class DungeonManager:
     def __init__(self, game: 'Game'):
@@ -14,11 +15,11 @@ class DungeonManager:
         self.dungeon.initialize_lobby()
         self.current_room_id = 0
 
-    def get_current_room(self) -> 'Room':
+    def get_current_room(self) -> Room:
         """Get the current room."""
         return self.dungeon.rooms[self.current_room_id]
 
-    def get_room_center(self, room: 'Room') -> Tuple[float, float]:
+    def get_room_center(self, room: Room) -> Tuple[float, float]:
         """Calculate the center of a room."""
         return (
             (room.x + room.width / 2) * TILE_SIZE,
@@ -32,6 +33,6 @@ class DungeonManager:
             return True
         return False
 
-    def get_dungeon(self) -> 'Dungeon':
+    def get_dungeon(self) -> Dungeon:
         """Get the dungeon instance."""
         return self.dungeon

@@ -1,7 +1,7 @@
 import pygame
 from typing import List, Dict
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT
-from src.entities.skill import Skill
+from .config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT, MAX_WEAPONS_DEFAULT
+from .entities.skill.skill import Skill
 import math
 
 class EventManager:
@@ -70,7 +70,7 @@ class EventManager:
 
     def _handle_weapon_selection_event(self, event: pygame.event.Event) -> None:
         """Handle events in the weapon selection state."""
-        max_weapons = self.game.entity_manager.player.max_weapons if self.game.entity_manager.player else MAX_SKILLS_DEFAULT
+        max_weapons = self.game.entity_manager.player.max_weapons if self.game.entity_manager.player else MAX_WEAPONS_DEFAULT
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 self.selected_skill = (self.selected_skill - 1) % len(self.game.storage_manager.weapons_library)
@@ -113,6 +113,7 @@ class EventManager:
                 magnitude = math.sqrt(dx**2 + dy**2)
                 direction = (dx / magnitude, dy / magnitude) if magnitude > 0 else (0, 0)
                 self.game.entity_manager.player.activate_skill(direction, self.game.current_time, target_pos)
+                self.game.audio_manager.play_sound_effect("skill_activate")  # Play skill activation sound
             elif event.key == pygame.K_w:
                 self.game.entity_manager.player.displacement = (self.game.entity_manager.player.displacement[0], -1)
             elif event.key == pygame.K_s:

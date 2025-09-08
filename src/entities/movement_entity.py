@@ -1,7 +1,8 @@
 # Base class for movement mechanics
-from basic_entity import BasicEntity
+from .basic_entity import BasicEntity
 import math
 from typing import *
+import pygame
 
 class MovementEntity(BasicEntity):
     def __init__(self, 

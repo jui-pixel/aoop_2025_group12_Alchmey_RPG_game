@@ -1,8 +1,8 @@
 from typing import *
 import pygame
 import math
-from basic_entity import BasicEntity
-from buff import Buff
+from .basic_entity import BasicEntity
+from .buff.buff import Buff
 
 class AttackEntity(BasicEntity):
     def __init__(self,

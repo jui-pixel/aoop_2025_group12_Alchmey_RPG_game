@@ -1,6 +1,6 @@
 import pygame
 from typing import List
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT, MAX_WEAPONS_DEFAULT
+from .config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT, MAX_WEAPONS_DEFAULT
 
 class RenderManager:
     def __init__(self, game: 'Game', screen: pygame.Surface):
@@ -23,7 +23,7 @@ class RenderManager:
 
     def draw_game_world(self) -> None:
         """Draw the game world, including dungeon and entities."""
-        self.screen.fill((0, 0, 0))  # Clear screen
+        self.screen.fill((0, 0, 0))
         dungeon = self.game.dungeon_manager.get_dungeon()
         dungeon.draw(self.screen, self.camera_offset)
         self.game.entity_manager.draw(self.screen, self.camera_offset)
