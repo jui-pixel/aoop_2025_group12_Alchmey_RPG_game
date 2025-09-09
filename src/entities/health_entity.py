@@ -4,7 +4,7 @@ from ..config import *
 import pygame
 import math
 import random
-
+import copy
 from src.ulits.elements import WEAKTABLE, ELEMENTS
 
 # Base class for health and defense mechanics
@@ -24,8 +24,10 @@ class HealthEntity(BasicEntity):
                  element: str = "untyped",
                  defense: int = 0,
                  resistances: Optional[Dict[str, float]] = None,
-                 invulnerable: bool = False):
-        super().__init__(x, y, w, h, image, shape, game, tag)
+                 invulnerable: bool = False,
+                 init_basic: bool = True):
+        if init_basic:
+            super().__init__(x, y, w, h, image, shape, game, tag)
         
         # Health and Shield
         self._base_max_hp: int = base_max_hp
@@ -52,7 +54,7 @@ class HealthEntity(BasicEntity):
         else:
             self._base_resistances: Dict[str, float] = {elem: 0.0 for elem in ELEMENTS}
         
-        self._resistances = self._base_resistances.deepcopy()
+        self._resistances = copy.deepcopy(self._base_resistances)
 
     # Getters
     @property

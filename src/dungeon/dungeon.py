@@ -1,6 +1,7 @@
 # src/dungeon/dungeon.py
 from dataclasses import dataclass
 from typing import List, Tuple, Optional, Dict, Set
+import pygame
 from src.config import *
 from src.dungeon.room import Room, RoomType
 from src.dungeon.bridge import Bridge
@@ -1047,3 +1048,50 @@ class Dungeon:
         self._place_room(lobby_room)
         self._add_walls()
         print(f"初始化大廳：房間 {lobby_room.id} 在 ({lobby_x}, {lobby_y})")
+        
+    def draw_background(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
+        """
+        Draw the dungeon background tiles, including the camera view and 2 tiles outside.
+        """
+        offset_x, offset_y = camera_offset
+        tile_size = TILE_SIZE
+
+        # Calculate the tile range: camera view + 2 tiles outside
+        start_tile_x = max(0, int((offset_x - 2 * tile_size) / tile_size))
+        end_tile_x = min(self.grid_width, int((offset_x + SCREEN_WIDTH + 2 * tile_size) / tile_size))
+        start_tile_y = max(0, int((offset_y - 2 * tile_size) / tile_size))
+        end_tile_y = min(self.grid_height, int((offset_y + SCREEN_HEIGHT + 2 * tile_size) / tile_size))
+
+        # Draw background tiles
+        for tile_y in range(start_tile_y, end_tile_y):
+            for tile_x in range(start_tile_x, end_tile_x):
+                tile_type = self.dungeon_tiles[tile_y][tile_x]
+                color = ROOM_FLOOR_COLORS.get(tile_type, GRAY)  # Default to GRAY if not found
+                screen_x = tile_x * tile_size - offset_x
+                screen_y = tile_y * tile_size - offset_y
+                pygame.draw.rect(screen, color, (screen_x, screen_y, tile_size, tile_size))
+
+    def draw_foreground(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
+        """
+        Draw the dungeon foreground walls as half-height (0.5 TILE_SIZE) rectangles
+        to create a 2.5D effect on wall positions.
+        """
+        offset_x, offset_y = camera_offset
+        tile_size = TILE_SIZE
+        half_tile = tile_size * 0.5
+
+        # Same tile range as background
+        start_tile_x = max(0, int((offset_x - 2 * tile_size) / tile_size))
+        end_tile_x = min(self.grid_width, int((offset_x + SCREEN_WIDTH + 2 * tile_size) / tile_size))
+        start_tile_y = max(0, int((offset_y - 2 * tile_size) / tile_size))
+        end_tile_y = min(self.grid_height, int((offset_y + SCREEN_HEIGHT + 2 * tile_size) / tile_size))
+
+        # Draw walls as half-height rectangles at the bottom of non-passable tiles
+        for tile_y in range(start_tile_y, end_tile_y):
+            for tile_x in range(start_tile_x, end_tile_x):
+                tile_type = self.dungeon_tiles[tile_y][tile_x]
+                if tile_type not in PASSABLE_TILES:  # Wall or non-passable
+                    screen_x = tile_x * tile_size - offset_x
+                    screen_y = (tile_y * tile_size - offset_y) - half_tile  # Bottom half of the tile
+                    wall_color = DARK_GRAY  # Or a specific wall color from config
+                    pygame.draw.rect(screen, wall_color, (screen_x, screen_y, tile_size, tile_size))

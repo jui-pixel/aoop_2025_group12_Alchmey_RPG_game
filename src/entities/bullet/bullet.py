@@ -6,6 +6,7 @@ from ..attack_entity import AttackEntity
 from ..damage_text import DamageText
 from ..buff.buff import Buff
 from ...config import TILE_SIZE, PASSABLE_TILES
+from ..basic_entity import BasicEntity  # 添加 import
 
 class Bullet(MovementEntity, AttackEntity):
     def __init__(self,
@@ -30,23 +31,30 @@ class Bullet(MovementEntity, AttackEntity):
                  explosion_damage: int = 0,
                  explosion_element: str = "untyped",
                  explosion_buffs: List['Buff'] = None):
-        # Initialize BasicEntity (base for both parent classes)
-        MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move)
+        # Initialize BasicEntity first
+        BasicEntity.__init__(self, x, y, w, h, image, shape, game, tag)
+        
+        # Initialize mixins without basic init
+        MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move, init_basic=False)
         AttackEntity.__init__(self, x, y, w, h, image, shape, game, tag, can_attack, damage_to_element,
                               atk_element, damage, 0, 0, 0, True, [], max_penetration_count,
                               collision_cooldown, explosion_range, explosion_damage, explosion_element,
-                              explosion_buffs if explosion_buffs else [])
+                              explosion_buffs if explosion_buffs else [], init_basic=False)
 
-        # Bullet-specific attributes
+        # Bullet-specific attributes (無變動)
         self.direction = direction  # Normalized direction vector
         self.velocity = (direction[0] * max_speed, direction[1] * max_speed)
         self.lifetime = 5.0  # Bullet expires after 5 seconds
         self.current_penetration_count = 0
 
-        # Default image if none provided
+        # Hit tracking (無變動)
+        self.hitted_entities = set()  # Set of hit enemy IDs
+        self.last_hit_times = {}  # Dict: enemy_id -> last_hit_time
+
+        # Default image if none provided (無變動)
         if not image:
             self.image = pygame.Surface((w, h))
-            self.image.fill((255, 255, 255))  # White bullet
+            self.image.fill((255, 255, 0))  # Yellow bullet
             self.rect = self.image.get_rect(center=(x, y))
 
     def update(self, dt: float, current_time: float) -> None:
@@ -65,7 +73,7 @@ class Bullet(MovementEntity, AttackEntity):
         # Check collisions with enemies
         if self.can_attack:
             for enemy in self.game.entity_manager.enemy_group:
-                if self.rect.colliderect(enemy.rect) and self.get_penetration_remaining() > 0:
+                if self.rect.colliderect(enemy.rect):
                     self._handle_collision(enemy, current_time)
 
         # Check collision with walls (if not pass_wall)
@@ -80,14 +88,29 @@ class Bullet(MovementEntity, AttackEntity):
                     self.kill()
 
     def _handle_collision(self, enemy: 'BasicEnemy', current_time: float) -> None:
-        """Handle collision with an enemy."""
+        """Handle collision with an enemy, with hit tracking and cooldown."""
+        enemy_id = id(enemy)  # Use enemy ID for tracking
+
+        # Check if already hit this enemy
+        if enemy_id in self.hitted_entities:
+            return  # Skip if already hit
+
+        # Check cooldown for this enemy
+        if enemy_id in self.last_hit_times:
+            time_since_last_hit = current_time - self.last_hit_times[enemy_id]
+            if time_since_last_hit < self.collision_cooldown:
+                return  # Skip if cooldown not expired
+
+        # Mark as hit and record time
+        self.hitted_entities.add(enemy_id)
+        self.last_hit_times[enemy_id] = current_time
+
         if not hasattr(enemy, 'take_damage'):
             return
 
         # Apply damage
-        damage_mult = getattr(self, 'get_modifier', lambda x: 1.0)('damage_multiplier')
         multiplier = self._damage_to_element.get(self.atk_element, 1.0)
-        effective_damage = int(self.damage * multiplier * damage_mult)
+        effective_damage = int(self.damage * multiplier)
         killed, actual_damage = enemy.take_damage(
             factor=1.0,
             element=self.atk_element,
@@ -151,3 +174,7 @@ class Bullet(MovementEntity, AttackEntity):
                 if self.explosion_buffs and hasattr(entity, 'add_buff'):
                     for buff in self.explosion_buffs:
                         entity.add_buff(buff.deepcopy())
+
+        # Clear hit tracking after explosion
+        self.hitted_entities.clear()
+        self.last_hit_times.clear()

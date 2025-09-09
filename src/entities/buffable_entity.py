@@ -37,11 +37,7 @@ class BuffSynthesizer:
 
 class BuffableEntity(BasicEntity):
     """
-    Entity class that handles all buff-related functionality:
-    - Buff management (add, remove, update)
-    - Modifier calculation
-    - Effect application
-    - Buff synthesis
+    Entity class that handles all buff-related functionality.
     """
     
     def __init__(self,
@@ -52,8 +48,10 @@ class BuffableEntity(BasicEntity):
                  image: Optional[pygame.Surface] = None,
                  shape: str = "rect",
                  game: 'Game' = None,
-                 tag: str = ""):
-        super().__init__(x, y, w, h, image, shape, game, tag)
+                 tag: str = "",
+                 init_basic: bool = True):
+        if init_basic:
+            super().__init__(x, y, w, h, image, shape, game, tag)
         self.buffs: List['Buff'] = []
         self.modifiers: Dict[str, float] = {
             'speed_multiplier': 1.0,

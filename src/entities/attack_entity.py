@@ -28,11 +28,16 @@ class AttackEntity(BasicEntity):
                  explosion_range: float = 0.0,
                  explosion_damage: int = 0,
                  explosion_element: str = "untyped",
-                 explosion_buffs: List['Buff'] = None):
-        super().__init__(x, y, w, h, image, shape, game, tag)
+                 explosion_buffs: List['Buff'] = None,
+                 explosion_max_hp_percentage_damage: int = 0,
+                 explosion_current_hp_percentage_damage: int = 0,
+                 explosion_lose_hp_percentage_damage: int = 0,
+                 init_basic: bool = True):
+        if init_basic:
+            super().__init__(x, y, w, h, image, shape, game, tag)
         
         # Attack Properties
-        self.can_attack: bool = can_attack
+        self._can_attack: bool = can_attack
         self._damage_to_element: Dict[str, float] = damage_to_element if damage_to_element is not None else {
             'untyped': 1.0, 'light': 1.0, 'dark': 1.0, 'metal': 1.0, 'wood': 1.0,
             'water': 1.0, 'fire': 1.0, 'earth': 1.0, 'ice': 1.0, 'electric': 1.0, 'wind': 1.0
@@ -59,6 +64,10 @@ class AttackEntity(BasicEntity):
         self.explosion_damage: int = explosion_damage
         self.explosion_element: str = explosion_element
         self.explosion_buffs: List['Buff'] = [buff.deepcopy() for buff in explosion_buffs] if explosion_buffs else []
+        # 注意: 原代碼有 explosion_max_hp_percentage_damage 等，但未定義；假設添加
+        self.explosion_max_hp_percentage_damage = explosion_max_hp_percentage_damage
+        self.explosion_current_hp_percentage_damage = explosion_current_hp_percentage_damage
+        self.explosion_lose_hp_percentage_damage = explosion_lose_hp_percentage_damage
 
     # Getters
     @property
@@ -72,8 +81,11 @@ class AttackEntity(BasicEntity):
     # Setters
     @can_attack.setter
     def can_attack(self, value: bool) -> None:
-        self.can_attack = value
+        self.set_can_attack(value)
 
+    def set_can_attack(self, can_attack: bool) -> None:
+        self._can_attack = can_attack
+    
     def set_damage_multiplier(self, element: str, multiplier: float) -> None:
         if element in self._damage_to_element:
             self._damage_to_element[element] = max(0.0, multiplier)

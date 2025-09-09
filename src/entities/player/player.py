@@ -7,30 +7,29 @@ from ..skill.skill import Skill
 from ...config import TILE_SIZE, MAX_SKILLS_DEFAULT
 import pygame
 import math
+from ..basic_entity import BasicEntity  # Import BasicEntity explicitly
 
 class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
     def __init__(self, x: float = 0.0, y: float = 0.0, w: int = TILE_SIZE // 2, h: int = TILE_SIZE // 2, 
                  image: Optional[pygame.Surface] = None, shape: str = "rect", game: 'Game' = None, tag: str = "",
-                 base_max_hp: int = 100, max_shield: int = 0, dodge_rate: float = 0.0, max_speed: float = 5 * TILE_SIZE,
+                 base_max_hp: int = 100, max_shield: int = 0, dodge_rate: float = 0.0, max_speed: float = 10 * TILE_SIZE,
                  element: str = "untyped", defense: int = 10, resistances: Optional[Dict[str, float]] = None, 
                  damage_to_element: Optional[Dict[str, float]] = None, can_move: bool = True, can_attack: bool = True, 
                  invulnerable: bool = False):
-        # Initialize BasicEntity (base for all parent classes)
+        
+        # Initialize BasicEntity first to set core attributes
         BasicEntity.__init__(self, x, y, w, h, image, shape, game, tag)
         
-        # Initialize MovementEntity
-        MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move)
+        # Initialize mixins without basic init
+        MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move, pass_wall=False, init_basic=False)
         
-        # Initialize HealthEntity
-        HealthEntity.__init__(self, x, y, w, h, image, shape, game, tag, base_max_hp, max_shield, dodge_rate, element, defense, resistances, invulnerable)
+        HealthEntity.__init__(self, x, y, w, h, image, shape, game, tag, base_max_hp, max_shield, dodge_rate, element, defense, resistances, invulnerable, init_basic=False)
         
-        # Initialize AttackEntity
         AttackEntity.__init__(self, x, y, w, h, image, shape, game, tag, can_attack, damage_to_element, 
                              atk_element=element, damage=0, max_penetration_count=0, collision_cooldown=0.2, 
-                             explosion_range=0.0, explosion_damage=0)
+                             explosion_range=0.0, explosion_damage=0, init_basic=False)
         
-        # Initialize BuffableEntity
-        BuffableEntity.__init__(self, x, y, w, h, image, shape, game, tag)
+        BuffableEntity.__init__(self, x, y, w, h, image, shape, game, tag, init_basic=False)
         
         # Player-specific attributes
         self.skill_chain = [[]]  # List[List[Skill]] for skill chains
@@ -47,14 +46,17 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         self.fog = True
 
     def update(self, dt: float, current_time: float) -> None:
-        # Call parent classes' update methods
-        MovementEntity.update(self, dt, current_time)
+        # Call parent classes' update methods in MRO order
+        MovementEntity.update(self, dt, current_time)  # This will chain to all parents
         HealthEntity.update(self, dt, current_time)
-        BuffableEntity.update(self, dt, current_time)
         AttackEntity.update(self, dt, current_time)
-        
+        BuffableEntity.update(self, dt, current_time)
         # Update energy
         self.energy = min(self.max_energy, self.energy + self.energy_regen_rate * dt)
+        
+    def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
+        BasicEntity.draw(self, screen, camera_offset)
+        # Additional player-specific drawing (e.g., HUD) can be added here
 
     def add_skill_to_chain(self, skill: Skill, chain_idx: int = 0) -> bool:
         """Add a skill to the specified skill chain."""

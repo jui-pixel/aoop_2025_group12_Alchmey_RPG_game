@@ -1,4 +1,4 @@
-from abstract_menu import AbstractMenu
+from menu.abstract_menu import AbstractMenu
 
 class MenuManager:
     def __init__(self, screen, game):

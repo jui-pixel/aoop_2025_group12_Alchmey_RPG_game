@@ -2,10 +2,14 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple, Callable, Dict, Optional, Any
 import math
 import pygame
-from combat_entity import CombatEntity
-from config import TILE_SIZE, RED
-from entities.character.weapons.weapon import Bullet
-from entities.element_buff_library import ELEMENTBUFFLIBRARY
+from ..attack_entity import AttackEntity
+from ..buffable_entity import BuffableEntity
+from ..health_entity import HealthEntity
+from ..movement_entity import MovementEntity
+from ...config import TILE_SIZE, RED
+from ..bullet.bullet import Bullet
+from ..buff.element_buff import ELEMENTAL_BUFFS
+from ..basic_entity import BasicEntity  # Import BasicEntity explicitly
 
 class Action(ABC):
     """Base class for all actions in the behavior tree."""
@@ -65,7 +69,7 @@ class AttackAction(Action):
         self.damage = damage
         self.bullet_speed = bullet_speed
         self.bullet_size = bullet_size
-        self.effects = effects or [ELEMENTBUFFLIBRARY['Burn']]
+        self.effects = effects or [ELEMENTAL_BUFFS['Burn']]
     
     def start(self, entity: 'enemy1', current_time: float) -> None:
         print(f"Starting {self.action_id}")
@@ -235,19 +239,29 @@ class IdleNode(BehaviorNode):
             print("Starting idle, cleared action_list")
         return True
 
-class enemy1(CombatEntity):
-    def __init__(self, x: float = 0, y: float = 0, w: int = 32, h: int = 32, 
-                 image: Optional[pygame.Surface] = None, shape: str = "rect", 
-                 game: 'Game' = None, tag: str = "", base_max_hp: int = 50, 
-                 max_shield: int = 0, dodge_rate: float = 0.0, max_speed: float = 100.0, 
-                 element: str = "untyped", resistances: Optional[Dict[str, float]] = None, 
-                 damage_to_element: Optional[Dict[str, float]] = None, 
-                 can_move: bool = True, can_attack: bool = True, invulnerable: bool = False):
-        super().__init__(x, y, w, h, image, shape, game, tag, base_max_hp, max_shield, 
-                         dodge_rate, max_speed, element, resistances, damage_to_element,
-                         can_move, can_attack, invulnerable)
+class enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
+    def __init__(self, x: float = 0.0, y: float = 0.0, w: int = TILE_SIZE // 2, h: int = TILE_SIZE // 2, 
+                 image: Optional[pygame.Surface] = None, shape: str = "rect", game: 'Game' = None, tag: str = "",
+                 base_max_hp: int = 100, max_shield: int = 0, dodge_rate: float = 0.0, max_speed: float = 5 * TILE_SIZE,
+                 element: str = "untyped", defense: int = 10, resistances: Optional[Dict[str, float]] = None, 
+                 damage_to_element: Optional[Dict[str, float]] = None, can_move: bool = True, can_attack: bool = True, 
+                 invulnerable: bool = False):
         
-        # Additional attributes for behavior
+        # Initialize BasicEntity first
+        BasicEntity.__init__(self, x, y, w, h, image, shape, game, tag)
+        
+        # Initialize mixins without basic init
+        MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move, init_basic=False)
+        
+        HealthEntity.__init__(self, x, y, w, h, image, shape, game, tag, base_max_hp, max_shield, dodge_rate, element, defense, resistances, invulnerable, init_basic=False)
+        
+        AttackEntity.__init__(self, x, y, w, h, image, shape, game, tag, can_attack, damage_to_element, 
+                             atk_element=element, damage=0, max_penetration_count=0, collision_cooldown=0.2, 
+                             explosion_range=0.0, explosion_damage=0, init_basic=False)
+        
+        BuffableEntity.__init__(self, x, y, w, h, image, shape, game, tag, init_basic=False)
+        
+        # Additional attributes for behavior (無變動)
         self.current_action = 'idle'
         self.action_list = []
         self.fire_rate = 1.5
@@ -255,7 +269,7 @@ class enemy1(CombatEntity):
         self.bullet_speed = 400.0
         self.bullet_damage = 5
         self.bullet_size = 5
-        self.bullet_effects = [ELEMENTBUFFLIBRARY['Burn']]
+        self.bullet_effects = [ELEMENTAL_BUFFS['Burn']]
         self.vision_radius = 10  # In tiles
         
         # Define actions
