@@ -22,7 +22,7 @@ class EntityManager:
     def initialize_player(self, x: float, y: float) -> None:
         """Initialize the player at the specified position."""
         self.player = Player(
-            x=x, y=y, game=self.game, base_max_hp=100, max_speed=20 * TILE_SIZE, 
+            x=x, y=y, game=self.game, base_max_hp=100, max_speed=10 * TILE_SIZE, 
             element="untyped", defense=10, resistances=None, damage_to_element=None,
             can_move=True, can_attack=True, invulnerable=False
         )
