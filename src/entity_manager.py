@@ -1,10 +1,14 @@
 import pygame
 from typing import Optional, List, Dict
 from src.entities.player.player import Player
-from src.entities.enemy.enemy1 import enemy1
-# from src.entities.npc.crucible import NPC
+from src.entities.enemy.enemy1 import Enemy1
+from src.entities.enemy.dummy import Dummy
+from src.entities.npc.alchemy_pot_npc import AlchemyPotNPC
+from src.entities.npc.dungeon_portal_npc import DungeonPortalNPC
+from src.entities.npc.magic_crystal_npc import MagicCrystalNPC
 from src.entities.damage_text import DamageText
-from src.config import TILE_SIZE
+from src.config import TILE_SIZE, ROOM_FLOOR_COLORS
+from src.utils.elements import ELEMENTS
 
 class EntityManager:
     def __init__(self, game: 'Game'):
@@ -19,13 +23,50 @@ class EntityManager:
         self.trap_group = pygame.sprite.Group()
         self.environment_group = pygame.sprite.Group()
 
-    def initialize_player(self, x: float, y: float) -> None:
-        """Initialize the player at the specified position."""
-        self.player = Player(
-            x=x, y=y, game=self.game, base_max_hp=100, max_speed=10 * TILE_SIZE, 
-            element="untyped", defense=10, resistances=None, damage_to_element=None,
-            can_move=True, can_attack=True, invulnerable=False
-        )
+    def initialize_lobby_entities(self, room) -> None:
+        """Initialize player, dummy, and NPCs in the lobby at their designated spawn points."""
+        for row in range(int(room.height)):
+            for col in range(int(room.width)):
+                tile = room.tiles[row][col]
+                x = (room.x + col) * TILE_SIZE + TILE_SIZE / 2
+                y = (room.y + row) * TILE_SIZE + TILE_SIZE / 2
+
+                if tile == 'Player_spawn':
+                    self.player = Player(
+                        x=x, y=y, game=self.game, base_max_hp=100, max_speed=10 * TILE_SIZE, 
+                        element="untyped", defense=10, resistances=None, damage_to_element=None,
+                        can_move=True, can_attack=True, invulnerable=False
+                    )
+                elif tile == 'Dummy_spawn':
+                    dummy = Dummy(
+                        x=x, y=y, game=self.game, tag="dummy",
+                        base_max_hp=999999999, max_shield=0, dodge_rate=0.0,
+                        element="untyped", defense=0, invulnerable=True
+                    )
+                    self.npc_group.add(dummy)
+                elif tile == 'Alchemy_pot_NPC_spawn':
+                    alchemy_npc = AlchemyPotNPC(
+                        x=x, y=y, game=self.game, tag="alchemy_pot_npc",
+                        base_max_hp=999999, max_shield=0, dodge_rate=0.0,
+                        element="earth", defense=100, invulnerable=True
+                    )
+                    self.npc_group.add(alchemy_npc)
+                elif tile == 'Dungeon_portal_NPC_spawn':
+                    dungeon_npc = DungeonPortalNPC(
+                        x=x, y=y, game=self.game, tag="dungeon_portal_npc",
+                        base_max_hp=999999, max_shield=0, dodge_rate=0.0,
+                        element="untyped", defense=100, invulnerable=True,
+                        available_dungeons=[{'name': 'Fire Dungeon', 'level': 1, 'entry_point': (100, 100)}]
+                    )
+                    self.npc_group.add(dungeon_npc)
+                elif tile == 'Magic_crystal_NPC_spawn':
+                    crystal_npc = MagicCrystalNPC(
+                        x=x, y=y, game=self.game, tag="magic_crystal_npc",
+                        base_max_hp=999999, max_shield=0, dodge_rate=0.0,
+                        element="light", defense=100, invulnerable=True,
+                        available_crystals={elem: {'price': 5, 'buff': None} for elem in ELEMENTS}
+                    )
+                    self.npc_group.add(crystal_npc)
 
     def update(self, dt: float, current_time: float) -> None:
         """Update all entities."""

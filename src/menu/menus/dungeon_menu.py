@@ -1,0 +1,82 @@
+from src.menu.abstract_menu import AbstractMenu
+from src.menu.button import Button
+import pygame
+from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from typing import List, Dict
+class DungeonMenu(AbstractMenu):
+    def __init__(self, game: 'Game', dungeons: List[Dict]):
+        self.game = game
+        self.dungeons = dungeons  # List of {'name': str, 'level': int, 'room_id': int}
+        self.buttons = [
+            Button(
+                SCREEN_WIDTH // 2 - 150, 100 + i * 50, 300, 40,
+                f"{dungeon['name']} (Level {dungeon['level']})",
+                pygame.Surface((300, 40)),
+                f"enter_{dungeon['name']}"
+            ) for i, dungeon in enumerate(dungeons)
+        ]
+        self.buttons.append(
+            Button(SCREEN_WIDTH // 2 - 150, 100 + len(dungeons) * 50, 300, 40, "Exit", pygame.Surface((300, 40)), "exit")
+        )
+        self.selected_index = 0
+        self.active = False
+        self.font = pygame.font.SysFont(None, 36)
+        self.buttons[self.selected_index].is_selected = True
+
+    def draw(self, screen: pygame.Surface) -> None:
+        if not self.active:
+            return
+        screen.fill((0, 0, 0))
+        for button in self.buttons:
+            button.draw(screen)
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        if not self.active:
+            return None
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                self.buttons[self.selected_index].is_selected = False
+                self.selected_index = (self.selected_index - 1) % len(self.buttons)
+                self.buttons[self.selected_index].is_selected = True
+            elif event.key == pygame.K_DOWN:
+                self.buttons[self.selected_index].is_selected = False
+                self.selected_index = (self.selected_index + 1) % len(self.buttons)
+                self.buttons[self.selected_index].is_selected = True
+            elif event.key == pygame.K_RETURN:
+                action = self.buttons[self.selected_index].action
+                if action == "exit":
+                    self.game.hide_menu('dungeon_menu')
+                    return None
+                if action.startswith("enter_"):
+                    dungeon_name = action.split("_")[1]
+                    for npc in self.game.entity_manager.npc_group:
+                        if npc.tag == "dungeon_portal_npc":
+                            npc.enter_dungeon(dungeon_name)
+                            self.game.hide_menu('dungeon_menu')
+                            break
+                return action
+        for button in self.buttons:
+            active, action = button.handle_event(event)
+            if active:
+                if action == "exit":
+                    self.game.hide_menu('dungeon_menu')
+                    return None
+                if action.startswith("enter_"):
+                    dungeon_name = action.split("_")[1]
+                    for npc in self.game.entity_manager.npc_group:
+                        if npc.tag == "dungeon_portal_npc":
+                            npc.enter_dungeon(dungeon_name)
+                            self.game.hide_menu('dungeon_menu')
+                            break
+                return action
+        return None
+
+    def get_selected_action(self) -> str:
+        return self.buttons[self.selected_index].action if self.active else None
+
+    def activate(self, active: bool) -> None:
+        self.active = active
+        if active:
+            self.buttons[self.selected_index].is_selected = True
+        else:
+            self.buttons[self.selected_index].is_selected = False

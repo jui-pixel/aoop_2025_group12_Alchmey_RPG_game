@@ -5,6 +5,11 @@ from .audio_manager import AudioManager
 from .render_manager import RenderManager
 from .storage_manager import StorageManager
 from .entity_manager import EntityManager
+from .menu_manager import MenuManager
+from .menu.menus.alchemy_menu import AlchemyMenu
+from .menu.menus.dungeon_menu import DungeonMenu
+from .menu.menus.crystal_menu import CrystalMenu
+from .menu.menus.main_menu import MainMenu
 from .config import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class Game:
@@ -21,13 +26,34 @@ class Game:
         self.render_manager = RenderManager(self, screen)
         self.storage_manager = StorageManager(self)
         self.entity_manager = EntityManager(self)
+        self.menu_manager = MenuManager(self.screen, self)
+        # Register menus
+        self.menu_manager.register_menu('main_menu', MainMenu())
+        self.menu_manager.register_menu('alchemy_menu', AlchemyMenu(self, []))
+        self.menu_manager.register_menu('dungeon_menu', DungeonMenu(self, []))
+        self.menu_manager.register_menu('crystal_shop', CrystalMenu(self, {}))
 
     def start_game(self) -> None:
-        """Start the game by initializing the lobby and player."""
+        """Start the game by initializing the lobby and entities."""
         self.dungeon_manager.initialize_lobby()
         lobby_room = self.dungeon_manager.get_current_room()
-        center_x, center_y = self.dungeon_manager.get_room_center(lobby_room)
-        self.entity_manager.initialize_player(center_x, center_y)
+        self.entity_manager.initialize_lobby_entities(lobby_room)
+        self.event_manager.state = "lobby"
+
+    def show_menu(self, menu_name: str, data: any = None) -> None:
+        """Show a specific menu with optional data to update its content."""
+        if menu_name == 'alchemy_menu':
+            self.menu_manager.register_menu(menu_name, AlchemyMenu(self, data))
+        elif menu_name == 'dungeon_menu':
+            self.menu_manager.register_menu(menu_name, DungeonMenu(self, data))
+        elif menu_name == 'crystal_shop':
+            self.menu_manager.register_menu(menu_name, CrystalMenu(self, data))
+        self.menu_manager.set_menu(menu_name)
+        self.event_manager.state = "menu"
+
+    def hide_menu(self, menu_name: str) -> None:
+        """Hide a specific menu and return to lobby state."""
+        self.menu_manager.set_menu(None)
         self.event_manager.state = "lobby"
 
     async def update(self, dt: float) -> bool:

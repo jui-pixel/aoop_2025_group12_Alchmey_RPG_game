@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Callable
 from .buff import Buff
-from ..buffable_entity import BuffableEntity
-from ...ulits.elements import WEAKTABLE
+# from ..buffable_entity import BuffableEntity
+from ... import WEAKTABLE
 # Elemental affinities based on the game's interaction table (derived from combat_entity cycle and special affinities)
 
 
@@ -71,9 +71,9 @@ ELEMENTAL_BUFFS = {
         on_remove=None,
     ),
     'water': ElementBuff(
-        name='Burn',
+        name='Humid',
         duration=3.0,
-        element='Humid',
+        element='water',
         multipliers={'electric_resistance_multiplier': -0.2, 'wood_resistance_multiplier': -0.2},
         effect_per_second=None,
         on_apply=None,
@@ -116,7 +116,7 @@ ELEMENTAL_BUFFS = {
         on_remove=None,
     ),
     'electric': ElementBuff(
-        name='Burn',
+        name='Paralysis',
         duration=3.0,
         element='electric',
         multipliers={'speed_multiplier': 0.0, 'can_attack_multiplier': 0.0},
@@ -218,7 +218,7 @@ ELEMENTAL_BUFFS = {
         name='Bleeding',
         duration=3.0,
         element='untyped',
-        multipliers={},
+        multipliers={'defense_multiplier': 0.8,},
         effect_per_second=lambda e: e.take_damage(lose_hp_percentage_damage=10, element='untyped') if hasattr(e, 'take_damage') else None,
         on_apply=None,
         on_remove=None,
@@ -241,10 +241,19 @@ ELEMENTAL_BUFFS = {
         on_apply=lambda e: e.take_damage(max_hp_percentage_damage=20, element='untyped') if hasattr(e, 'take_damage') else None,
         on_remove=None,
     ),
+    'Enpty': ElementBuff(
+        name='Enpty',
+        duration=1.0,
+        element='untyped',
+        multipliers={},
+        effect_per_second=None,
+        on_apply=None,
+        on_remove=None,
+    ),
 }
 
 
-def apply_elemental_buff(entity: BuffableEntity, element: str, duration: float = 3.0, strength: float = 1.0) -> None:
+def apply_elemental_buff(entity: 'BuffableEntity', element: str, duration: float = 3.0, strength: float = 1.0) -> None:
     """
     Convenience function to apply a predefined elemental buff to an entity.
     Adjusts duration and strength as needed.

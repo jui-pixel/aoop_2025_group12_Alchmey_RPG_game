@@ -1,4 +1,3 @@
-# src/config.py
 from enum import Enum
 
 ROOM_WIDTH = 20  # 單個房間的最大寬度（瓦片數，控制房間的最大尺寸）
@@ -17,8 +16,8 @@ EXTRA_BRIDGE_RATIO = 0.0  # 額外走廊的比例（增加連通性，生成更�
 MOMSTER_ROOM_RATIO = 0.8  # 怪物房間的比例（控制怪物房間的數量，增加遊戲挑戰性）
 TRAP_ROOM_RATIO = 0.1  # 陷阱房間的比例（控制陷阱房間的數量，增加遊戲危險性）
 REWARD_ROOM_RATIO = 0.1  # 獎勵房間的比例（控制獎勵房間的數量，增加遊戲獎勵）
-LOBBY_WIDTH = 60 # 大廳的寬度（瓦片數，確保大廳有足夠空間）
-LOBBY_HEIGHT = 40 # 大廳的高度（瓦片數，確保大廳有足夠空間）
+LOBBY_WIDTH = 30 # 大廳的寬度（瓦片數，確保大廳有足夠空間）
+LOBBY_HEIGHT = 20 # 大廳的高度（瓦片數，確保大廳有足夠空間）
 
 FPS = 60
 SCREEN_WIDTH = 1400
@@ -27,7 +26,7 @@ MAX_WEAPONS_DEFAULT = 2
 MAX_SKILLS_DEFAULT = 4
 MAX_WEAPON_CHAINS_DEFAULT = 9
 MAX_WEAPON_CHAIN_LENGTH_DEFAULT = 5
-#
+
 # 顏色定義
 # ====== 基本顏色 ======
 BLACK       = (0, 0, 0)             # ⬛ 黑色 - 用於背景或外部區域
@@ -85,13 +84,17 @@ ROOM_FLOOR_COLORS = {
     'Trap_room_floor': SANDSTONE,    # 陷阱房間地板 - 砂岩，荒涼感
     'Reward_room_floor': DARK_GOLD,  # 獎勵房間地板 - 暗金，財寶感
     'Player_spawn': LIME_GLOW,       # 玩家出生點 - 青綠，高亮
-    'NPC_spawn': PALE_RED,           # NPC出生點 - 淡紅，
+    'NPC_spawn': PALE_RED,           # NPC出生點 - 淡紅
     'Monster_spawn': CRIMSON,        # 怪物出生點 - 深紅，警示
-    'Trap_spawn': AMBER,             # 陷阱出生點 - 琥
+    'Trap_spawn': AMBER,             # 陷阱出生點 - 琥珀
     'Reward_spawn': GOLD,            # 獎勵出生點 - 金黃，吸引目光
-    'Outside': OUTSIDE_COLOR,  # 地圖外部 - 黑色
-    'Door': IRON_GRAY,  # 門 - 使用與橋相近的顏色
-    'NPC_room_floor': PALE_RED,  # NPC房間地板 - 淡紅，柔和感
+    'Outside': OUTSIDE_COLOR,        # 地圖外部 - 黑色
+    'Door': IRON_GRAY,              # 門 - 使用與橋相近的顏色
+    'NPC_room_floor': PALE_RED,     # NPC房間地板 - 淡紅，柔和感
+    'Magic_crystal_NPC_spawn': VIOLET_GLOW,  # 魔法水晶NPC生成點 - 紫羅蘭，魔法效果
+    'Dungeon_portal_NPC_spawn': MYSTIC_BLUE,  # 副本傳送門NPC生成點 - 神秘藍，傳送門效果
+    'Alchemy_pot_NPC_spawn': AMBER,          # 煉金鍋NPC生成點 - 琥珀，溫暖高亮
+    'Dummy_spawn': CRIMSON,                 # 假人出生點 - 深紅，警示
 }
 
 PASSABLE_TILES = {
@@ -111,4 +114,8 @@ PASSABLE_TILES = {
     'Reward_spawn',
     'Door',
     'NPC_room_floor',
+    'Magic_crystal_NPC_spawn',
+    'Dungeon_portal_NPC_spawn',
+    'Alchemy_pot_NPC_spawn',
+    'Dummy_spawn',
 }

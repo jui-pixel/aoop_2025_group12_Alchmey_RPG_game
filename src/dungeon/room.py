@@ -54,12 +54,17 @@ class Room:
                     self.tiles[row][col] = 'Start_room_floor'
             self.tiles[center_y][center_x] = 'Player_spawn'
 
-        elif self.room_type == RoomType.LOBBY:
+        if self.room_type == RoomType.LOBBY:
             for row in range(int(self.height)):
                 for col in range(int(self.width)):
                     self.tiles[row][col] = 'Lobby_room_floor'
-            self.tiles[center_y][center_x-2] = 'Player_spawn'
-            self.tiles[center_y][center_x+2] = 'NPC_spawn'
+            
+            # Placing specific tiles at designated positions
+            self.tiles[0][0] = 'Magic_crystal_NPC_spawn'  # Top-left: Magic Crystal NPC spawn
+            self.tiles[0][self.width-1] = 'Dungeon_portal_NPC_spawn'  # Top-right: Dungeon Portal NPC spawn
+            self.tiles[self.height-1][0] = 'Alchemy_pot_NPC_spawn'  # Bottom-left: Alchemy Pot NPC spawn
+            self.tiles[self.height-1][int(self.width/2)] = 'Player_spawn'  # Bottom-center: Player spawn
+            self.tiles[self.height-1][self.width-1] = 'Dummy_spawn'  # Bottom-right: Dummy spawn
 
         elif self.room_type == RoomType.MONSTER:
             # Monster room: Scale number of monsters based on room size

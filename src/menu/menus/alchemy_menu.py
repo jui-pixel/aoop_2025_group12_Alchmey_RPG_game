@@ -2,21 +2,21 @@ from src.menu.abstract_menu import AbstractMenu
 from src.menu.button import Button
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
-from typing import Dict, List   
-class CrystalMenu(AbstractMenu):
-    def __init__(self, game: 'Game', crystals: Dict[str, Dict]):
+from typing import List, Dict
+class AlchemyMenu(AbstractMenu):
+    def __init__(self, game: 'Game', options: List[Dict]):
         self.game = game
-        self.crystals = list(crystals.items())  # List of (crystal_type, {'price': int, 'buff': Buff})
+        self.options = options  # List of {'ingredients': [str], 'result': str}
         self.buttons = [
             Button(
                 SCREEN_WIDTH // 2 - 150, 100 + i * 50, 300, 40,
-                f"{crystal_type} (Price: {info['price']} Gold)",
+                f"{', '.join(opt['ingredients'])} -> {opt['result']}",
                 pygame.Surface((300, 40)),
-                f"purchase_{crystal_type}"
-            ) for i, (crystal_type, info) in enumerate(self.crystals)
+                f"synthesize_{i}"
+            ) for i, opt in enumerate(options)
         ]
         self.buttons.append(
-            Button(SCREEN_WIDTH // 2 - 150, 100 + len(self.crystals) * 50, 300, 40, "Exit", pygame.Surface((300, 40)), "exit")
+            Button(SCREEN_WIDTH // 2 - 150, 100 + len(options) * 50, 300, 40, "Exit", pygame.Surface((300, 40)), "exit")
         )
         self.selected_index = 0
         self.active = False
@@ -45,28 +45,28 @@ class CrystalMenu(AbstractMenu):
             elif event.key == pygame.K_RETURN:
                 action = self.buttons[self.selected_index].action
                 if action == "exit":
-                    self.game.hide_menu('crystal_shop')
+                    self.game.hide_menu('alchemy_menu')
                     return None
-                if action.startswith("purchase_"):
-                    crystal_type = action.split("_")[1]
+                if action.startswith("synthesize_"):
+                    idx = int(action.split("_")[1])
                     for npc in self.game.entity_manager.npc_group:
-                        if npc.tag == "magic_crystal_npc":
-                            npc.purchase_crystal(crystal_type)
-                            self.game.hide_menu('crystal_shop')
+                        if npc.tag == "alchemy_pot_npc":
+                            npc.synthesize_item(self.options[idx]['ingredients'])
+                            self.game.hide_menu('alchemy_menu')
                             break
                 return action
         for button in self.buttons:
             active, action = button.handle_event(event)
             if active:
                 if action == "exit":
-                    self.game.hide_menu('crystal_shop')
+                    self.game.hide_menu('alchemy_menu')
                     return None
-                if action.startswith("purchase_"):
-                    crystal_type = action.split("_")[1]
+                if action.startswith("synthesize_"):
+                    idx = int(action.split("_")[1])
                     for npc in self.game.entity_manager.npc_group:
-                        if npc.tag == "magic_crystal_npc":
-                            npc.purchase_crystal(crystal_type)
-                            self.game.hide_menu('crystal_shop')
+                        if npc.tag == "alchemy_pot_npc":
+                            npc.synthesize_item(self.options[idx]['ingredients'])
+                            self.game.hide_menu('alchemy_menu')
                             break
                 return action
         return None

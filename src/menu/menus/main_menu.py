@@ -1,13 +1,15 @@
-from abstract_menu import AbstractMenu
-from buttom import Button
+from ..abstract_menu import AbstractMenu
+from ..button import Button
 import pygame
-from ..config import SCREEN_WIDTH, SCREEN_HEIGTH
-class Main_Menu(AbstractMenu):
+from ...config import SCREEN_WIDTH, SCREEN_HEIGHT
+
+
+class MainMenu(AbstractMenu):
     def __init__(self):
         self.x = 0
         self.y = 0
         self.title = "main_manu"
-        self.image = pygame.Surface(SCREEN_WIDTH, SCREEN_HEIGTH)
+        self.image = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.font = pygame.rect
         self.buttons = [
             Button(10, 50 , 180, 30, "Enter Lobby", pygame.Surface((180, 30)), "enter_lobby"),

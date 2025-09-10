@@ -2,8 +2,8 @@ from typing import Dict, List, Optional
 import pygame
 from .basic_entity import BasicEntity
 from .buff.buff import Buff
-from ..ulits.elements import ELEMENTS
-
+from ..utils.elements import ELEMENTS
+from .buff.element_buff import ELEMENTAL_BUFFS
 class BuffSynthesizer:
     """Handles buff synthesis and combination logic."""
     
@@ -13,6 +13,23 @@ class BuffSynthesizer:
             # e.g., ('Humid', 'Cold'): 'Freeze',
             #       ('Humid', 'Dust'): 'Mud',
             #       ('Mud', 'Burn'): 'Petrochemical'
+            ('Burn', 'Humid') : 'Fog',
+            ('Burn', 'Mud') : 'Petrochemical',
+            ('Burn', 'Freeze') : 'Vulnerable',
+            ('Burn', 'Entangled') : 'Backdraft',
+            ('Humid', 'Cold') : 'Freeze',
+            ('Humid', 'Paralysis') : 'Taser',
+            ('Humid', 'Dist') : 'Mud',
+            ('Humid', 'Tear') : 'Bleeding',
+            ('Disorder', 'Dist') : 'Sandstorm',
+            ('Blind', 'Erosion') : 'Annihilation',
+            
+            ('Mud', 'Humid') : 'Enpty',
+            ('Fog', 'Disorder') : 'Enpty',
+            ('Entangled', 'Disorder') : 'Enpty',
+            ('Tear', 'Dist') : 'Enpty',
+            ('Tear', 'Entangled') : 'Enpty',
+            ('Paralysis', 'Dist') : 'Enpty',
         }
     
     def synthesize_buffs(self, buffs: List['Buff'], entity: 'BuffableEntity') -> None:
@@ -29,7 +46,8 @@ class BuffSynthesizer:
                     # Remove the original buffs
                     entity.remove_buff(buff1_obj)
                     entity.remove_buff(buff2_obj)
-                    
+                    result_buff = ELEMENTAL_BUFFS[result]
+                    entity.add_buff(result_buff)
                     # Add the synthesized buff
                     # Note: This requires a Buff class instance; implementation depends on your Buff class
                     print(f"Synthesized {buff1} + {buff2} = {result}")

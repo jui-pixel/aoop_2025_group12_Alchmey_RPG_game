@@ -5,7 +5,7 @@ import pygame
 import math
 import random
 import copy
-from src.ulits.elements import WEAKTABLE, ELEMENTS
+from src.utils.elements import WEAKTABLE, ELEMENTS
 
 # Base class for health and defense mechanics
 class HealthEntity(BasicEntity):
