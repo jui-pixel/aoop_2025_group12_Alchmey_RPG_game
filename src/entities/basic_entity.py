@@ -32,10 +32,12 @@ class BasicEntity(pygame.sprite.Sprite):
         screen_y = self.y - camera_offset[1] - self.h // 2
         if self.image:
             screen.blit(self.image, (screen_x, screen_y))
+            # 除錯：添加邊框
+            pygame.draw.rect(screen, (255, 255, 0), (screen_x, screen_y, self.w, self.h), 2)  # 黃色邊框
         else:
-            if self.rect:
-                draw_rect = pygame.Rect(screen_x, screen_y, self.w, self.h)
-                pygame.draw.rect(screen, (255, 0, 0), draw_rect)
+            draw_rect = pygame.Rect(screen_x, screen_y, self.w, self.h)
+            pygame.draw.rect(screen, (255, 0, 0), draw_rect)
+            pygame.draw.rect(screen, (255, 255, 0), draw_rect, 2)  # 邊框
 
     def update(self, dt: float, current_time: float) -> None:
         """Base update method, to be overridden by subclasses."""

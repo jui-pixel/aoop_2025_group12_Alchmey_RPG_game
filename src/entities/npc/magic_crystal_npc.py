@@ -1,11 +1,12 @@
 from typing import Optional, Dict, Tuple, List
 import pygame
+import math
 from src.entities.basic_entity import BasicEntity
 from src.entities.health_entity import HealthEntity
 from src.entities.buffable_entity import BuffableEntity
 from src.entities.buff.buff import Buff
 from src.config import *
-from src.utils.elements import ELEMENTS  # Fixed typo: ulits -> utils
+from src.utils.elements import ELEMENTS
 from src.entities.buff.element_buff import ELEMENTAL_BUFFS
 
 class MagicCrystalNPC(HealthEntity, BuffableEntity):
@@ -40,39 +41,33 @@ class MagicCrystalNPC(HealthEntity, BuffableEntity):
         # Initialize BasicEntity
         BasicEntity.__init__(self, x=x, y=y, w=w, h=h, image=image, shape=shape, game=game, tag=tag)
         
+        if self.image is None:
+            self.image = pygame.Surface((w, h))
+            self.image.fill((255, 255, 255))  # 白色方塊，代表魔法水晶
+            self.rect = self.image.get_rect(center=(x, y))
+        
         self.interaction_range: float = 80.0
-        self.available_crystals = available_crystals or {
-            elem: {'price': 5, 'buff': ELEMENTAL_BUFFS.get(elem)} for elem in ELEMENTS
-        }
+        self.available_crystals = available_crystals or {elem: {'price': 5, 'buff': None} for elem in ELEMENTS}
         self.is_interacting: bool = False
-        self.crystal_glow_timer: float = 0.0
-
-    def calculate_distance_to(self, other_entity):
-        """Calculate Euclidean distance to another entity."""
-        dx = self.x - other_entity.x
-        dy = self.y - other_entity.y
-        return (dx**2 + dy**2)**0.5
+        self.show_interact_prompt: bool = False  # 新增：是否顯示提示
+        self.font = pygame.font.SysFont(None, 24)  # 用於提示文字
 
     def update(self, dt: float, current_time: float) -> None:
-        """Update NPC, handle glow animation, interactions."""
-        if self.current_hp < self.max_hp:
-            self.heal(int(1000 * dt))
-        
-        # Update crystal glow
-        self.crystal_glow_timer += dt
-        if self.crystal_glow_timer > 2.0:
-            self.crystal_glow_timer = 0.0
-        
-        # Check player proximity
+        """Update NPC state, check player proximity for interaction prompt."""
         if self.game and self.game.entity_manager.player:
             distance = self.calculate_distance_to(self.game.entity_manager.player)
-            if distance <= self.interaction_range and not self.is_interacting:
-                self.start_interaction()
-            elif distance > self.interaction_range and self.is_interacting:
-                self.end_interaction()
-        
+            self.show_interact_prompt = distance <= self.interaction_range
         BuffableEntity.update(self, dt, current_time)
         super().update(dt, current_time)
+
+    def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
+        """Draw NPC and interaction prompt if within range."""
+        super().draw(screen, camera_offset)
+        if self.show_interact_prompt:
+            screen_x = self.x - camera_offset[0] - self.w // 2
+            screen_y = self.y - camera_offset[1] - self.h // 2 - 20
+            prompt_text = self.font.render("Press E to interact", True, (255, 255, 255))
+            screen.blit(prompt_text, (screen_x - prompt_text.get_width() // 2 + self.w // 2, screen_y))
 
     def start_interaction(self) -> None:
         """Open crystal shop/menu via MenuManager."""
@@ -110,3 +105,9 @@ class MagicCrystalNPC(HealthEntity, BuffableEntity):
         killed, damage = super().take_damage(cause_death=False)
         self.heal(damage)
         return False, damage
+    
+    def calculate_distance_to(self, other_entity) -> float:
+        """Calculate the Euclidean distance to another entity."""
+        dx = self.x - other_entity.x
+        dy = self.y - other_entity.y
+        return math.sqrt(dx**2 + dy**2)

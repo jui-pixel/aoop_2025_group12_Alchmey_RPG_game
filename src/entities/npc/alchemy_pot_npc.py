@@ -1,10 +1,11 @@
 from typing import Optional, Dict, List, Tuple
 import pygame
+import math
 from src.entities.basic_entity import BasicEntity
 from src.entities.health_entity import HealthEntity
 from src.entities.buffable_entity import BuffableEntity, BuffSynthesizer
 from src.config import *
-from src.utils.elements import ELEMENTS  # Fixed potential typo: ulits -> utils
+from src.utils.elements import ELEMENTS
 from src.entities.buff.buff import Buff
 from src.entities.buff.element_buff import ELEMENTAL_BUFFS
 
@@ -39,36 +40,44 @@ class AlchemyPotNPC(HealthEntity, BuffableEntity):
         # Initialize BasicEntity last
         BasicEntity.__init__(self, x=x, y=y, w=w, h=h, image=image, shape=shape, game=game, tag=tag)
         
+        if self.image is None:
+            self.image = pygame.Surface((w, h))
+            self.image.fill((139, 69, 19))  # 棕色方塊，代表煉金鍋
+            self.rect = self.image.get_rect(center=(x, y))
+        
         self.interaction_range: float = 80.0
         self.alchemy_options: List[Dict] = [
             {'ingredients': ['fire', 'water'], 'result': 'Fog'},
             {'ingredients': ['earth', 'water'], 'result': 'Mud'},
-            {'ingredients': ['fire', 'ice'], 'result': 'Vulnerable'},
         ]
         self.is_interacting: bool = False
-        self.buff_synthesizer = BuffSynthesizer()
-
-    def calculate_distance_to(self, other_entity):
-        """Calculate Euclidean distance to another entity."""
-        dx = self.x - other_entity.x
-        dy = self.y - other_entity.y
-        return (dx**2 + dy**2)**0.5
+        self.show_interact_prompt: bool = False  # 新增：是否顯示提示
+        self.font = pygame.font.SysFont(None, 24)  # 用於提示文字
 
     def update(self, dt: float, current_time: float) -> None:
-        """Update the NPC, check for player interaction."""
-        if self.current_hp < self.max_hp:
-            self.heal(int(1000 * dt))
-        
-        # Check for nearby player interaction
+        """Update NPC state, check player proximity for interaction prompt."""
         if self.game and self.game.entity_manager.player:
             distance = self.calculate_distance_to(self.game.entity_manager.player)
-            if distance <= self.interaction_range and not self.is_interacting:
-                self.start_interaction()
-            elif distance > self.interaction_range and self.is_interacting:
-                self.end_interaction()
+            self.show_interact_prompt = distance <= self.interaction_range
+            # 檢查按鍵事件（由 event_manager 處理，僅設置提示）
         
         BuffableEntity.update(self, dt, current_time)
         super().update(dt, current_time)
+
+    def calculate_distance_to(self, other_entity) -> float:
+        """Calculate the Euclidean distance to another entity."""
+        dx = self.x - other_entity.x
+        dy = self.y - other_entity.y
+        return math.sqrt(dx**2 + dy**2)
+    
+    def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
+        """Draw NPC and interaction prompt if within range."""
+        super().draw(screen, camera_offset)
+        if self.show_interact_prompt:
+            screen_x = self.x - camera_offset[0] - self.w // 2
+            screen_y = self.y - camera_offset[1] - self.h // 2 - 20  # 顯示在 NPC 頭上
+            prompt_text = self.font.render("Press E to interact", True, (255, 255, 255))
+            screen.blit(prompt_text, (screen_x - prompt_text.get_width() // 2 + self.w // 2, screen_y))
 
     def start_interaction(self) -> None:
         """Initiate alchemy menu via MenuManager."""

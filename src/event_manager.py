@@ -1,7 +1,7 @@
 import pygame
 from typing import List, Dict
-from .config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT
-from .entities.skill.skill import Skill
+from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT
+from src.entities.skill.skill import Skill
 import math
 
 class EventManager:
@@ -29,47 +29,46 @@ class EventManager:
 
     def _handle_menu_event(self, event: pygame.event.Event) -> None:
         """Handle events in the menu state."""
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                self.selected_menu_option = (self.selected_menu_option - 1) % len(self.menu_options)
-            elif event.key == pygame.K_DOWN:
-                self.selected_menu_option = (self.selected_menu_option + 1) % len(self.menu_options)
-            elif event.key == pygame.K_RETURN:
-                if self.menu_options[self.selected_menu_option] == "Enter Lobby":
-                    self.game.start_game()  # Initialize player and dungeon
-                    self.state = "lobby"
-                elif self.menu_options[self.selected_menu_option] == "Exit":
-                    pygame.event.post(pygame.event.Event(pygame.QUIT))
+        # 僅通過 menu_manager 處理選單事件
+        action = self.game.menu_manager.handle_event(event)
+        if action:
+            print(f"EventManager: Received action {action} from menu")
+            if action == "enter_lobby":
+                self.game.start_game()
+                self.state = "lobby"
+                print("EventManager: Entered lobby")
+            elif action == "show_setting":
+                print("EventManager: Show settings (not implemented)")
+                # TODO: 實現設置選單
+            elif action == "exit":
+                pygame.event.post(pygame.event.Event(pygame.QUIT))
+                print("EventManager: Exit game")
 
     def _handle_skill_selection_event(self, event: pygame.event.Event) -> None:
         """Handle events in the skill selection state."""
         max_skills = self.game.entity_manager.player.max_skills if self.game.entity_manager.player else MAX_SKILLS_DEFAULT
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
-                self.selected_skill = (self.selected_skill - 1) % len(self.game.storage_manager.skills_library)
+                self.selected_skill = (self.selected_skill - 1) % len(self.game.storage_manager.skills)
             elif event.key == pygame.K_DOWN:
-                self.selected_skill = (self.selected_skill + 1) % len(self.game.storage_manager.skills_library)
-            elif event.key == pygame.K_LEFT:
-                self.selected_skill_chain_idx = (self.selected_skill_chain_idx - 1) % self.game.entity_manager.player.max_skill_chains
-            elif event.key == pygame.K_RIGHT:
-                self.selected_skill_chain_idx = (self.selected_skill_chain_idx + 1) % self.game.entity_manager.player.max_skill_chains
+                self.selected_skill = (self.selected_skill + 1) % len(self.game.storage_manager.skills)
             elif event.key == pygame.K_RETURN:
                 if len(self.selected_skills) < max_skills:
-                    self.selected_skills.append(self.game.storage_manager.skills_library[self.selected_skill])
-            elif event.key == pygame.K_SPACE:
-                if self.selected_skills:
-                    for skill_data in self.selected_skills:
-                        skill = Skill(**skill_data)
-                        self.game.entity_manager.player.add_skill_to_chain(skill, self.selected_skill_chain_idx)
-                    self.game.start_game()
+                    self.selected_skills.append(self.game.storage_manager.skills[self.selected_skill])
+                if len(self.selected_skills) >= max_skills:
+                    self.game.entity_manager.player.skill_chain[self.selected_skill_chain_idx] = self.selected_skills[:]
+                    self.selected_skills = []
+                    self.state = "lobby"
+                    print("EventManager: Skill selection completed, returned to lobby")
             elif event.key == pygame.K_ESCAPE:
-                self.state = "menu"
+                self.state = "lobby"
+                print("EventManager: Escaped skill selection, returned to lobby")
 
     def _handle_lobby_event(self, event: pygame.event.Event) -> None:
         """Handle events in the lobby state."""
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                self.state = "playing"
+            if event.key == pygame.K_e:
+                self._handle_interaction()
             elif event.key == pygame.K_w:
                 current_disp = self.game.entity_manager.player.displacement
                 self.game.entity_manager.player.displacement = (current_disp[0], -1)
@@ -92,10 +91,7 @@ class EventManager:
     def _handle_playing_event(self, event: pygame.event.Event) -> None:
         """Handle events in the playing state."""
         if event.type == pygame.KEYDOWN:
-            if event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4):
-                skill_index = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4].index(event.key)
-                self.game.entity_manager.player.switch_skill(skill_index)
-            elif event.key == pygame.K_q:
+            if event.key == pygame.K_q:
                 self.game.entity_manager.player.switch_skill_chain((self.game.entity_manager.player.current_skill_chain_idx - 1) % self.game.entity_manager.player.max_skill_chains)
             elif event.key == pygame.K_e:
                 self.game.entity_manager.player.switch_skill_chain((self.game.entity_manager.player.current_skill_chain_idx + 1) % self.game.entity_manager.player.max_skill_chains)
@@ -127,3 +123,20 @@ class EventManager:
                 self.game.entity_manager.player.displacement = (current_disp[0], 0)
             elif event.key in (pygame.K_a, pygame.K_d):
                 self.game.entity_manager.player.displacement = (0, current_disp[1])
+
+    def _handle_interaction(self) -> None:
+        """Find nearest NPC within range and trigger interaction."""
+        if not self.game.entity_manager.player:
+            return
+        player = self.game.entity_manager.player
+        nearest_npc = None
+        min_distance = float('inf')
+        for npc in self.game.entity_manager.npc_group:
+            if hasattr(npc, 'interaction_range'):
+                distance = npc.calculate_distance_to(player)
+                if distance <= npc.interaction_range and distance < min_distance:
+                    min_distance = distance
+                    nearest_npc = npc
+        if nearest_npc:
+            nearest_npc.start_interaction()
+            print(f"EventManager: Interacting with {nearest_npc.tag}")

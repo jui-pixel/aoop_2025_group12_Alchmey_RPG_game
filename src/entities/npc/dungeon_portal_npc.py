@@ -1,5 +1,6 @@
 from typing import Optional, List, Dict, Tuple
 import pygame
+import math
 from src.entities.basic_entity import BasicEntity
 from src.entities.health_entity import HealthEntity
 from src.entities.buffable_entity import BuffableEntity
@@ -37,62 +38,62 @@ class DungeonPortalNPC(HealthEntity, BuffableEntity):
         # Initialize BasicEntity
         BasicEntity.__init__(self, x=x, y=y, w=w, h=h, image=image, shape=shape, game=game, tag=tag)
         
+        if self.image is None:
+            self.image = pygame.Surface((w, h))
+            self.image.fill((128, 0, 128))  # 紫色方塊，代表地牢入口
+            self.rect = self.image.get_rect(center=(x, y))
+        
         self.interaction_range: float = 80.0
-        self.available_dungeons = available_dungeons or [
-            {'name': 'Fire Dungeon', 'level': 1, 'room_id': 1},
-            {'name': 'Ice Dungeon', 'level': 2, 'room_id': 2}
-        ]
+        # 確保 available_dungeons 包含 room_id
+        self.available_dungeons = available_dungeons or [{'name': 'Fire Dungeon', 'level': 1, 'room_id': 1}]
+        for dungeon in self.available_dungeons:
+            if 'room_id' not in dungeon:
+                dungeon['room_id'] = 1  # 預設值
+                print(f"DungeonPortalNPC: Added missing room_id to {dungeon['name']}")
         self.is_interacting: bool = False
-        self.portal_effect_active: bool = False
-        self.glow_timer: float = 0.0
-
-    def calculate_distance_to(self, other_entity):
-        """Calculate Euclidean distance to another entity."""
-        dx = self.x - other_entity.x
-        dy = self.y - other_entity.y
-        return (dx**2 + dy**2)**0.5
+        self.show_interact_prompt: bool = False
+        self.font = pygame.font.SysFont(None, 24)
+        self.portal_effect_active = False
 
     def update(self, dt: float, current_time: float) -> None:
-        """Update the NPC, animate portal if active, check interactions."""
-        if self.current_hp < self.max_hp:
-            self.heal(int(1000 * dt))
-        
-        # Animate portal glow
-        self.glow_timer += dt
-        if self.glow_timer > 1.0:
-            self.glow_timer = 0.0
-            self.portal_effect_active = not self.portal_effect_active
-        
-        # Check player proximity
+        """Update NPC state, check player proximity for interaction prompt."""
         if self.game and self.game.entity_manager.player:
             distance = self.calculate_distance_to(self.game.entity_manager.player)
-            if distance <= self.interaction_range and not self.is_interacting:
-                self.start_interaction()
-            elif distance > self.interaction_range and self.is_interacting:
-                self.end_interaction()
-        
+            self.show_interact_prompt = distance <= self.interaction_range
         BuffableEntity.update(self, dt, current_time)
         super().update(dt, current_time)
+
+    def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
+        """Draw NPC and interaction prompt if within range."""
+        super().draw(screen, camera_offset)
+        if self.show_interact_prompt:
+            screen_x = self.x - camera_offset[0] - self.w // 2
+            screen_y = self.y - camera_offset[1] - self.h // 2 - 20
+            prompt_text = self.font.render("Press E to interact", True, (255, 255, 255))
+            screen.blit(prompt_text, (screen_x - prompt_text.get_width() // 2 + self.w // 2, screen_y))
 
     def start_interaction(self) -> None:
         """Show dungeon selection menu via MenuManager."""
         self.is_interacting = True
         if self.game:
             self.game.show_menu('dungeon_menu', self.available_dungeons)
-        print("Dungeon Portal NPC: Select and enter dungeon.")
+        print(f"DungeonPortalNPC: Opening dungeon menu with {len(self.available_dungeons)} dungeons")
 
     def end_interaction(self) -> None:
         """Close menu."""
         self.is_interacting = False
         if self.game:
             self.game.hide_menu('dungeon_menu')
+        print("DungeonPortalNPC: Closed dungeon menu")
 
     def enter_dungeon(self, dungeon_name: str) -> bool:
         """Switch to the selected dungeon room."""
         for dungeon in self.available_dungeons:
             if dungeon['name'] == dungeon_name:
+                if 'room_id' not in dungeon:
+                    print(f"DungeonPortalNPC: Error - No room_id for {dungeon_name}")
+                    return False
                 if self.game and self.game.entity_manager.player:
-                    # Ensure room_id exists in dungeon
                     if dungeon['room_id'] < len(self.game.dungeon_manager.dungeon.rooms):
                         room = self.game.dungeon_manager.dungeon.rooms[dungeon['room_id']]
                         center_x, center_y = self.game.dungeon_manager.get_room_center(room)
@@ -100,9 +101,11 @@ class DungeonPortalNPC(HealthEntity, BuffableEntity):
                         self.game.dungeon_manager.switch_room(dungeon['room_id'])
                         self.game.event_manager.state = "playing"
                         self.portal_effect_active = True
-                        print(f"Dungeon Portal NPC: Entered {dungeon_name}")
+                        print(f"DungeonPortalNPC: Entered {dungeon_name}, room_id: {dungeon['room_id']}")
                         return True
-        print(f"Dungeon Portal NPC: Failed to enter {dungeon_name}")
+                    else:
+                        print(f"DungeonPortalNPC: Invalid room_id {dungeon['room_id']} for {dungeon_name}")
+        print(f"DungeonPortalNPC: Failed to enter {dungeon_name}")
         return False
 
     def take_damage(self, factor: float = 1.0, element: str = "untyped", base_damage: int = 0, 

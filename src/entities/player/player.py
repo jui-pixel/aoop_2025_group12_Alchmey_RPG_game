@@ -15,13 +15,13 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
                  base_max_hp: int = 100, max_shield: int = 0, dodge_rate: float = 0.0, max_speed: float = 10 * TILE_SIZE,
                  element: str = "untyped", defense: int = 10, resistances: Optional[Dict[str, float]] = None, 
                  damage_to_element: Optional[Dict[str, float]] = None, can_move: bool = True, can_attack: bool = True, 
-                 invulnerable: bool = False):
+                 invulnerable: bool = False, pass_wall: bool = False):
         
         # Initialize BasicEntity first to set core attributes
         BasicEntity.__init__(self, x, y, w, h, image, shape, game, tag)
         
         # Initialize mixins without basic init
-        MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move, pass_wall=False, init_basic=False)
+        MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move, pass_wall=pass_wall, init_basic=False)
         
         HealthEntity.__init__(self, x, y, w, h, image, shape, game, tag, base_max_hp, max_shield, dodge_rate, element, defense, resistances, invulnerable, init_basic=False)
         

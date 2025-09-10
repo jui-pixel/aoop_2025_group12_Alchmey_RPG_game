@@ -28,6 +28,12 @@ class Dummy(HealthEntity):
             base_max_hp=base_max_hp, max_shield=max_shield, dodge_rate=dodge_rate,
             element=element, defense=defense, resistances=resistances, invulnerable=invulnerable
         )
+        
+        if self.image is None:
+            self.image = pygame.Surface((w, h))
+            self.image.fill((255, 0, 0))  # 紅色方塊，代表假人
+            self.rect = self.image.get_rect(center=(x, y))
+            
         self._regen_rate: float = 1000000.0  # High regeneration rate per second
 
     def update(self, dt: float, current_time: float) -> None:
