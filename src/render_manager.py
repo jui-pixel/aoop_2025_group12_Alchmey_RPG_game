@@ -139,26 +139,26 @@ class RenderManager:
 
 
     def _draw_fog(self) -> None:
-        """繪製迷霧，覆蓋不可見區域。"""
+        """繪製視野迷霧。
+
+        未探索區域為全黑色，探索過但不在視野內為半透明黑色，視野內為完全透明。
+        """
         dungeon = self.game.dungeon_manager.get_dungeon()
-        self.fog_surface.fill((0, 0, 0, 200))  # 半透明黑色覆蓋全部
+        self.fog_surface.fill(DARK_GRAY)  # 深灰色，不透明（未探索）
 
-        for y in range(dungeon.grid_height - 1, 0, -1):
-            for x in range(dungeon.grid_width - 1, 0, -1):
+        for y in range(dungeon.grid_height):
+            for x in range(dungeon.grid_width):
+                screen_x = x * TILE_SIZE - self.camera_offset[0]
+                screen_y = y * TILE_SIZE - self.camera_offset[1]
                 if self.fog_map[y][x]:
-                    # 玩家可見 → 清除迷霧
-                    screen_x = x * TILE_SIZE - self.camera_offset[0]
-                    screen_y = y * TILE_SIZE - self.camera_offset[1]
-                    self.fog_surface.fill((0, 0, 0, 0), (screen_x, screen_y, TILE_SIZE, TILE_SIZE))
-                elif dungeon.dungeon_tiles[y][x] in ['Door', 'Bridge_floor']:
-                    # 特殊地形 → 畫深灰色迷霧提示
-                    screen_x = x * TILE_SIZE - self.camera_offset[0]
-                    screen_y = y * TILE_SIZE - self.camera_offset[1]
-                    pygame.draw.rect(self.fog_surface, DARK_GRAY,
-                                    (screen_x, screen_y - TILE_SIZE // 2, TILE_SIZE, TILE_SIZE))
+                    
+                    if (x, y) in self.last_player_pos or math.sqrt((x - self.last_player_pos[0]) ** 2 + (y - self.last_player_pos[1]) ** 2) <= self.last_vision_radius:
+                        self.fog_surface.fill((0, 0, 0, 0), (screen_x, screen_y, TILE_SIZE, TILE_SIZE))  # 完全透明（當前視野內）
+                    else:
+                        self.fog_surface.fill((0, 0, 0, 128), (screen_x, screen_y, TILE_SIZE, TILE_SIZE))  # 半透明黑色（探索過但不在視野內）
 
-        # 貼到主螢幕
         self.screen.blit(self.fog_surface, (0, 0))
+        print("RenderManager: 繪製迷霧")
 
     def update_camera(self, dt: float) -> None:
         """更新攝影機位置，使其跟隨玩家。

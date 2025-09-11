@@ -95,7 +95,7 @@ ROOM_FLOOR_COLORS = {
     'Dungeon_portal_NPC_spawn': MYSTIC_BLUE,  # 副本傳送門NPC生成點 - 神秘藍，傳送門效果
     'Alchemy_pot_NPC_spawn': AMBER,          # 煉金鍋NPC生成點 - 琥珀，溫暖高亮
     'Dummy_spawn': CRIMSON,                 # 假人出生點 - 深紅，警示
-    'Border_wall': DARK_GRAY,          # 邊界牆 - 深灰
+    'Border_wall': GRAY,          # 邊界牆 - 灰
 }
 
 PASSABLE_TILES = {
