@@ -15,7 +15,7 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
                  base_max_hp: int = 100, max_shield: int = 0, dodge_rate: float = 0.0, max_speed: float = 10 * TILE_SIZE,
                  element: str = "untyped", defense: int = 10, resistances: Optional[Dict[str, float]] = None, 
                  damage_to_element: Optional[Dict[str, float]] = None, can_move: bool = True, can_attack: bool = True, 
-                 invulnerable: bool = False, pass_wall: bool = False):
+                 invulnerable: bool = False, pass_wall: bool = False, vision_radius: int = 10):
         
         # Initialize BasicEntity first to set core attributes
         BasicEntity.__init__(self, x, y, w, h, image, shape, game, tag)
@@ -44,6 +44,7 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         self.energy_regen_rate = 20.0
         self.original_energy_regen_rate = 20.0
         self.fog = True
+        self.vision_radius = vision_radius  # In tiles
 
     def update(self, dt: float, current_time: float) -> None:
         # Call parent classes' update methods in MRO order

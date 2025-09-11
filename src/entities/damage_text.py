@@ -15,7 +15,7 @@ class DamageText(pygame.sprite.Sprite):
         self.speed = -50.0  # Move upward at 50 pixels per second
         self.alpha = 255  # Start fully opaque
 
-    def update(self, dt: float) -> bool:
+    def update(self, dt: float, current_time: float) -> bool:
         """Update position and transparency, remove when lifetime expires."""
         self.lifetime -= dt
         if self.lifetime <= 0:
@@ -28,3 +28,8 @@ class DamageText(pygame.sprite.Sprite):
         self.alpha = max(0, self.alpha - 255 * dt / self.lifetime)
         self.image.set_alpha(int(self.alpha))
         return True
+    
+    def draw(self, screen: pygame.Surface, camera_offset: Tuple[float, float]) -> None:
+        """Draw the damage text on the screen with camera offset."""
+        screen_pos = (self.rect.x - camera_offset[0], self.rect.y - camera_offset[1])
+        screen.blit(self.image, screen_pos)

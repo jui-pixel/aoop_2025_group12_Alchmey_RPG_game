@@ -22,6 +22,7 @@ class Bullet(MovementEntity, AttackEntity):
                  direction: Tuple[float, float] = (0.0, 0.0),
                  can_move: bool = True,
                  can_attack: bool = True,
+                 buffs: List['Buff'] = None,
                  damage_to_element: Optional[Dict[str, float]] = None,
                  atk_element: str = "untyped",
                  damage: int = 10,
@@ -37,10 +38,11 @@ class Bullet(MovementEntity, AttackEntity):
         # Initialize mixins without basic init
         MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move, init_basic=False)
         AttackEntity.__init__(self, x, y, w, h, image, shape, game, tag, can_attack, damage_to_element,
-                              atk_element, damage, 0, 0, 0, True, [], max_penetration_count,
+                              atk_element, damage, 0, 0, 0, True, buffs, max_penetration_count,
                               collision_cooldown, explosion_range, explosion_damage, explosion_element,
-                              explosion_buffs if explosion_buffs else [], init_basic=False)
+                              explosion_buffs if explosion_buffs else [], init_basic=False, )
 
+        self.tag = tag
         # Bullet-specific attributes (無變動)
         self.direction = direction  # Normalized direction vector
         self.velocity = (direction[0] * max_speed, direction[1] * max_speed)
@@ -77,7 +79,7 @@ class Bullet(MovementEntity, AttackEntity):
                     self._handle_collision(enemy, current_time)
 
         # Check collision with walls (if not pass_wall)
-        if not self.pass_wall:
+        if not self._pass_wall:
             tile_x, tile_y = int(self.x // TILE_SIZE), int(self.y // TILE_SIZE)
             x_valid = 0 <= tile_x < self.dungeon.grid_width
             y_valid = 0 <= tile_y < self.dungeon.grid_height
@@ -91,6 +93,8 @@ class Bullet(MovementEntity, AttackEntity):
         """Handle collision with an enemy, with hit tracking and cooldown."""
         enemy_id = id(enemy)  # Use enemy ID for tracking
 
+        if enemy.tag == self.tag:
+            return  # Skip if same tag (e.g., player bullet hitting player)
         # Check if already hit this enemy
         if enemy_id in self.hitted_entities:
             return  # Skip if already hit

@@ -124,12 +124,13 @@ class ChaseAction(Action):
 
 class AttackAction(Action):
     def __init__(self, action_id: str, damage: int = 5, bullet_speed: float = 400.0, 
-                 bullet_size: int = 5, effects: List[Any] = None):
+                 bullet_size: int = 5, effects: List[Any] = None, tag: str = ""):
         super().__init__(action_id, duration=0.0)
         self.damage = damage
         self.bullet_speed = bullet_speed
         self.bullet_size = bullet_size
-        self.effects = effects or [ELEMENTAL_BUFFS['Burn']]
+        self.effects = effects or [ELEMENTAL_BUFFS['fire']]
+        self.tag = tag
     
     def start(self, entity: 'Enemy1', current_time: float) -> None:
         entity.current_action = self.action_id
@@ -139,11 +140,11 @@ class AttackAction(Action):
         if not entity.can_attack:
             print(f"{self.action_id} skipped: Cannot attack")
             return False
-        if not entity.game.player:
+        if not entity.game.entity_manager.player:
             print(f"{self.action_id} failed: No player")
             return False
-        dx = entity.game.player.x - entity.x
-        dy = entity.game.player.y - entity.y
+        dx = entity.game.entity_manager.player.x - entity.x
+        dy = entity.game.entity_manager.player.y - entity.y
         distance = math.sqrt(dx**2 + dy**2)
         if distance > 500 or distance == 0:
             print(f"{self.action_id} failed: Player out of range")
@@ -155,11 +156,11 @@ class AttackAction(Action):
             w=self.bullet_size,
             h=self.bullet_size,
             game=entity.game,
-            tag="enemy_bullet",
+            tag=self.tag,
             max_speed=self.bullet_speed,
             direction=direction,
             damage=self.damage,
-            buffs=self.effects
+            buffs=self.effects,
         )
         bullet.image = pygame.Surface((self.bullet_size, self.bullet_size))
         bullet.image.fill(RED)
@@ -264,12 +265,13 @@ class DodgeAction(Action):
 
 class SpecialAttackAction(Action):
     def __init__(self, action_id: str, damage: int = 10, bullet_speed: float = 300.0, 
-                 outer_radius: float = TILE_SIZE * 2, expansion_duration: float = 1.5):
+                 outer_radius: float = TILE_SIZE * 2, expansion_duration: float = 1.5, tag: str = ""):
         super().__init__(action_id, duration=0.0)
         self.damage = damage
         self.bullet_speed = bullet_speed
         self.outer_radius = outer_radius
         self.expansion_duration = expansion_duration
+        self.tag = tag  
     
     def start(self, entity: 'Enemy1', current_time: float) -> None:
         entity.current_action = self.action_id
@@ -295,12 +297,13 @@ class SpecialAttackAction(Action):
             w=TILE_SIZE // 2,
             h=TILE_SIZE // 2,
             game=entity.game,
-            tag="enemy_bullet",
+            tag=self.tag,
             max_speed=self.bullet_speed,
             direction=direction,
             damage=self.damage,
             outer_radius=self.outer_radius,
-            expansion_duration=self.expansion_duration
+            expansion_duration=self.expansion_duration,
+  
         )
         entity.game.entity_manager.enemy_bullet_group.add(bullet)
         print(f"{self.action_id} completed")
@@ -316,11 +319,11 @@ class MeleeAttackAction(Action):
         print(f"Starting {self.action_id}")
     
     def update(self, entity: 'Enemy1', dt: float, current_time: float) -> bool:
-        if not entity.game.player or entity.game.player.invulnerable:
+        if not entity.game.entity_manager.player or entity.game.entity_manager.player.invulnerable:
             print(f"{self.action_id} failed: No player or player invulnerable")
             return False
-        if entity.rect.colliderect(entity.game.player.rect):
-            killed, damage = entity.game.player.take_damage(self.damage, entity.element)
+        if entity.rect.colliderect(entity.game.entity_manager.player.rect):
+            killed, damage = entity.game.entity_manager.player.take_damage(self.damage, entity.element)
             if killed:
                 print("Player died!")
             print(f"{self.action_id} completed: Dealt {damage} damage")
@@ -345,13 +348,18 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
                              explosion_range=0.0, explosion_damage=0, init_basic=False)
         BuffableEntity.__init__(self, x, y, w, h, image, shape, game, tag, init_basic=False)
         
+        if self.image is None:
+            self.image = pygame.Surface((w, h))
+            self.image.fill((0, 255, 0))  # 綠色方塊，代表敵人1
+            self.rect = self.image.get_rect(center=(x, y))
+        
         # Enemy-specific attributes
         self.current_action = 'idle'
         self.action_list = []
         self.bullet_speed = 400.0
         self.bullet_damage = 5
         self.bullet_size = 5
-        self.bullet_effects = [ELEMENTAL_BUFFS['Burn']]
+        self.bullet_effects = [ELEMENTAL_BUFFS['fire']] # Example effect
         self.vision_radius = 10  # In tiles
         self.patrol_points = [(x + i * TILE_SIZE * 2, y) for i in range(-2, 3)]
         
@@ -370,7 +378,8 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
                 damage=self.bullet_damage,
                 bullet_speed=self.bullet_speed,
                 bullet_size=self.bullet_size,
-                effects=self.bullet_effects
+                effects=self.bullet_effects,
+                tag = self.tag
             ),
             'pause': WaitAction(duration=1.0, action_id='pause'),
             'patrol': PatrolAction(
@@ -387,7 +396,8 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
                 damage=10,
                 bullet_speed=300.0,
                 outer_radius=TILE_SIZE * 2,
-                expansion_duration=1.5
+                expansion_duration=1.5,
+                tag = self.tag
             ),
             'melee': MeleeAttackAction(
                 action_id='melee',
@@ -397,11 +407,11 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         
         # Dynamic combo
         def get_default_combo(entity: 'Enemy1') -> List[str]:
-            if not entity.game.player:
+            if not entity.game.entity_manager.player:
                 return ['patrol', 'pause']
             hp_ratio = entity.current_hp / entity.max_hp
-            dx = entity.game.player.x - entity.x
-            dy = entity.game.player.y - entity.y
+            dx = entity.game.entity_manager.player.x - entity.x
+            dy = entity.game.entity_manager.player.y - entity.y
             distance = math.sqrt(dx**2 + dy**2)
             # Check for nearby player bullets
             bullet_nearby = False
@@ -428,11 +438,11 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             if not entity.is_alive():
                 print("Interrupt: Entity not alive")
                 return True
-            if not entity.game.player:
+            if not entity.game.entity_manager.player:
                 print("Interrupt: No player")
                 return True
-            dx = entity.game.player.x - entity.x
-            dy = entity.game.player.y - entity.y
+            dx = entity.game.entity_manager.player.x - entity.x
+            dy = entity.game.entity_manager.player.y - entity.y
             distance = math.sqrt(dx**2 + dy**2)
             return distance >= entity.vision_radius * TILE_SIZE or distance <= 0
         
@@ -449,10 +459,10 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             return False
         
         def player_close_condition(entity: 'Enemy1', current_time: float) -> bool:
-            if not entity.game.player:
+            if not entity.game.entity_manager.player:
                 return False
-            dx = entity.game.player.x - entity.x
-            dy = entity.game.player.y - entity.y
+            dx = entity.game.entity_manager.player.x - entity.x
+            dy = entity.game.entity_manager.player.y - entity.y
             distance = math.sqrt(dx**2 + dy**2)
             return distance < 2 * TILE_SIZE
         

@@ -72,7 +72,7 @@ class AttackEntity(BasicEntity):
     # Getters
     @property
     def can_attack(self) -> bool:
-        return self.can_attack
+        return self._can_attack
     
     @property
     def damage_to_element(self) -> Dict[str, float]:
@@ -132,7 +132,7 @@ class AttackEntity(BasicEntity):
         Handle collision with another entity, applying damage, buffs, and triggering explosion if applicable.
         Returns True if collision was processed, False otherwise.
         """
-        if not self.can_attack or not self.can_collide_with(target):
+        if not self.can_attack or not self.can_collide_with(target) or self.tag == target.tag:
             return False
         
         self.collision_list[target.id] = self.collision_cooldown
