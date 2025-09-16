@@ -311,25 +311,31 @@ class SpecialAttackAction(Action):
             return False
         direction = (dx / distance, dy / distance)
         r = TILE_SIZE // 2
-        num_bullets = int(math.ceil(distance / r) + 5)  # Number of bullets to reach or exceed player
+        num_bullets = int(math.ceil(distance / r) + 5)  # Extend beyond player
         for i in range(num_bullets):
-            # Calculate position for each bullet
-            bullet_x = entity.x + i * r * direction[0]
-            bullet_y = entity.y + i * r * direction[1]
-            # Set wait_time: 0.1s for first bullet, increasing by 0.1s for each subsequent bullet
-            wait_time = 0.1 + i * 0.1
+            # Calculate position with sinusoidal offset
+            t = i * r / distance  # Normalized distance along path
+            offset_magnitude = r * 2 * math.sin(t * 2 * math.pi * 2)  # Wave with 2 cycles
+            # Perpendicular vector to direction
+            perp = (-direction[1], direction[0])  # Rotate 90 degrees
+            bullet_x = entity.x + i * r * direction[0] + offset_magnitude * perp[0]
+            bullet_y = entity.y + i * r * direction[1] + offset_magnitude * perp[1]
+            # Dynamic wait_time: starts at 0.1s, increases by 0.05s per bullet
+            wait_time = 0.1 + 0.02 * i
+            # Alternate tags for visual variation (if supported)
+            bullet_tag = "fire" if i % 2 == 0 else "ice" if self.tag == "" else self.tag
             bullet = ExpandingCircleBullet(
                 x=bullet_x,
                 y=bullet_y,
                 w=TILE_SIZE // 2,
                 h=TILE_SIZE // 2,
                 game=entity.game,
-                tag=self.tag,
+                tag=bullet_tag,
                 max_speed=0.0,  # Stationary bullet
                 direction=direction,
                 damage=self.damage,
                 outer_radius=self.outer_radius,
-                explosion_range=self.outer_radius,
+                explosion_range=self.outer_radius,  # Synced with outer_radius
                 expansion_duration=self.expansion_duration,
                 wait_time=wait_time,
             )
