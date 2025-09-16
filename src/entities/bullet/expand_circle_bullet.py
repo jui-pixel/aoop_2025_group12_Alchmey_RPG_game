@@ -44,7 +44,8 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
         AttackEntity.__init__(self, x, y, w, h, None, "circle", game, tag, can_attack, damage_to_element,
                               atk_element, damage, 0, 0, 0, True, [], max_penetration_count,
                               collision_cooldown, explosion_range, explosion_damage, explosion_element,
-                              explosion_buffs if explosion_buffs else [], init_basic=False)
+                              explosion_buffs if explosion_buffs else [],explosion_max_hp_percentage_damage, 
+                              explosion_current_hp_percentage_damage, explosion_lose_hp_percentage_damage, init_basic=False)
 
         self._pass_wall = True  # Bullets can pass through walls
         self.tag = tag
@@ -77,7 +78,7 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
         # Update lifetime
         self.lifetime -= dt
         if self.lifetime <= 0:
-            self.explode(self.game.entity_manager.entity_group)
+            self.explode()
             self.kill()
             return
 
@@ -90,7 +91,7 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
             # Trigger damage when inner circle reaches outer circle
             if expansion_progress >= 1.0 and not self.expanded:
                 self.expanded = True
-                self.explode(self.game.entity_manager.entity_group)
+                self.explode()
                 self.kill()
                 return
 
@@ -105,7 +106,7 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
             if x_valid and y_valid:
                 tile = self.dungeon.dungeon_tiles[tile_y][tile_x]
                 if tile not in PASSABLE_TILES:
-                    self.explode(self.game.entity_manager.entity_group)
+                    self.explode()
                     self.kill()
 
     def _update_image(self) -> None:
@@ -123,11 +124,11 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
         screen_y = self.y - camera_offset[1] - self.outer_radius
         screen.blit(self.image, (screen_x, screen_y))
 
-    def explode(self, entities: pygame.sprite.Group) -> None:
+    def explode(self) -> None:
         """Trigger explosion and damage nearby entities."""
         if self.explosion_range <= 0:
             return
-
+        entities = self.game.entity_manager.entity_group
         explosion_center = (self.x, self.y)
         damage_mult = getattr(self, 'get_modifier', lambda x: 1.0)('damage_multiplier')
 
@@ -136,7 +137,6 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
                 continue
             if self.tag == entity.tag:
                 continue  # Prevent self-damage or friendly fire
-
             entity_center = (entity.x + entity.w / 2, entity.y + entity.h / 2)
             distance = math.sqrt(
                 (explosion_center[0] - entity_center[0])**2 +
@@ -144,6 +144,7 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
             )
 
             if distance <= self.explosion_range:
+                print(f"ExpandingCircleBullet: {self.tag} explosion hits {entity.tag} at distance {distance:.2f}")
                 multiplier = self._damage_to_element.get(self.explosion_element, 1.0)
                 effective_explosion_damage = int(self.explosion_damage * multiplier * damage_mult)
                 killed, actual_damage = entity.take_damage(

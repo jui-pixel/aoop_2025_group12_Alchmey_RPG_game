@@ -311,7 +311,7 @@ class SpecialAttackAction(Action):
             return False
         direction = (dx / distance, dy / distance)
         r = TILE_SIZE // 2
-        num_bullets = int(math.ceil(distance / r))  # Number of bullets to reach or exceed player
+        num_bullets = int(math.ceil(distance / r) + 5)  # Number of bullets to reach or exceed player
         for i in range(num_bullets):
             # Calculate position for each bullet
             bullet_x = entity.x + i * r * direction[0]
@@ -329,6 +329,7 @@ class SpecialAttackAction(Action):
                 direction=direction,
                 damage=self.damage,
                 outer_radius=self.outer_radius,
+                explosion_range=self.outer_radius,
                 expansion_duration=self.expansion_duration,
                 wait_time=wait_time,
             )
@@ -404,6 +405,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
                 tag = self.tag
             ),
             'pause': WaitAction(duration=0.3, action_id='pause'),
+            'pause2': WaitAction(duration=1.5, action_id='pause2'),
             'patrol': PatrolAction(
                 duration=5.0,
                 action_id='patrol',
@@ -416,9 +418,9 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             'special_attack': SpecialAttackAction(
                 action_id='special_attack',
                 damage=10,
-                bullet_speed=300.0,
-                outer_radius=TILE_SIZE * 2,
-                expansion_duration=1.5,
+                bullet_speed=0.0,
+                outer_radius=TILE_SIZE // 2,
+                expansion_duration=1.0,
                 tag = self.tag
             ),
             'melee': MeleeAttackAction(
@@ -460,7 +462,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             elif distance < 2 * TILE_SIZE:  # Player too close: dodge or melee
                 return ['chase', 'melee', 'pause']
             elif distance < entity.vision_radius * TILE_SIZE:  # Player in range
-                return ['attack', 'dodge', 'special_attack', 'pause', 'special_attack', 'pause', 'special_attack', 'pause', 'chase']
+                return ['attack', 'dodge', 'special_attack', 'pause2', 'special_attack', 'pause2', 'special_attack', 'pause2', 'chase']
             else:  # Player out of range
                 return ['patrol', 'pause']
         

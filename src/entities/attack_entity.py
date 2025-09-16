@@ -64,7 +64,6 @@ class AttackEntity(BasicEntity):
         self.explosion_damage: int = explosion_damage
         self.explosion_element: str = explosion_element
         self.explosion_buffs: List['Buff'] = [buff.deepcopy() for buff in explosion_buffs] if explosion_buffs else []
-        # 注意: 原代碼有 explosion_max_hp_percentage_damage 等，但未定義；假設添加
         self.explosion_max_hp_percentage_damage = explosion_max_hp_percentage_damage
         self.explosion_current_hp_percentage_damage = explosion_current_hp_percentage_damage
         self.explosion_lose_hp_percentage_damage = explosion_lose_hp_percentage_damage
@@ -201,6 +200,8 @@ class AttackEntity(BasicEntity):
         for entity in entities:
             if not hasattr(entity, 'take_damage'):
                 continue
+            if self.tag == entity.tag:
+                continue  # Prevent self-damage or friendly fire
             
             entity_center = (entity.x + entity.w / 2, entity.y + entity.h / 2)
             distance = math.sqrt(
