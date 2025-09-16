@@ -20,7 +20,7 @@ class DungeonMenu(AbstractMenu):
         self.buttons.append(
             Button(
                 SCREEN_WIDTH // 2 - 150, 100 + len(dungeons) * 50, 300, 40,
-                "Exit", pygame.Surface((300, 40)), "exit",
+                "Back", pygame.Surface((300, 40)), "back_to_lobby",
                 pygame.font.SysFont(None, 36)
             )
         )
@@ -44,6 +44,13 @@ class DungeonMenu(AbstractMenu):
     def handle_event(self, event: pygame.event.Event) -> str:
         if not self.active:
             return ""
+        if event.type == pygame.MOUSEMOTION:
+            for i, button in enumerate(self.buttons):
+                if button.rect.collidepoint(event.pos):
+                    self.buttons[self.selected_index].is_selected = False
+                    self.selected_index = i
+                    self.buttons[self.selected_index].is_selected = True
+                    break
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 self.buttons[self.selected_index].is_selected = False
@@ -55,9 +62,9 @@ class DungeonMenu(AbstractMenu):
                 self.buttons[self.selected_index].is_selected = True
             elif event.key == pygame.K_RETURN:
                 action = self.buttons[self.selected_index].action
-                if action == "exit":
+                if action == "back_to_lobby":
                     self.game.hide_menu('dungeon_menu')
-                    return "exit"
+                    return "back_to_lobby"
                 if action.startswith("enter_"):
                     dungeon_name = action.split("_")[1]
                     for npc in self.game.entity_manager.npc_group:
@@ -69,12 +76,12 @@ class DungeonMenu(AbstractMenu):
         for button in self.buttons:
             active, action = button.handle_event(event)
             if active:
-                if action == "exit":
+                if action == "back_to_lobby":
                     self.game.hide_menu('dungeon_menu')
-                    return "exit"
+                    return "back_to_lobby"
                 if action.startswith("enter_"):
                     dungeon_name = action.split("_")[1]
-                    for npc in self.game.entity_manager.npc_group:
+                    for npc in self.game.entity_manager.entity_group:
                         if npc.tag == "dungeon_portal_npc":
                             npc.enter_dungeon(dungeon_name)
                             self.game.hide_menu('dungeon_menu')

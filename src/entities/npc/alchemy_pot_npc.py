@@ -46,10 +46,7 @@ class AlchemyPotNPC(HealthEntity, BuffableEntity):
             self.rect = self.image.get_rect(center=(x, y))
         
         self.interaction_range: float = 80.0
-        self.alchemy_options: List[Dict] = [
-            {'ingredients': ['fire', 'water'], 'result': 'Fog'},
-            {'ingredients': ['earth', 'water'], 'result': 'Mud'},
-        ]
+        self.alchemy_options: List[Dict] = []
         self.is_interacting: bool = False
         self.show_interact_prompt: bool = False  # 新增：是否顯示提示
         self.font = pygame.font.SysFont(None, 24)  # 用於提示文字

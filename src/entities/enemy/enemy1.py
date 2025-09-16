@@ -63,10 +63,18 @@ class PerformNextAction(BehaviorNode):
         if not action:
             entity.action_list.pop(0)
             return False
+        if not action.started:
+            action.start(entity, current_time)
+            action.started = True
         if action.update(entity, dt, current_time):
+            print(f"{action.timer:.2f} seconds remaining for {action.action_id}")
             return True
         entity.action_list.pop(0)
+        print(f"Action {action.action_id} finished")
+        print(f"Remaining actions: {entity.action_list}")
         action.reset()
+        if len(entity.action_list) >= 1:
+            return True
         return False
 
 class RefillActionList(BehaviorNode):
@@ -76,6 +84,7 @@ class RefillActionList(BehaviorNode):
     
     def execute(self, entity: 'Enemy1', dt: float, current_time: float) -> bool:
         entity.action_list = self.default_combo(entity)
+        print(f"Refilled action list: {entity.action_list}")
         return True
 
 class IdleNode(BehaviorNode):
@@ -90,6 +99,7 @@ class Action(ABC):
         self.action_id = action_id
         self.duration = duration
         self.timer = 0.0
+        self.started = False
     
     @abstractmethod
     def start(self, entity: 'Enemy1', current_time: float) -> None:
@@ -101,6 +111,7 @@ class Action(ABC):
     
     def reset(self) -> None:
         self.timer = 0.0
+        self.started = False
 
 class ChaseAction(Action):
     def __init__(self, duration: float, action_id: str, 
@@ -114,11 +125,12 @@ class ChaseAction(Action):
         print(f"Starting {self.action_id}: timer={self.timer:.2f}")
     
     def update(self, entity: 'Enemy1', dt: float, current_time: float) -> bool:
-        if self.timer <= 0 or not entity.game.player:
+        if self.timer <= 0 or not entity.game.entity_manager.player:
             print(f"{self.action_id} {'completed' if self.timer <= 0 else 'failed: No player'}")
             return False
         dx, dy = self.direction_source(entity)
         entity.move(dx, dy, dt)
+        print(f"{self.action_id} moving: dx={dx:.2f}, dy={dy:.2f}")
         self.timer -= dt
         return True
 
@@ -165,7 +177,7 @@ class AttackAction(Action):
         bullet.image = pygame.Surface((self.bullet_size, self.bullet_size))
         bullet.image.fill(RED)
         bullet.rect = bullet.image.get_rect(center=(entity.x, entity.y))
-        entity.game.entity_manager.enemy_bullet_group.add(bullet)
+        entity.game.entity_manager.bullet_group.add(bullet)
         print(f"{self.action_id} completed")
         return False
 
@@ -217,6 +229,7 @@ class PatrolAction(Action):
 class DodgeAction(Action):
     def __init__(self, duration: float, action_id: str):
         super().__init__(action_id, duration)
+        self.direction = (0.0, 0.0)
     
     def start(self, entity: 'Enemy1', current_time: float) -> None:
         self.timer = self.duration
@@ -231,7 +244,9 @@ class DodgeAction(Action):
         # Check for nearby player bullets
         bullet_direction = None
         min_distance = float('inf')
-        for bullet in entity.game.entity_manager.player_bullet_group:
+        for bullet in entity.game.entity_manager.bullet_group:
+            if bullet.tag != "player_bullet":
+                continue
             dx = bullet.x - entity.x
             dy = bullet.y - entity.y
             distance = math.sqrt(dx**2 + dy**2)
@@ -243,10 +258,10 @@ class DodgeAction(Action):
         if bullet_direction:
             # Move away from nearest bullet
             entity.move(-bullet_direction[0], -bullet_direction[1], dt)
-        elif entity.game.player:
+        elif entity.game.entity_manager.player:
             # Move away from player if no bullets
-            dx = entity.x - entity.game.player.x
-            dy = entity.y - entity.game.player.y
+            dx = entity.x - entity.game.entity_manager.player.x
+            dy = entity.y - entity.game.entity_manager.player.y
             distance = math.sqrt(dx**2 + dy**2)
             if distance > 0:
                 direction = (dx / distance, dy / distance)
@@ -254,11 +269,15 @@ class DodgeAction(Action):
             else:
                 # Random movement if too close
                 import random
-                entity.move(random.uniform(-1, 1), random.uniform(-1, 1), dt)
+                if self.direction == (0.0, 0.0):
+                    self.direction = (random.uniform(-1, 1), random.uniform(-1, 1))
+                entity.move(direction, dt)
         else:
             # Random movement if no player or bullets
             import random
-            entity.move(random.uniform(-1, 1), random.uniform(-1, 1), dt)
+            if self.direction == (0.0, 0.0):
+                self.direction = (random.uniform(-1, 1), random.uniform(-1, 1))
+            entity.move(direction, dt)
         
         self.timer -= dt
         return True
@@ -281,31 +300,39 @@ class SpecialAttackAction(Action):
         if not entity.can_attack:
             print(f"{self.action_id} skipped: Cannot attack")
             return False
-        if not entity.game.player:
+        if not entity.game.entity_manager.player:
             print(f"{self.action_id} failed: No player")
             return False
-        dx = entity.game.player.x - entity.x
-        dy = entity.game.player.y - entity.y
+        dx = entity.game.entity_manager.player.x - entity.x
+        dy = entity.game.entity_manager.player.y - entity.y
         distance = math.sqrt(dx**2 + dy**2)
         if distance > 500 or distance == 0:
             print(f"{self.action_id} failed: Player out of range")
             return False
         direction = (dx / distance, dy / distance)
-        bullet = ExpandingCircleBullet(
-            x=entity.x,
-            y=entity.y,
-            w=TILE_SIZE // 2,
-            h=TILE_SIZE // 2,
-            game=entity.game,
-            tag=self.tag,
-            max_speed=self.bullet_speed,
-            direction=direction,
-            damage=self.damage,
-            outer_radius=self.outer_radius,
-            expansion_duration=self.expansion_duration,
-  
-        )
-        entity.game.entity_manager.enemy_bullet_group.add(bullet)
+        r = TILE_SIZE // 2
+        num_bullets = int(math.ceil(distance / r))  # Number of bullets to reach or exceed player
+        for i in range(num_bullets):
+            # Calculate position for each bullet
+            bullet_x = entity.x + i * r * direction[0]
+            bullet_y = entity.y + i * r * direction[1]
+            # Set wait_time: 0.1s for first bullet, increasing by 0.1s for each subsequent bullet
+            wait_time = 0.1 + i * 0.1
+            bullet = ExpandingCircleBullet(
+                x=bullet_x,
+                y=bullet_y,
+                w=TILE_SIZE // 2,
+                h=TILE_SIZE // 2,
+                game=entity.game,
+                tag=self.tag,
+                max_speed=0.0,  # Stationary bullet
+                direction=direction,
+                damage=self.damage,
+                outer_radius=self.outer_radius,
+                expansion_duration=self.expansion_duration,
+                wait_time=wait_time,
+            )
+            entity.game.entity_manager.bullet_group.add(bullet)
         print(f"{self.action_id} completed")
         return False
 
@@ -322,18 +349,13 @@ class MeleeAttackAction(Action):
         if not entity.game.entity_manager.player or entity.game.entity_manager.player.invulnerable:
             print(f"{self.action_id} failed: No player or player invulnerable")
             return False
-        if entity.rect.colliderect(entity.game.entity_manager.player.rect):
-            killed, damage = entity.game.entity_manager.player.take_damage(self.damage, entity.element)
-            if killed:
-                print("Player died!")
-            print(f"{self.action_id} completed: Dealt {damage} damage")
-            return False
+        entity.collision(entity.game.entity_manager.player)
         return False
 
 class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
     def __init__(self, x: float = 0.0, y: float = 0.0, w: int = TILE_SIZE // 2, h: int = TILE_SIZE // 2, 
                  image: Optional[pygame.Surface] = None, shape: str = "rect", game: 'Game' = None, tag: str = "",
-                 base_max_hp: int = 100, max_shield: int = 0, dodge_rate: float = 0.0, max_speed: float = 5 * TILE_SIZE,
+                 base_max_hp: int = 100, max_shield: int = 0, dodge_rate: float = 0.0, max_speed: float = 2 * TILE_SIZE,
                  element: str = "untyped", defense: int = 10, resistances: Optional[Dict[str, float]] = None, 
                  damage_to_element: Optional[Dict[str, float]] = None, can_move: bool = True, can_attack: bool = True, 
                  invulnerable: bool = False):
@@ -360,18 +382,18 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         self.bullet_damage = 5
         self.bullet_size = 5
         self.bullet_effects = [ELEMENTAL_BUFFS['fire']] # Example effect
-        self.vision_radius = 10  # In tiles
+        self.vision_radius = 15  # In tiles
         self.patrol_points = [(x + i * TILE_SIZE * 2, y) for i in range(-2, 3)]
         
         # Define actions
         self.actions = {
             'chase': ChaseAction(
-                duration=2.0,
+                duration=0.3,
                 action_id='chase',
                 direction_source=lambda e: (
-                    (e.game.player.x - e.x) / max(1e-10, math.sqrt((e.game.player.x - e.x)**2 + (e.game.player.y - e.y)**2)),
-                    (e.game.player.y - e.y) / max(1e-10, math.sqrt((e.game.player.x - e.x)**2 + (e.game.player.y - e.y)**2))
-                ) if e.game.player else (0, 0)
+                    (e.game.entity_manager.player.x - e.x) / max(1e-10, math.sqrt((e.game.entity_manager.player.x - e.x)**2 + (e.game.entity_manager.player.y - e.y)**2)),
+                    (e.game.entity_manager.player.y - e.y) / max(1e-10, math.sqrt((e.game.entity_manager.player.x - e.x)**2 + (e.game.entity_manager.player.y - e.y)**2))
+                ) if e.game.entity_manager.player else (0, 0)
             ),
             'attack': AttackAction(
                 action_id='attack',
@@ -381,14 +403,14 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
                 effects=self.bullet_effects,
                 tag = self.tag
             ),
-            'pause': WaitAction(duration=1.0, action_id='pause'),
+            'pause': WaitAction(duration=0.3, action_id='pause'),
             'patrol': PatrolAction(
                 duration=5.0,
                 action_id='patrol',
                 waypoints=self.patrol_points
             ),
             'dodge': DodgeAction(
-                duration=1.0,
+                duration=0.2,
                 action_id='dodge'
             ),
             'special_attack': SpecialAttackAction(
@@ -415,21 +437,30 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             distance = math.sqrt(dx**2 + dy**2)
             # Check for nearby player bullets
             bullet_nearby = False
-            for bullet in entity.game.entity_manager.player_bullet_group:
+            for bullet in entity.game.entity_manager.bullet_group:
+                if bullet.tag != "player_bullet":
+                    continue
                 b_dx = bullet.x - entity.x
                 b_dy = bullet.y - entity.y
                 b_distance = math.sqrt(b_dx**2 + b_dy**2)
                 if b_distance < 3 * TILE_SIZE:
                     bullet_nearby = True
                     break
+            # return ['chase']
+            # return ['attack']
+            # return ['dodge']
+            # return ['melee']
+            # return ['special_attack']
+            # return ['patrol']
+            # return ['pause']
             if hp_ratio < 0.3:  # Low HP: prioritize dodge
-                return ['dodge', 'pause', 'attack', 'dodge', 'chase']
+                return ['dodge', 'pause', 'attack', 'pause', 'chase']
             elif bullet_nearby:  # Nearby bullet: dodge
-                return ['dodge', 'pause', 'attack']
+                return ['dodge', 'pause', 'attack', 'pause']
             elif distance < 2 * TILE_SIZE:  # Player too close: dodge or melee
-                return ['dodge', 'melee', 'pause']
+                return ['chase', 'melee', 'pause']
             elif distance < entity.vision_radius * TILE_SIZE:  # Player in range
-                return ['attack', 'dodge', 'special_attack', 'dodge', 'chase']
+                return ['attack', 'dodge', 'special_attack', 'pause', 'special_attack', 'pause', 'special_attack', 'pause', 'chase']
             else:  # Player out of range
                 return ['patrol', 'pause']
         
@@ -450,7 +481,9 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             return entity.current_hp / entity.max_hp < 0.3
         
         def bullet_nearby_condition(entity: 'Enemy1', current_time: float) -> bool:
-            for bullet in entity.game.entity_manager.player_bullet_group:
+            for bullet in entity.game.entity_manager.bullet_group:
+                if bullet.tag != "player_bullet":
+                    continue
                 dx = bullet.x - entity.x
                 dy = bullet.y - entity.y
                 distance = math.sqrt(dx**2 + dy**2)
@@ -467,7 +500,8 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             return distance < 2 * TILE_SIZE
         
         def action_list_has_actions(entity: 'Enemy1', current_time: float) -> bool:
-            return bool(entity.action_list)
+            # print(f"Action list: {entity.action_list}")
+            return len(entity.action_list) >= 1
         
         self.behavior_tree = Selector([
             ConditionNode(
@@ -475,29 +509,26 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
                 on_success=IdleNode()
             ),
             ConditionNode(
+                condition=action_list_has_actions,
+                on_success=PerformNextAction(self.actions)
+            ),
+            ConditionNode(
                 condition=low_hp_condition,
                 on_success=Sequence([
-                    PerformNextAction(self.actions),
                     RefillActionList(self.actions, get_default_combo)
                 ])
             ),
             ConditionNode(
                 condition=bullet_nearby_condition,
                 on_success=Sequence([
-                    PerformNextAction(self.actions),
                     RefillActionList(self.actions, get_default_combo)
                 ])
             ),
             ConditionNode(
                 condition=player_close_condition,
                 on_success=Sequence([
-                    PerformNextAction(self.actions),
                     RefillActionList(self.actions, get_default_combo)
                 ])
-            ),
-            ConditionNode(
-                condition=action_list_has_actions,
-                on_success=PerformNextAction(self.actions)
             ),
             RefillActionList(self.actions, get_default_combo),
             IdleNode()
@@ -506,9 +537,9 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
     def is_alive(self) -> bool:
         return self.current_hp > 0
     
-    def check_collision_with_player(self, current_time: float) -> int:
-        # Move collision damage to MeleeAttackAction
-        return 0
+    # def check_collision_with_player(self, current_time: float) -> int:
+    #     # Move collision damage to MeleeAttackAction
+    #     return 0
     
     def update(self, dt: float, current_time: float) -> None:
         # Explicitly call each mixin's update

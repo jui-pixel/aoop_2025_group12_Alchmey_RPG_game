@@ -1,37 +1,23 @@
 from src.menu.abstract_menu import AbstractMenu
 from src.menu.button import Button
 import pygame
-from typing import List, Dict
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 
-class AmplifierMenu(AbstractMenu):
-    def __init__(self, game: 'Game', options: List[Dict]):
-        """Initialize the amplifier selection menu with options for magic missile, shield, step, and back.
-
-        Args:
-            game: The main game instance for accessing storage manager and menu management.
-        """
-        self.title = "Amplifier Selection"
+class ElementChooseMenu(AbstractMenu):
+    def __init__(self, game: 'Game', options=None):
+        self.title = "Choose Element"
         self.game = game
-        self.buttons = [
-            Button(
-                SCREEN_WIDTH // 2 - 150, 100 + i * 50, 300, 40,
-                text, pygame.Surface((300, 40)), action,
-                pygame.font.SysFont(None, 36)
-            ) for i, (text, action) in enumerate([
-                ("Magic Missile", "show_magic_missile"),
-                ("Magic Shield", "show_magic_shield"),
-                ("Magic Step", "show_magic_step"),
-                ("Back", "crystal_menu")
-            ])
-        ]
+        self.buttons = [Button(SCREEN_WIDTH // 2 - 150, 100, 300, 40, "None", pygame.Surface((300, 40)), "none", pygame.font.SysFont(None, 36))]
+        awakened = game.storage_manager.awakened_elements
+        for i, elem in enumerate(awakened):
+            self.buttons.append(Button(SCREEN_WIDTH // 2 - 150, 150 + i * 50, 300, 40, elem.capitalize(), pygame.Surface((300, 40)), elem, pygame.font.SysFont(None, 36)))
+        self.buttons.append(Button(SCREEN_WIDTH // 2 - 150, 150 + len(awakened) * 50, 300, 40, "Back", pygame.Surface((300, 40)), "back", pygame.font.SysFont(None, 36)))
         self.selected_index = 0
         self.active = False
         self.font = pygame.font.SysFont(None, 48)
         self.buttons[self.selected_index].is_selected = True
 
     def draw(self, screen: pygame.Surface) -> None:
-        """Draw the amplifier menu, including title and buttons."""
         if not self.active:
             return
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -44,11 +30,6 @@ class AmplifierMenu(AbstractMenu):
             button.draw(screen)
 
     def handle_event(self, event: pygame.event.Event) -> str:
-        """Handle keyboard and mouse events for showing sub-menus or returning.
-
-        Returns:
-            str: The triggered action name.
-        """
         if not self.active:
             return ""
         if event.type == pygame.MOUSEMOTION:
@@ -69,41 +50,31 @@ class AmplifierMenu(AbstractMenu):
                 self.buttons[self.selected_index].is_selected = True
             elif event.key == pygame.K_RETURN:
                 action = self.buttons[self.selected_index].action
-                if action == "crystal_menu":
-                    self.game.hide_menu('amplifier_menu')
-                    self.game.show_menu('crystal_menu')
-                    return "crystal_menu"
-                elif action.startswith("show_"):
-                    amplifier_type = action.split("_")[1] + "_" + action.split("_")[2]
-                    self.game.show_menu('amplifier_stat_menu', type=amplifier_type)
+                if action == "back":
+                    self.game.show_menu('alchemy_menu')
+                    return "back"
+                else:
+                    alchemy_menu = self.game.menu_manager.menus['alchemy_menu']
+                    alchemy_menu.element = action if action != "none" else "untyped"
+                    self.game.show_menu('alchemy_menu')
                     return action
         for button in self.buttons:
             active, action = button.handle_event(event)
             if active:
-                if action == "crystal_menu":
-                    self.game.hide_menu('amplifier_menu')
-                    self.game.show_menu('crystal_menu')
-                    return "crystal_menu"
-                elif action.startswith("show_"):
-                    amplifier_type = action.split("_")[1] + "_" + action.split("_")[2]
-                    self.game.show_menu('amplifier_stat_menu', type=amplifier_type)
+                if action == "back":
+                    self.game.show_menu('alchemy_menu')
+                    return "back"
+                else:
+                    alchemy_menu = self.game.menu_manager.menus['alchemy_menu']
+                    alchemy_menu.element = action if action != "none" else "untyped"
+                    self.game.show_menu('alchemy_menu')
                     return action
         return ""
 
     def get_selected_action(self) -> str:
-        """Get the currently selected button action.
-
-        Returns:
-            str: The current selected action name.
-        """
         return self.buttons[self.selected_index].action if self.active else ""
 
     def activate(self, active: bool) -> None:
-        """Activate or deactivate the menu.
-
-        Args:
-            active: Whether to activate the menu.
-        """
         self.active = active
         if active:
             self.buttons[self.selected_index].is_selected = True

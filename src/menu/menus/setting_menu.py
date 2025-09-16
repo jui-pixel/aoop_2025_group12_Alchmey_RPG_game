@@ -2,9 +2,10 @@ from src.menu.abstract_menu import AbstractMenu
 from src.menu.button import Button
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from typing import List, Dict
 
 class SettingsMenu(AbstractMenu):
-    def __init__(self):
+    def __init__(self, game: 'Game', dungeons: List[Dict]):
         self.title = "Settings"
         self.buttons = [
             Button(
@@ -36,6 +37,13 @@ class SettingsMenu(AbstractMenu):
     def handle_event(self, event: pygame.event.Event) -> str:
         if not self.active:
             return ""
+        if event.type == pygame.MOUSEMOTION:
+            for i, button in enumerate(self.buttons):
+                if button.rect.collidepoint(event.pos):
+                    self.buttons[self.selected_index].is_selected = False
+                    self.selected_index = i
+                    self.buttons[self.selected_index].is_selected = True
+                    break
         if event.type == pygame.KEYDOWN:
             print(f"SettingsMenu: Key pressed: {event.key}")
             if event.key == pygame.K_UP:

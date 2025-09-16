@@ -4,15 +4,12 @@ from .basic_entity import BasicEntity
 from .buff.buff import Buff
 from ..utils.elements import ELEMENTS
 from .buff.element_buff import ELEMENTAL_BUFFS
+
 class BuffSynthesizer:
     """Handles buff synthesis and combination logic."""
     
     def __init__(self):
         self.synthesis_rules = {
-            # Define synthesis rules here
-            # e.g., ('Humid', 'Cold'): 'Freeze',
-            #       ('Humid', 'Dust'): 'Mud',
-            #       ('Mud', 'Burn'): 'Petrochemical'
             ('Burn', 'Humid') : 'Fog',
             ('Burn', 'Mud') : 'Petrochemical',
             ('Burn', 'Freeze') : 'Vulnerable',
@@ -23,7 +20,6 @@ class BuffSynthesizer:
             ('Humid', 'Tear') : 'Bleeding',
             ('Disorder', 'Dist') : 'Sandstorm',
             ('Blind', 'Erosion') : 'Annihilation',
-            
             ('Mud', 'Humid') : 'Enpty',
             ('Fog', 'Disorder') : 'Enpty',
             ('Entangled', 'Disorder') : 'Enpty',
@@ -38,20 +34,16 @@ class BuffSynthesizer:
         
         for (buff1, buff2), result in self.synthesis_rules.items():
             if buff1 in buff_names and buff2 in buff_names:
-                # Find the buffs to remove
                 buff1_obj = next((b for b in buffs if b.name == buff1), None)
                 buff2_obj = next((b for b in buffs if b.name == buff2), None)
                 
                 if buff1_obj and buff2_obj:
-                    # Remove the original buffs
                     entity.remove_buff(buff1_obj)
                     entity.remove_buff(buff2_obj)
                     result_buff = ELEMENTAL_BUFFS[result]
                     entity.add_buff(result_buff)
-                    # Add the synthesized buff
-                    # Note: This requires a Buff class instance; implementation depends on your Buff class
                     print(f"Synthesized {buff1} + {buff2} = {result}")
-                    break  # Only apply one synthesis per update
+                    break
 
 class BuffableEntity(BasicEntity):
     """
@@ -78,7 +70,8 @@ class BuffableEntity(BasicEntity):
             'damage_multiplier': 1.0,
             'vision_radius_multiplier': 1.0,
             'can_attack_multiplier': 1.0,
-            'all_resistance_multiplier' : 0.0,
+            'all_resistance_multiplier': 0.0,
+            'dodge_rate_add': 0.0,
         }
         for element in ELEMENTS:
             self.modifiers[f'{element}_resistance_multiplier'] = 0.0
@@ -87,11 +80,11 @@ class BuffableEntity(BasicEntity):
     def init(self) -> None:
         """Initialize buff-related properties."""
         self.buffs = []
-        multiplier_keys = [k for k in self.modifiers if 'resistance' not in k.lower()]
-        resistance_keys = [k for k in self.modifiers if 'resistance' in k.lower()]
+        multiplier_keys = [k for k in self.modifiers if 'resistance' not in k.lower() and 'add' not in k.lower()]
+        additive_keys = [k for k in self.modifiers if 'resistance' in k.lower() or 'add' in k.lower()]
         for key in multiplier_keys:
             self.modifiers[key] = 1.0
-        for key in resistance_keys:
+        for key in additive_keys:
             self.modifiers[key] = 0.0
     
     def update(self, dt: float, current_time: float) -> None:
@@ -175,54 +168,89 @@ class BuffableEntity(BasicEntity):
     
     def _update_modifiers(self) -> None:
         """Recalculate all modifiers based on active buffs."""
-        # Reset multipliers to 1.0, additives to 0.0
-        multiplier_keys = [k for k in self.modifiers if 'resistance' not in k.lower()]
-        resistance_keys = [k for k in self.modifiers if 'resistance' in k.lower()]
+        multiplier_keys = [k for k in self.modifiers if 'resistance' not in k.lower() and 'add' not in k.lower()]
+        additive_keys = [k for k in self.modifiers if 'resistance' in k.lower() or 'add' in k.lower()]
         for key in multiplier_keys:
             self.modifiers[key] = 1.0
-        for key in resistance_keys:
+        for key in additive_keys:
             self.modifiers[key] = 0.0
         
         for buff in self.buffs:
             for modifier_name, value in buff.multipliers.items():
                 if modifier_name in self.modifiers:
-                    if 'resistance' in modifier_name:
-                        self.modifiers[modifier_name] += value  # 加法 for resistance
+                    if 'resistance' in modifier_name or 'add' in modifier_name:
+                        self.modifiers[modifier_name] += value
                     else:
-                        self.modifiers[modifier_name] *= value  # 乘法 for others
+                        self.modifiers[modifier_name] *= value
         
         self._apply_modifiers_to_entity()
     
     def _apply_modifiers_to_entity(self) -> None:
         """Apply calculated modifiers to the entity's attributes."""
+        # Apply speed multiplier
         if hasattr(self, 'set_max_speed') and hasattr(self, 'base_max_speed'):
             speed_mult = self.modifiers.get('speed_multiplier', 1.0)
             self.set_max_speed(self.base_max_speed * speed_mult)
         
+        # Apply health multiplier
         if hasattr(self, 'set_max_hp') and hasattr(self, 'base_max_hp'):
             health_mult = self.modifiers.get('health_multiplier', 1.0)
             new_max_hp = int(self.base_max_hp * health_mult)
             self.set_max_hp(new_max_hp)
         
-        # Apply resistance modifiers (assuming self._resistances from HealthEntity or similar)
+        # Apply defense multiplier
+        if hasattr(self, 'set_base_defense') and hasattr(self, 'base_defense'):
+            defense_mult = self.modifiers.get('defense_multiplier', 1.0)
+            new_defense = int(self._base_defense * defense_mult)
+            self.set_base_defense(new_defense)
+        
+        # Apply damage multiplier (for AttackEntity)
+        if hasattr(self, 'damage'):
+            damage_mult = self.modifiers.get('damage_multiplier', 1.0)
+            # Assuming a base_damage exists or damage is the base value
+            if hasattr(self, 'base_damage'):
+                self.damage = int(self.base_damage * damage_mult)
+            else:
+                # If no base_damage, store it on first modification
+                if not hasattr(self, '_base_damage'):
+                    self._base_damage = self.damage
+                self.damage = int(self._base_damage * damage_mult)
+        
+        # Apply vision radius multiplier (specific to Player)
+        if hasattr(self, 'vision_radius'):
+            vision_mult = self.modifiers.get('vision_radius_multiplier', 1.0)
+            if not hasattr(self, '_base_vision_radius'):
+                self._base_vision_radius = self.vision_radius
+            self.vision_radius = int(self._base_vision_radius * vision_mult)
+        
+        # Apply can_attack multiplier
+        if hasattr(self, 'set_can_attack'):
+            can_attack_mult = self.modifiers.get('can_attack_multiplier', 1.0)
+            self.set_can_attack(can_attack_mult >= 1.0)
+        
+        # Apply dodge rate additive
+        if hasattr(self, 'dodge_rate'):
+            dodge_add = self.modifiers.get('dodge_rate_add', 0.0)
+            if not hasattr(self, '_base_dodge_rate'):
+                self._base_dodge_rate = self.dodge_rate
+            self.dodge_rate = max(0.0, min(1.0, self._base_dodge_rate + dodge_add))
+        
+        # Apply resistance modifiers
         if hasattr(self, '_resistances'):
             for element in ELEMENTS:
                 mod_key = f'{element}_resistance_multiplier'
                 add = self.modifiers.get(mod_key, 0.0)
-                self._resistances[element] += add
+                base_resistance = self._base_resistances.get(element, 0.0)
+                self._resistances[element] = max(0.0, min(1.0, base_resistance + add))
             
-            # Apply all_resistance_multiplier
             all_add = self.modifiers.get('all_resistance_multiplier', 0.0)
             for element in ELEMENTS:
-                self._resistances[element] += all_add
-            
-            # Clamp resistances to 0.0 - 1.0
-            for element in self._resistances:
-                self._resistances[element] = max(0.0, min(1.0, self._resistances[element]))
+                base_resistance = self._base_resistances.get(element, 0.0)
+                self._resistances[element] = max(0.0, min(1.0, base_resistance + add + all_add))
     
     def get_modifier(self, name: str) -> float:
         """Get a specific modifier value."""
-        return self.modifiers.get(name, 1.0 if 'resistance' not in name.lower() else 0.0)
+        return self.modifiers.get(name, 1.0 if 'resistance' not in name.lower() and 'add' not in name.lower() else 0.0)
     
     def get_active_buffs(self) -> List[str]:
         """Get list of active buff names."""

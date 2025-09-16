@@ -195,8 +195,9 @@ class RenderManager:
 
         先繪製遊戲世界作為背景，然後繪製菜單。
         """
+        assert self.game.menu_manager.current_menu is not None # 確保有當前菜單
         self.draw_game_world()
-        self.game.menu_manager.draw()
+        self.game.menu_manager.draw() 
         print(f"RenderManager: 繪製菜單 {self.game.menu_manager.current_menu.__class__.__name__ if self.game.menu_manager.current_menu else 'None'}")
 
     def draw_skill_selection(self) -> None:

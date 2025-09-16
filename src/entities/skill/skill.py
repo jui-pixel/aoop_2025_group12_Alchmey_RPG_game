@@ -1,67 +1,52 @@
-from typing import Optional, Dict, Tuple
-from ..buff.element_buff import ElementBuff, apply_elemental_buff
-from ...entities.bullet.bullet import Bullet
-import math
 
-class Skill:
-    def __init__(self, name: str, type: str, element: str, energy_cost: float,
-                 damage: int = 0, bullet_speed: float = 0, bullet_size: int = 0,
-                 buff: str = None, buff_duration: float = 0, effect: Dict = None):
-        self.name = name
-        self.type = type  # "shooting", "defense", or "movement"
-        self.element = element
-        self.energy_cost = energy_cost
-        self.damage = damage
-        self.bullet_speed = bullet_speed
-        self.bullet_size = bullet_size
-        self.buff = buff
-        self.buff_duration = buff_duration
-        self.effect = effect or {}
-        self.last_used = 0.0
+from typing import Optional, Dict, Tuple, List
+from .abstract_skill import Skill
+from .shoot_skill import ShootingSkill
+from .buff_skill import BuffSkill
+from ...config import TILE_SIZE
 
-    def activate(self, player: 'Player', game: 'Game', target_position: Tuple[float, float], current_time: float) -> None:
-        if player.energy < self.energy_cost:
-            print(f"Not enough energy for {self.name} (required: {self.energy_cost}, available: {player.energy})")
-            return
 
-        player.energy -= self.energy_cost
 
-        if self.type == "shooting":
-            # Normalize direction
-            dx = target_position[0] - player.x
-            dy = target_position[1] - player.y
-            magnitude = math.sqrt(dx**2 + dy**2)
-            if magnitude == 0:
-                return
-            direction = (dx / magnitude, dy / magnitude)
-
-            # Create bullet with effect
-            bullet = Bullet(
-                x=player.x + player.w / 2,
-                y=player.y + player.h / 2,
-                w=self.bullet_size,
-                h=self.bullet_size,
-                image=None,
-                shape="rect",
-                game=game,
-                tag="player_bullet",
-                base_max_hp=self.damage,
-                max_speed=self.bullet_speed,
-                element=self.element,
-                direction=direction,
-                effect=self.effect
-            )
-            game.player_bullet_group.add(bullet)
-
-        elif self.type in ("defense", "movement"):
-            # Apply buff to player
-            buff = ElementBuff(
-                name=self.buff,
-                duration=self.buff_duration,
-                element=self.element,
-                multipliers=self.effect.get("multipliers", {}),
-                effect_per_second=None,
-                on_apply=None,
-                on_remove=None
-            )
-            player.add_buff(buff)
+def create_skill_from_dict(data: Dict) -> Skill:
+    if data['type'] == 'shooting':
+        params = data['params']
+        return ShootingSkill(
+            name=data['name'],
+            element=data['element'],
+            energy_cost=20.0,
+            element_buff_enable=params.get('elebuff', 0) > 0,
+            bullet_damage=10 * (1 + 0.1 * params.get('damage', 0)),
+            bullet_speed=3 * TILE_SIZE * (1 + 0.1 * params.get('speed', 0)),
+            bullet_size=8,
+            bullet_element=data['element'],
+            max_penetration_count=params.get('penetration', 0),
+            explosion_range=params.get('explosion', 0),
+            # Assume other params 0
+            bullet_max_hp_percentage_damage=0,
+            bullet_current_hp_percentage_damage=0,
+            bullet_lose_hp_percentage_damage=0,
+            explosion_damage=0,
+            explosion_max_hp_percentage_damage=0,
+            explosion_current_hp_percentage_damage=0,
+            explosion_lose_hp_percentage_damage=0,
+            collision_cooldown=0.2,
+            pass_wall=False
+        )
+    elif data['type'] == 'buff':
+        params = data['params']
+        return BuffSkill(
+            name=data['name'],
+            type='buff',
+            element=data['element'],
+            energy_cost=20.0,
+            buff_duration_level=params.get('duration', 0),
+            element_resistance_level=params.get('element_resistance', 0),
+            counter_element_resistance_level=params.get('counter_element_resistance', 0),
+            shield_level=params.get('shield', 0),
+            remove_element_debuff=params.get('remove_element', 0) > 0,
+            remove_counter_element_debuff=params.get('remove_counter', 0) > 0,
+            avoid_level=params.get('avoid', 0),
+            speed_level=params.get('speed', 0),
+        )
+    else:
+        raise ValueError("Unknown skill type")

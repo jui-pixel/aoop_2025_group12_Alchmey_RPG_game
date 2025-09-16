@@ -13,6 +13,7 @@ class BasicEntity(pygame.sprite.Sprite):
         self.shape = shape
         self.game = game
         self.tag = tag
+        self.id = id(self)  # Unique identifier
         self.rect = pygame.Rect(x - w // 2, y - h // 2, w, h) if image is None else image.get_rect(center=(x, y))
         self.dungeon = game.dungeon_manager.get_dungeon() if game else None
         super().__init__(**kwargs)  # Pass remaining kwargs to next class in MRO

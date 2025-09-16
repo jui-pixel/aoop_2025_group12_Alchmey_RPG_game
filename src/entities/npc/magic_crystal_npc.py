@@ -28,7 +28,7 @@ class MagicCrystalNPC(HealthEntity, BuffableEntity):
                  defense: int = 100,
                  resistances: Optional[Dict[str, float]] = None,
                  invulnerable: bool = True,
-                 available_crystals: Dict[str, Dict] = None):
+                 ):
         # Initialize HealthEntity
         HealthEntity.__init__(
             self, x=x, y=y, w=w, h=h, image=image, shape=shape, game=game, tag=tag,
@@ -47,7 +47,6 @@ class MagicCrystalNPC(HealthEntity, BuffableEntity):
             self.rect = self.image.get_rect(center=(x, y))
         
         self.interaction_range: float = 80.0
-        self.available_crystals = available_crystals or {elem: {'price': 5, 'buff': None} for elem in ELEMENTS}
         self.is_interacting: bool = False
         self.show_interact_prompt: bool = False  # 新增：是否顯示提示
         self.font = pygame.font.SysFont(None, 24)  # 用於提示文字
@@ -73,38 +72,20 @@ class MagicCrystalNPC(HealthEntity, BuffableEntity):
         """Open crystal shop/menu via MenuManager."""
         self.is_interacting = True
         if self.game:
-            self.game.show_menu('crystal_shop', self.available_crystals)
+            self.game.show_menu('crystal_menu')
         print("Magic Crystal NPC: Browse elemental crystals and buffs.")
 
     def end_interaction(self) -> None:
         """Close shop."""
         self.is_interacting = False
         if self.game:
-            self.game.hide_menu('crystal_shop')
-
-    def purchase_crystal(self, crystal_type: str) -> bool:
-        """Handle crystal purchase and apply buff."""
-        if crystal_type in self.available_crystals:
-            crystal_info = self.available_crystals[crystal_type]
-            player = self.game.entity_manager.player
-            if player and hasattr(player, 'gold') and player.gold >= crystal_info['price']:
-                player.gold -= crystal_info['price']
-                if crystal_info['buff']:
-                    player.add_buff(crystal_info['buff'].deepcopy())
-                print(f"Magic Crystal NPC: Purchased {crystal_type} crystal.")
-                return True
-        print("Magic Crystal NPC: Purchase failed.")
-        return False
+            self.game.hide_menu('crystal_menu')
 
     def take_damage(self, factor: float = 1.0, element: str = "untyped", base_damage: int = 0, 
                     max_hp_percentage_damage: int = 0, current_hp_percentage_damage: int = 0, 
                     lose_hp_percentage_damage: int = 0, cause_death: bool = True) -> Tuple[bool, int]:
         """Regenerate damage."""
-        if self.invulnerable:
-            return False, 0
-        killed, damage = super().take_damage(cause_death=False)
-        self.heal(damage)
-        return False, damage
+        return False, 0
     
     def calculate_distance_to(self, other_entity) -> float:
         """Calculate the Euclidean distance to another entity."""

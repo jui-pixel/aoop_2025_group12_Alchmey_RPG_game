@@ -12,7 +12,7 @@ from ..basic_entity import BasicEntity  # Import BasicEntity explicitly
 class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
     def __init__(self, x: float = 0.0, y: float = 0.0, w: int = TILE_SIZE // 2, h: int = TILE_SIZE // 2, 
                  image: Optional[pygame.Surface] = None, shape: str = "rect", game: 'Game' = None, tag: str = "",
-                 base_max_hp: int = 100, max_shield: int = 0, dodge_rate: float = 0.0, max_speed: float = 10 * TILE_SIZE,
+                 base_max_hp: int = 100, max_shield: int = 0, dodge_rate: float = 0.0, max_speed: float = 3 * TILE_SIZE,
                  element: str = "untyped", defense: int = 10, resistances: Optional[Dict[str, float]] = None, 
                  damage_to_element: Optional[Dict[str, float]] = None, can_move: bool = True, can_attack: bool = True, 
                  invulnerable: bool = False, pass_wall: bool = False, vision_radius: int = 10):
@@ -45,6 +45,8 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         self.original_energy_regen_rate = 20.0
         self.fog = True
         self.vision_radius = vision_radius  # In tiles
+        
+        
 
     def update(self, dt: float, current_time: float) -> None:
         # Call parent classes' update methods in MRO order

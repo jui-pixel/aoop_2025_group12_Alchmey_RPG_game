@@ -1,4 +1,5 @@
 import pygame
+from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 from src.dungeon_manager import DungeonManager
 from src.event_manager import EventManager
 from src.audio_manager import AudioManager
@@ -7,11 +8,19 @@ from src.storage_manager import StorageManager
 from src.entity_manager import EntityManager
 from src.menu_manager import MenuManager
 from src.menu.menus.alchemy_menu import AlchemyMenu
-from src.menu.menus.dungeon_menu import DungeonMenu
+from src.menu.menus.amplifier_menu import AmplifierMenu
+from src.menu.menus.amplifier_stat_menu import AmplifierStatMenu
 from src.menu.menus.crystal_menu import CrystalMenu
+from src.menu.menus.dungeon_menu import DungeonMenu
+from src.menu.menus.element_menu import ElementMenu
 from src.menu.menus.main_menu import MainMenu
+from src.menu.menus.main_material_menu import MainMaterialMenu
+from src.menu.menus.element_choose_menu import ElementChooseMenu
+from src.menu.menus.amplifier_choose_menu import AmplifierChooseMenu
+from src.menu.menus.naming_menu import NamingMenu
 from src.menu.menus.setting_menu import SettingsMenu
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
+from src.menu.menus.skill_library_menu import SkillLibraryMenu
+from src.menu.menus.stat_menu import StatMenu
 
 class Game:
     def __init__(self, screen: pygame.Surface, pygame_clock: pygame.time.Clock):
@@ -30,19 +39,28 @@ class Game:
         self.event_manager = EventManager(self)  # 初始化事件管理器
         self.audio_manager = AudioManager(self)  # 初始化音效管理器
         self.render_manager = RenderManager(self, screen)  # 初始化渲染管理器
-        self.storage_manager = StorageManager(self)  # 初始化儲存管理器
         self.entity_manager = EntityManager(self)  # 初始化實體管理器
         self.menu_manager = MenuManager(self.screen, self)  # 初始化菜單管理器
+        self.storage_manager = StorageManager(self)  # 初始化儲存管理器
         # 註冊菜單
-        self.menu_manager.register_menu('main_menu', MainMenu())  # 主菜單
-        self.menu_manager.register_menu('settings_menu', SettingsMenu())  # 設置菜單
-        # 延遲註冊動態菜單
-        self.menu_manager.register_menu('alchemy_menu', None)  # 煉金菜單
-        self.menu_manager.register_menu('dungeon_menu', None)  # 地牢菜單
-        self.menu_manager.register_menu('crystal_shop', None)  # 水晶商店
+        self.menu_manager.register_menu('main_menu', MainMenu(self, None))  # 主菜單
+        self.menu_manager.register_menu('settings_menu', SettingsMenu(self, None))  # 設置選單
+        self.menu_manager.register_menu('alchemy_menu', None)  
+        self.menu_manager.register_menu('dungeon_menu', None)  
+        self.menu_manager.register_menu('crystal_menu', None)  
+        self.menu_manager.register_menu('stat_menu', None)  
+        self.menu_manager.register_menu('element_menu', None)  
+        self.menu_manager.register_menu('skill_library_menu', None)  
+        self.menu_manager.register_menu('amplifier_menu', None)  
+        self.menu_manager.register_menu('amplifier_stat_menu', None)  
+        self.menu_manager.register_menu('main_material_menu', None)  
+        self.menu_manager.register_menu('element_choose_menu', None)  
+        self.menu_manager.register_menu('amplifier_choose_menu', None)  
+        self.menu_manager.register_menu('naming_menu', None)  
+        self.menu_manager.register_menu('skill_selection_menu', None)  
         # 設置初始菜單
-        self.menu_manager.set_menu('main_menu')  # 顯示主菜單
-        self.event_manager.state = "menu"  # 設置初始狀態為菜單
+        self.menu_manager.set_menu('main_menu')
+        self.event_manager.state = "menu"
         print("Game: 已初始化，顯示主菜單")
 
     def start_game(self) -> None:
@@ -73,13 +91,33 @@ class Game:
         """
         print(f"Game: 顯示菜單 {menu_name}")
         if menu_name == 'alchemy_menu':
-            self.menu_manager.register_menu(menu_name, AlchemyMenu(self, data or []))  # 註冊並顯示煉金菜單
+            self.menu_manager.register_menu(menu_name, AlchemyMenu(self, data or []))
         elif menu_name == 'dungeon_menu':
-            self.menu_manager.register_menu(menu_name, DungeonMenu(self, data or []))  # 註冊並顯示地牢菜單
-        elif menu_name == 'crystal_shop':
-            self.menu_manager.register_menu(menu_name, CrystalMenu(self, data or {}))  # 註冊並顯示水晶商店
+            self.menu_manager.register_menu(menu_name, DungeonMenu(self, data or []))
+        elif menu_name == 'crystal_menu':
+            self.menu_manager.register_menu(menu_name, CrystalMenu(self, data or []))
+        elif menu_name == 'stat_menu':
+            self.menu_manager.register_menu(menu_name, StatMenu(self, data or []))
+        elif menu_name == 'element_menu':
+            self.menu_manager.register_menu(menu_name, ElementMenu(self, data or []))
+        elif menu_name == 'element_choose_menu':
+            self.menu_manager.register_menu(menu_name, ElementChooseMenu(self, data or []))
+        elif menu_name == 'main_material_menu':
+            self.menu_manager.register_menu(menu_name, MainMaterialMenu(self, data or []))
+        elif menu_name == 'naming_menu':
+            self.menu_manager.register_menu(menu_name, NamingMenu(self, data or []))
+        elif menu_name == 'skill_library_menu':
+            self.menu_manager.register_menu(menu_name, SkillLibraryMenu(self, data or []))
+        elif menu_name == 'amplifier_menu':
+            self.menu_manager.register_menu(menu_name, AmplifierMenu(self, data or []))
+        elif menu_name == 'amplifier_stat_menu':
+            self.menu_manager.register_menu(menu_name, AmplifierStatMenu(self, data or []))
+        elif menu_name == 'amplifier_choose_menu':
+            self.menu_manager.register_menu(menu_name, AmplifierChooseMenu(self, data or []))
         elif menu_name == 'settings_menu':
-            self.menu_manager.register_menu(menu_name, SettingsMenu())  # 註冊並顯示設置菜單
+            self.menu_manager.register_menu(menu_name, SettingsMenu(self, data or []))
+        elif menu_name == 'settings_menu':
+            self.menu_manager.register_menu(menu_name, SettingsMenu(self, data or []))  # 註冊並顯示設置選單
         self.menu_manager.set_menu(menu_name)  # 設置當前菜單
         self.event_manager.state = "menu"  # 設置狀態為菜單
 
@@ -91,9 +129,9 @@ class Game:
 
         如果當前菜單匹配，則隱藏並根據情況返回大廳或主菜單。
         """
-        if self.menu_manager.current_menu and self.menu_manager.current_menu.__class__.__name__ == menu_name.capitalize():
-            if menu_name == 'settings_menu':
-                self.menu_manager.set_menu('main_menu')  # 返回主菜單
+        if self.menu_manager.current_menu and self.menu_manager.current_menu.__class__.__name__.lower() == menu_name:
+            if menu_name in ['settings_menu', 'stat_menu', 'element_menu', 'skill_library_menu', 'amplifier_menu', 'amplifier_stat_menu']:
+                self.menu_manager.set_menu('crystal_menu' if menu_name in ['stat_menu', 'element_menu', 'skill_library_menu', 'amplifier_menu', 'amplifier_stat_menu'] else 'main_menu')  # 返回上級選單
             else:
                 self.menu_manager.set_menu(None)  # 隱藏菜單
                 self.event_manager.state = "lobby"  # 返回大廳狀態

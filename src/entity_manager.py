@@ -19,11 +19,8 @@ class EntityManager:
         """
         self.game = game  # 保存遊戲實例引用
         self.player = None  # 玩家實例，初始為空
-        self.npc_group = pygame.sprite.Group()  # NPC 精靈組
-        self.enemy_group = pygame.sprite.Group()  # 敵人精靈組
-        self.player_bullet_group = pygame.sprite.Group()  # 玩家投射物精靈組
-        self.enemy_bullet_group = pygame.sprite.Group()  # 敵人投射物精靈組
-        self.npc_bullet_group = pygame.sprite.Group()  # NPC 投射物精靈組
+        self.entity_group = pygame.sprite.Group()  # 實體(玩家/NPC/敵人)精靈組
+        self.bullet_group = pygame.sprite.Group()  # 投射物精靈組
         self.damage_text_group = pygame.sprite.Group()  # 傷害文字精靈組
 
     def get_valid_tiles(self, room, tile_types: List[str]) -> List[Tuple[int, int]]:
@@ -83,15 +80,16 @@ class EntityManager:
         elif fallback_tiles:
             player_tile = random.choice(fallback_tiles)  # 隨機選擇備用地板瓦片
             player_x, player_y = self.tile_to_pixel(*player_tile)
-            self.player = Player(x=player_x, y=player_y, game=self.game)  # 生成玩家（不可穿牆）
+            self.player = Player(x=player_x, y=player_y, game=self.game, tag="player")  # 生成玩家（不可穿牆）
             print(f"EntityManager: 在備用地板瓦片 ({player_tile[0]}, {player_tile[1]}) 初始化玩家，像素座標 ({player_x}, {player_y})")
         else:
             center_x, center_y = self.game.dungeon_manager.get_room_center(room)  # 使用房間中心
-            self.player = Player(x=center_x, y=center_y, game=self.game)
+            self.player = Player(x=center_x, y=center_y, game=self.game, tag="player")
             print(f"EntityManager: 在房間中心 ({center_x}, {center_y}) 初始化玩家 - 無有效瓦片")
-
+        self.game.storage_manager.apply_all_to_player()  # Apply stored stats and skills to player
+        self.entity_group.add(self.player)
         # 初始化 NPC
-        self.npc_group.empty()  # 清空現有 NPC
+        # self.entity_group.empty()  # 清空現有 NPC
         npc_classes = [
             (AlchemyPotNPC, 'AlchemyPotNPC'),
             (MagicCrystalNPC, 'MagicCrystalNPC'),
@@ -107,7 +105,7 @@ class EntityManager:
             if npc_tiles:
                 npc_tile = npc_tiles[0]  # 使用第一個特定生成瓦片
                 npc_x, npc_y = self.tile_to_pixel(*npc_tile)
-                self.npc_group.add(npc_class(x=npc_x, y=npc_y, game=self.game))  # 添加 NPC
+                self.entity_group.add(npc_class(x=npc_x, y=npc_y, game=self.game))  # 添加 NPC
                 used_tiles.add(npc_tile)
                 print(f"EntityManager: 在瓦片 ({npc_tile[0]}, {npc_tile[1]}) 初始化 {npc_key}，像素座標 ({npc_x}, {npc_y})")
             elif fallback_tiles:
@@ -115,7 +113,7 @@ class EntityManager:
                 if available_tiles:
                     npc_tile = random.choice(available_tiles)
                     npc_x, npc_y = self.tile_to_pixel(*npc_tile)
-                    self.npc_group.add(npc_class(x=npc_x, y=npc_y, game=self.game))  # 添加 NPC
+                    self.entity_group.add(npc_class(x=npc_x, y=npc_y, game=self.game))  # 添加 NPC
                     used_tiles.add(npc_tile)
                     print(f"EntityManager: 在備用地板瓦片 ({npc_tile[0]}, {npc_tile[1]}) 初始化 {npc_key}，像素座標 ({npc_x}, {npc_y})")
                 else:
@@ -123,7 +121,7 @@ class EntityManager:
             else:
                 print(f"EntityManager: 無有效瓦片可供 {npc_key}，跳過")
 
-        print(f"EntityManager: 初始化了 {len(self.npc_group)} 個 NPC")
+        print(f"EntityManager: 初始化了 {len(self.entity_group)} 個 NPC")
 
     def initialize_dungeon_entities(self) -> None:
         """初始化地牢房間的實體，將其放置在指定瓦片上。
@@ -139,16 +137,18 @@ class EntityManager:
         }
 
         # 初始化敵人
-        self.enemy_group.empty()  # 清空現有敵人
+        # self.entity_group.empty()  # 清空現有敵人
         for y in range(int(self.game.dungeon_manager.dungeon.grid_height)):
             for x in range(int(self.game.dungeon_manager.dungeon.grid_width)):
                 if self.game.dungeon_manager.dungeon.dungeon_tiles[y][x] == 'Monster_spawn':
                     enemy_x, enemy_y = self.tile_to_pixel(x, y)
-                    self.enemy_group.add(Enemy1(x=enemy_x, y=enemy_y, game=self.game, tag="enemy"))  # 添加敵人
+                    self.entity_group.add(Enemy1(x=enemy_x, y=enemy_y, game=self.game, tag="enemy"))  # 添加敵人
                 elif self.game.dungeon_manager.dungeon.dungeon_tiles[y][x] == 'Player_spawn':
                     if not self.player:
                         player_x, player_y = self.tile_to_pixel(x, y)
                         self.player = Player(x=player_x, y=player_y, game=self.game)  # 生成玩家（不可穿牆）
+                        self.entity_group.add(self.player)
+                        self.game.storage_manager.apply_all_to_player()  # Apply stored stats and skills to player
                         print(f"EntityManager: 在瓦片 ({x}, {y}) 初始化玩家，像素座標 ({player_x}, {player_y})")
                     else:
                         self.player.x, self.player.y = self.tile_to_pixel(x, y)
@@ -165,16 +165,14 @@ class EntityManager:
 
         更新玩家、NPC、敵人和投射物的狀態。
         """
-        if self.game.event_manager.state in ["lobby", "playing"]:
-            if self.player:
-                self.player.update(dt, current_time)  # 更新玩家
-                print(f"EntityManager: 在狀態 {self.game.event_manager.state} 中更新玩家，位置 ({self.player.x}, {self.player.y})")
-            self.npc_group.update(dt, current_time)  # 更新 NPC
-        self.enemy_group.update(dt, current_time)  # 更新敵人
-        self.player_bullet_group.update(dt, current_time)  # 更新玩家投射物
-        self.enemy_bullet_group.update(dt, current_time)  # 更新敵人投射
-        self.npc_bullet_group.update(dt, current_time)  # 更新 NPC 投射物
-        self.damage_text_group.update(dt, current_time)  # 更新傷害文字
+        # if self.player:
+        #     self.player.update(dt, current_time)  # 更新玩家
+        for entity in self.entity_group:
+            entity.update(dt, current_time)  # 更新每個 實體
+        for entity in self.bullet_group:
+            entity.update(dt, current_time)  # 更新每個 投射物
+        for entity in self.damage_text_group:
+            entity.update(dt, current_time)  # 更新每個傷害文字
         print(f"EntityManager: 在狀態 {self.game.event_manager.state} 中更新實體")
 
     def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
@@ -186,22 +184,10 @@ class EntityManager:
 
         繪製 NPC、敵人、投射物和玩家。
         """
-        # self.npc_group.draw(screen)
-        for entity in self.npc_group:
-            entity.draw(screen, camera_offset)  # 繪製每個 NPC
-        # self.enemy_group.draw(screen)
-        for entity in self.enemy_group:
-            entity.draw(screen, camera_offset)  # 繪製每個敵人
-        # self.player_bullet_group.draw(screen)
-        for entity in self.player_bullet_group:
-            entity.draw(screen, camera_offset)  # 繪製每個玩家投射物
-        # self.enemy_bullet_group.draw(screen)
-        for entity in self.enemy_bullet_group:
-            entity.draw(screen, camera_offset)  # 繪製每個敵人投射物
-        # self.npc_bullet_group.draw(screen)
-        for entity in self.npc_bullet_group:
-            entity.draw(screen, camera_offset)  # 繪製每個 NPC 投射物
-        # self.damage_text_group.draw(screen)
+        for entity in self.entity_group:
+            entity.draw(screen, camera_offset)  # 繪製每個 實體
+        for entity in self.bullet_group:
+            entity.draw(screen, camera_offset)  # 繪製每個  投射物
         for entity in self.damage_text_group:
             entity.draw(screen, camera_offset)  # 繪製每個傷害文字  
         if self.player:

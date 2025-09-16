@@ -1,0 +1,27 @@
+{
+    "attack_level": 5,
+    "defense_level": 5,
+    "movement_level": 5,
+    "health_level": 5,
+    "mana": 499,
+    "skills": [
+        "112233",
+        "1"
+    ],
+    "awakened_elements": [
+        "light",
+        "fire",
+        "untyped",
+        "wind",
+        "dark",
+        "water",
+        "wood",
+        "metal",
+        "earth",
+        "thunder",
+        "ice"
+    ],
+    "amplifiers": {},
+    "skills_library": [
+    ]
+}

@@ -27,10 +27,15 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
                  collision_cooldown: float = 0.2,
                  explosion_range: float = 0.0,
                  explosion_damage: int = 0,
+                 explosion_max_hp_percentage_damage: int = 0,
+                 explosion_current_hp_percentage_damage: int = 0,
+                 explosion_lose_hp_percentage_damage: int = 0,
                  explosion_element: str = "untyped",
                  explosion_buffs: List['Buff'] = None,
                  outer_radius: float = TILE_SIZE,
-                 expansion_duration: float = 1.0):
+                 expansion_duration: float = 1.0,
+                 wait_time: float = 0.0,
+                 lifetime: float = 5.0,):
         # Initialize BasicEntity first
         BasicEntity.__init__(self, x, y, w, h, None, "circle", game, tag)
         
@@ -41,11 +46,13 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
                               collision_cooldown, explosion_range, explosion_damage, explosion_element,
                               explosion_buffs if explosion_buffs else [], init_basic=False)
 
+        self._pass_wall = True  # Bullets can pass through walls
+        self.tag = tag
         # Bullet-specific attributes (無變動)
         self.direction = direction
         self.velocity = (direction[0] * max_speed, direction[1] * max_speed)
-        self.lifetime = 5.0
-        self.current_penetration_count = 0
+        self.wait_time = wait_time
+        self.lifetime = lifetime
 
         # Circle-specific attributes (無變動)
         self.outer_radius = outer_radius
@@ -61,14 +68,16 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
 
     def update(self, dt: float, current_time: float) -> None:
         """Update bullet position, expansion, and check collisions."""
+        if self.wait_time > 0:
+            self.wait_time -= dt
+            return
         # Update parent classes
         MovementEntity.update(self, dt, current_time)
         AttackEntity.update(self, dt, current_time)
-
         # Update lifetime
         self.lifetime -= dt
         if self.lifetime <= 0:
-            self.explode(self.game.entity_manager.enemy_group)
+            self.explode(self.game.entity_manager.entity_group)
             self.kill()
             return
 
@@ -81,20 +90,22 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
             # Trigger damage when inner circle reaches outer circle
             if expansion_progress >= 1.0 and not self.expanded:
                 self.expanded = True
-                self._trigger_area_damage()
+                self.explode(self.game.entity_manager.entity_group)
+                self.kill()
+                return
 
         # Update image and rect
         self._update_image()
 
         # Check collision with walls (if not pass_wall)
-        if not self.pass_wall:
+        if not self._pass_wall:
             tile_x, tile_y = int(self.x // TILE_SIZE), int(self.y // TILE_SIZE)
             x_valid = 0 <= tile_x < self.dungeon.grid_width
             y_valid = 0 <= tile_y < self.dungeon.grid_height
             if x_valid and y_valid:
                 tile = self.dungeon.dungeon_tiles[tile_y][tile_x]
                 if tile not in PASSABLE_TILES:
-                    self.explode(self.game.entity_manager.enemy_group)
+                    self.explode(self.game.entity_manager.entity_group)
                     self.kill()
 
     def _update_image(self) -> None:
@@ -103,56 +114,8 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
         # Draw outer circle (white border, transparent fill)
         pygame.draw.circle(self.image, (255, 255, 255, 128), (self.outer_radius, self.outer_radius), self.outer_radius, 2)
         # Draw inner circle (solid red)
-        pygame.draw.circle(self.image, (255, 0, 0), (self.outer_radius, self.outer_radius), self.inner_radius)
+        pygame.draw.circle(self.image, (0, 0, 255), (self.outer_radius, self.outer_radius), self.inner_radius)
         self.rect = self.image.get_rect(center=(self.x, self.y))
-
-    def _trigger_area_damage(self) -> None:
-        """Trigger damage when inner circle reaches outer circle size."""
-        if not self.can_attack:
-            return
-
-        center = (self.x, self.y)
-
-        for enemy in self.game.entity_manager.enemy_group:
-            if not hasattr(enemy, 'take_damage'):
-                continue
-
-            enemy_center = (enemy.x + enemy.w / 2, enemy.y + enemy.h / 2)
-            distance = math.sqrt((center[0] - enemy_center[0])**2 + (center[1] - enemy_center[1])**2)
-
-            if distance <= self.outer_radius:
-                multiplier = self._damage_to_element.get(self.atk_element, 1.0)
-                effective_damage = int(self.damage * multiplier)
-                killed, actual_damage = enemy.take_damage(
-                    factor=1.0,
-                    element=self.atk_element,
-                    base_damage=effective_damage,
-                    max_hp_percentage_damage=self.max_hp_percentage_damage,
-                    current_hp_percentage_damage=self.current_hp_percentage_damage,
-                    lose_hp_percentage_damage=self.lose_hp_percentage_damage,
-                    cause_death=self.cause_death
-                )
-
-                # Add damage text
-                if actual_damage > 0:
-                    damage_text = DamageText((enemy.x + enemy.w / 2, enemy.y), actual_damage)
-                    self.game.entity_manager.damage_text_group.add(damage_text)
-
-                # Apply buffs
-                if self.buffs and hasattr(enemy, 'add_buff'):
-                    for buff in self.buffs:
-                        enemy.add_buff(buff.deepcopy())
-
-        # Increment penetration count
-        self.current_penetration_count += 1
-        if self.max_penetration_count > 0 and self.current_penetration_count >= self.max_penetration_count:
-            self.explode(self.game.entity_manager.enemy_group)
-            self.kill()
-        else:
-            # Reset expansion for next cycle
-            self.inner_radius = self.initial_inner_radius
-            self.expansion_time = 0.0
-            self.expanded = False
 
     def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
         """Draw the bullet with camera offset."""
@@ -171,6 +134,8 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
         for entity in entities:
             if not hasattr(entity, 'take_damage'):
                 continue
+            if self.tag == entity.tag:
+                continue  # Prevent self-damage or friendly fire
 
             entity_center = (entity.x + entity.w / 2, entity.y + entity.h / 2)
             distance = math.sqrt(

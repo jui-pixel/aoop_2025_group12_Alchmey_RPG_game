@@ -26,10 +26,17 @@ class Bullet(MovementEntity, AttackEntity):
                  damage_to_element: Optional[Dict[str, float]] = None,
                  atk_element: str = "untyped",
                  damage: int = 10,
+                 max_hp_percentage_damage: int = 0,
+                 current_hp_percentage_damage: int = 0,
+                 lose_hp_percentage_damage: int = 0,
+                 cause_death: bool = True,
                  max_penetration_count: int = 0,
                  collision_cooldown: float = 0.2,
                  explosion_range: float = 0.0,
                  explosion_damage: int = 0,
+                 explosion_max_hp_percentage_damage : int = 0,
+                 explosion_current_hp_percentage_damage : int = 0,
+                 explosion_lose_hp_percentage_damage : int = 0,
                  explosion_element: str = "untyped",
                  explosion_buffs: List['Buff'] = None):
         # Initialize BasicEntity first
@@ -38,9 +45,9 @@ class Bullet(MovementEntity, AttackEntity):
         # Initialize mixins without basic init
         MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move, init_basic=False)
         AttackEntity.__init__(self, x, y, w, h, image, shape, game, tag, can_attack, damage_to_element,
-                              atk_element, damage, 0, 0, 0, True, buffs, max_penetration_count,
+                              atk_element, damage, max_hp_percentage_damage, current_hp_percentage_damage, lose_hp_percentage_damage, True, buffs, max_penetration_count,
                               collision_cooldown, explosion_range, explosion_damage, explosion_element,
-                              explosion_buffs if explosion_buffs else [], init_basic=False, )
+                              explosion_buffs if explosion_buffs else [], explosion_max_hp_percentage_damage, explosion_max_hp_percentage_damage, explosion_max_hp_percentage_damage, init_basic=False)
 
         self.tag = tag
         # Bullet-specific attributes (無變動)
@@ -62,19 +69,21 @@ class Bullet(MovementEntity, AttackEntity):
     def update(self, dt: float, current_time: float) -> None:
         """Update bullet position, check collisions, and handle lifetime."""
         # Update parent classes
-        MovementEntity.update(self, dt, current_time)
-        AttackEntity.update(self, dt, current_time)
+        # AttackEntity.update(self, dt, current_time)
 
+        if self.can_move:
+            self.move(self.direction[0], self.direction[1], dt)
+        
         # Update lifetime
         self.lifetime -= dt
         if self.lifetime <= 0:
-            self.explode(self.game.entity_manager.enemy_group)
+            self.explode(self.game.entity_manager.entity_group)
             self.kill()
             return
 
         # Check collisions with enemies
         if self.can_attack:
-            for enemy in self.game.entity_manager.enemy_group:
+            for enemy in self.game.entity_manager.entity_group:
                 if self.rect.colliderect(enemy.rect):
                     self._handle_collision(enemy, current_time)
 
@@ -86,7 +95,7 @@ class Bullet(MovementEntity, AttackEntity):
             if x_valid and y_valid:
                 tile = self.dungeon.dungeon_tiles[tile_y][tile_x]
                 if tile not in PASSABLE_TILES:
-                    self.explode(self.game.entity_manager.enemy_group)
+                    self.explode(self.game.entity_manager.entity_group)
                     self.kill()
 
     def _handle_collision(self, enemy: 'BasicEnemy', current_time: float) -> None:
@@ -182,3 +191,28 @@ class Bullet(MovementEntity, AttackEntity):
         # Clear hit tracking after explosion
         self.hitted_entities.clear()
         self.last_hit_times.clear()
+        
+    def move(self, dx: float, dy: float, dt: float) -> None:
+        """Update velocity based on input direction and handle movement."""  # 無變動
+        if dx != 0 or dy != 0:
+            magnitude = math.sqrt(dx**2 + dy**2)
+            if magnitude > 0:
+                dx /= magnitude
+                dy /= magnitude
+            self.velocity = (dx * self.max_speed, dy * self.max_speed)
+
+        new_x = self.x + self.velocity[0] * dt
+        new_y = self.y + self.velocity[1] * dt
+        
+        if not self._pass_wall:
+            tile_x, tile_y = int(new_x // TILE_SIZE), int(new_y // TILE_SIZE)
+            x_valid = 0 <= tile_x < self.dungeon.grid_width
+            y_valid = 0 <= tile_y < self.dungeon.grid_height
+            if x_valid and y_valid:
+                tile = self.dungeon.dungeon_tiles[tile_y][tile_x]
+                if tile in PASSABLE_TILES:
+                    self.set_position(new_x, new_y)
+                else:
+                    self.kill()
+        else:
+            self.set_position(new_x, new_y)

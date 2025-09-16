@@ -25,6 +25,9 @@ class MenuManager:
 
         將菜單加入到 menus 字典中，並設置其初始激活狀態為 False。
         """
+        if name in self.menus and self.menus[name] is not None:
+            print(f"MenuManager: 菜單 {name} 已存在，無法重複註冊")
+            return
         self.menus[name] = menu
         if menu is not None:
             menu.activate(False)  # 設置菜單為非激活狀態

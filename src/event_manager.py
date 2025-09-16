@@ -62,6 +62,11 @@ class EventManager:
             elif action == "exit":
                 pygame.event.post(pygame.event.Event(pygame.QUIT))  # 退出遊戲
                 print("EventManager: 退出遊戲")
+            elif action == "back_to_lobby":
+                self.state = "lobby"
+                self.game.hide_menu(self.game.menu_manager.current_menu.__class__.__name__.lower())
+                print("EventManager: 返回大廳")
+
 
     def _handle_skill_selection_event(self, event: pygame.event.Event) -> None:
         """處理技能選擇狀態的事件。
@@ -189,7 +194,7 @@ class EventManager:
         player = self.game.entity_manager.player
         nearest_npc = None
         min_distance = float('inf')
-        for npc in self.game.entity_manager.npc_group:
+        for npc in self.game.entity_manager.entity_group:
             if hasattr(npc, 'interaction_range'):
                 distance = npc.calculate_distance_to(player)  # 計算與玩家的距離
                 if distance <= npc.interaction_range and distance < min_distance:
