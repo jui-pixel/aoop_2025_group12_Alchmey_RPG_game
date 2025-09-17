@@ -13,8 +13,8 @@ class StatMenu(AbstractMenu):
         """
         self.title = "Stat Upgrade"
         self.game = game
-        self.costs = [1, 2, 3, 4, 5]  # Upgrade costs per level
-        self.max_level = 5  # Maximum level for each stat
+        self.costs = [cost for cost in range(1, 101, 1)]  # Upgrade costs per level
+        self.max_level = 100  # Maximum level for each stat
         self.buttons = [
             Button(
                 SCREEN_WIDTH // 2 - 150, 100 + i * 50, 300, 40,

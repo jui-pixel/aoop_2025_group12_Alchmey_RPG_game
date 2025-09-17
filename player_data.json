@@ -1,9 +1,9 @@
 {
-    "attack_level": 5,
-    "defense_level": 5,
-    "movement_level": 5,
-    "health_level": 5,
-    "mana": 435,
+    "attack_level": 10,
+    "defense_level": 10,
+    "movement_level": 10,
+    "health_level": 10,
+    "mana": 18764273,
     "awakened_elements": [
         "wind",
         "ice"

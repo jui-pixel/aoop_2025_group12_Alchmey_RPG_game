@@ -322,15 +322,14 @@ class SpecialAttackAction(Action):
             bullet_y = entity.y + i * r * direction[1] + offset_magnitude * perp[1]
             # Dynamic wait_time: starts at 0.1s, increases by 0.05s per bullet
             wait_time = 0.1 + 0.02 * i
-            # Alternate tags for visual variation (if supported)
-            bullet_tag = "fire" if i % 2 == 0 else "ice" if self.tag == "" else self.tag
+            
             bullet = ExpandingCircleBullet(
                 x=bullet_x,
                 y=bullet_y,
                 w=TILE_SIZE // 2,
                 h=TILE_SIZE // 2,
                 game=entity.game,
-                tag=bullet_tag,
+                tag=self.tag,
                 max_speed=0.0,  # Stationary bullet
                 direction=direction,
                 damage=self.damage,
