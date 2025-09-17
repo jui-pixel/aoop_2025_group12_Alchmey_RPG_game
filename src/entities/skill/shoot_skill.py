@@ -44,11 +44,6 @@ class ShootingSkill(Skill):
         self.explosion_buffs = [ELEMENTAL_BUFFS[element]] if self.element_buff_enable else []
 
     def activate(self, player: 'Player', game: 'Game', target_position: Tuple[float, float], current_time: float) -> None:
-        if player.energy < self.energy_cost:
-            print(f"Not enough energy for {self.name} (required: {self.energy_cost}, available: {player.energy})")
-            return
-
-        player.energy -= self.energy_cost
         self.last_used = current_time
 
         dx = target_position[0] - (player.x + player.w / 2)

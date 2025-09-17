@@ -53,7 +53,15 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         HealthEntity.update(self, dt, current_time)
         AttackEntity.update(self, dt, current_time)
         BuffableEntity.update(self, dt, current_time)
+        self.regenerate_energy(dt)
 
+    def regenerate_energy(self, dt: float) -> None:
+        """Regenerate energy over time."""
+        if self.energy < self.max_energy:
+            self.energy += self.energy_regen_rate * dt
+            if self.energy > self.max_energy:
+                self.energy = self.max_energy
+    
     def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
         # Draw the player as a white rectangle
         pygame.draw.rect(screen, (255, 255, 255), 
@@ -103,7 +111,7 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
 
         skill.activate(self, self.game, target_position, current_time)
         self.energy -= skill.energy_cost
-
+        assert self.energy >= 0, "Energy should not be negative after skill activation"
         # Auto-switch to next skill in chain
         if len(self.skill_chain[self.current_skill_chain_idx]) > 1:
             self.current_skill_idx = (self.current_skill_idx + 1) % len(self.skill_chain[self.current_skill_chain_idx])

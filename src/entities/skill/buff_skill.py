@@ -25,6 +25,7 @@ class BuffSkill(Skill):
         def on_apply(entity):
             if shield_level > 0:
                 entity._current_shield += shield_level * 10
+                entity.current_shield = min(entity.current_shield, entity.max_shield)
             if remove_element_debuff and hasattr(entity, 'remove_buff'):
                 for buff in entity.buffs[:]:
                     if buff.element == self.element:
@@ -45,10 +46,5 @@ class BuffSkill(Skill):
         )
 
     def activate(self, player: 'Player', game: 'Game', target_position: Tuple[float, float], current_time: float) -> None:
-        if player.energy < self.energy_cost:
-            print(f"Not enough energy for {self.name} (required: {self.energy_cost}, available: {player.energy})")
-            return
-
-        player.energy -= self.energy_cost
         self.last_used = current_time
         player.add_buff(self.buff)

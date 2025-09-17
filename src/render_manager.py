@@ -229,6 +229,7 @@ class RenderManager:
         繪製遊戲世界並在需要時顯示菜單。
         """
         self.draw_game_world()
+        self._draw_ui()
         if self.game.menu_manager.current_menu:
             self.game.menu_manager.draw()
         pygame.display.flip()
@@ -239,11 +240,7 @@ class RenderManager:
         繪製遊戲世界並顯示當前技能名稱。
         """
         self.draw_game_world()
-        if self.game.entity_manager.player and self.game.entity_manager.player.skill_chain[self.game.entity_manager.player.current_skill_chain_idx]:
-            font = pygame.font.SysFont(None, 36)
-            skill_name = self.game.entity_manager.player.skill_chain[self.game.entity_manager.player.current_skill_chain_idx][self.game.entity_manager.player.current_skill_idx].name
-            skill_text = font.render(f"current skill：{skill_name}", True, (255, 255, 255))
-            self.screen.blit(skill_text, (10, 50))
+        self._draw_ui()
         if self.game.menu_manager.current_menu:
             self.game.menu_manager.draw()
         pygame.display.flip()
@@ -259,3 +256,28 @@ class RenderManager:
         self.screen.blit(win_text, (SCREEN_WIDTH // 2 - win_text.get_width() // 2,
                                    SCREEN_HEIGHT // 2 - win_text.get_height() // 2))
         pygame.display.flip()
+        
+    def _draw_ui(self) -> None:
+        """Draw the UI elements: HP, Shield, Energy, Current Skill Chain on left top; Mana on right top."""
+        if not self.game.entity_manager.player:
+            return
+        player = self.game.entity_manager.player
+        font = pygame.font.SysFont(None, 36)
+        
+        # Left top UI
+        hp_text = font.render(f"HP: {player.current_hp}/{player.max_hp}", True, (255, 255, 255))
+        self.screen.blit(hp_text, (10, 10))
+        
+        shield_text = font.render(f"Shield: {player.current_shield}/{player.max_shield}", True, (255, 255, 255))
+        self.screen.blit(shield_text, (10, 40))
+        
+        energy_text = font.render(f"Energy: {int(player.energy)}/{int(player.max_energy)}", True, (255, 255, 255))
+        self.screen.blit(energy_text, (10, 70))
+        
+        chain_idx = player.current_skill_chain_idx + 1
+        chain_text = font.render(f"Current Chain: {chain_idx}", True, (255, 255, 255))
+        self.screen.blit(chain_text, (10, 100))
+        
+        # Right top UI
+        mana_text = font.render(f"Mana: {self.game.storage_manager.mana}", True, (255, 255, 255))
+        self.screen.blit(mana_text, (SCREEN_WIDTH - mana_text.get_width() - 10, 10))
