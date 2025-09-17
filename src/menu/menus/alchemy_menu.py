@@ -5,7 +5,6 @@ import random
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from typing import List, Dict
 from ...utils.elements import ELEMENTS, WEAKTABLE
-from ...entities.skill.skill import create_skill_from_dict
 
 class AlchemyMenu(AbstractMenu):
     def __init__(self, game: 'Game', options = None):

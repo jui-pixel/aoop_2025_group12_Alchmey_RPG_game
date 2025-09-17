@@ -38,12 +38,13 @@ class Bullet(MovementEntity, AttackEntity):
                  explosion_current_hp_percentage_damage : int = 0,
                  explosion_lose_hp_percentage_damage : int = 0,
                  explosion_element: str = "untyped",
-                 explosion_buffs: List['Buff'] = None):
+                 explosion_buffs: List['Buff'] = None,
+                 pass_wall: bool = False):
         # Initialize BasicEntity first
         BasicEntity.__init__(self, x, y, w, h, image, shape, game, tag)
         
         # Initialize mixins without basic init
-        MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move, init_basic=False)
+        MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move, pass_wall, init_basic=False)
         AttackEntity.__init__(self, x, y, w, h, image, shape, game, tag, can_attack, damage_to_element,
                               atk_element, damage, max_hp_percentage_damage, current_hp_percentage_damage, lose_hp_percentage_damage, True, buffs, max_penetration_count,
                               collision_cooldown, explosion_range, explosion_damage, explosion_element,
@@ -147,7 +148,7 @@ class Bullet(MovementEntity, AttackEntity):
         # Increment penetration count
         self.current_penetration_count += 1
         if self.current_penetration_count >= self.max_penetration_count and self.max_penetration_count > 0:
-            self.explode(self.game.entity_manager.enemy_group)
+            self.explode(self.game.entity_manager.entity_group)
             self.kill()
 
     def explode(self, entities: pygame.sprite.Group) -> None:

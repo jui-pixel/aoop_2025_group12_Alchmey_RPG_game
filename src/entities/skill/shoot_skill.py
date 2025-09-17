@@ -3,49 +3,45 @@ import math
 from ..buff.element_buff import ElementBuff, ELEMENTAL_BUFFS, apply_elemental_buff
 from ...entities.bullet.bullet import Bullet
 from .abstract_skill import Skill
-
+from ...config import TILE_SIZE
 
 class ShootingSkill(Skill):
-    def __init__(self, name: str, element: str, energy_cost: float, element_buff_enable: bool = False,
-                 bullet_damage: int = 0, bullet_speed: float = 0, bullet_size: int = 0,
-                 bullet_element: str = "untyped", bullet_max_hp_percentage_damage : int = 0,
-                 bullet_current_hp_percentage_damage : int = 0,
-                 bullet_lose_hp_percentage_damage : int = 0,
-                 cause_death: bool = True,
-                 max_penetration_count: int = 0, collision_cooldown: float = 0.2,
-                 explosion_range: float = 0.0, explosion_damage: int = 0,
-                 explosion_max_hp_percentage_damage : int = 0,
-                 explosion_current_hp_percentage_damage : int = 0,
-                 explosion_lose_hp_percentage_damage : int = 0,
-                 explosion_element: str = "untyped",
-                 pass_wall: bool = False):
+    def __init__(self, name: str, element: str, energy_cost: float = 20.0,
+                 damage_level: int = 0, penetration_level: int = 0, elebuff_level: int = 0,
+                 explosion_level: int = 0, speed_level: int = 0):
         super().__init__(name, "shooting", element, energy_cost)
         
-        self.element_buff_enable = element_buff_enable
+        # Level-based parameters
+        self.damage_level = damage_level
+        self.penetration_level = penetration_level
+        self.elebuff_level = elebuff_level
+        self.explosion_level = explosion_level
+        self.speed_level = speed_level
         
-        self.bullet_damage = bullet_damage
-        self.bullet_max_hp_percentage_damage = bullet_max_hp_percentage_damage
-        self.bullet_current_hp_percentage_damage = bullet_current_hp_percentage_damage
-        self.bullet_lose_hp_percentage_damage = bullet_lose_hp_percentage_damage
-        self.cause_death = cause_death
-        self.bullet_speed = bullet_speed
-        self.bullet_size = bullet_size
-        self.bullet_element = bullet_element
-        self.bullet_effects = [ELEMENTAL_BUFFS[bullet_element]] if element_buff_enable else []
+        # Calculated values based on levels (moved from skill.py)
+        self.bullet_damage = 10 * (1 + 0.1 * damage_level)  # +10% damage per level
+        self.bullet_speed = 3 * TILE_SIZE * (1 + 0.1 * speed_level)  # +10% speed per level
+        self.bullet_size = 8  # Fixed size, as in original skill.py
+        self.bullet_element = element
+        self.max_penetration_count = penetration_level  # Direct mapping from penetration_level
+        self.explosion_range = explosion_level * 10  # +10 pixels per level (arbitrary scaling)
+        self.element_buff_enable = elebuff_level > 0  # Enable elemental buff if elebuff_level > 0
         
-        self.max_penetration_count = max_penetration_count
+        # Default values for other parameters (as in original skill.py)
+        self.bullet_max_hp_percentage_damage = 0
+        self.bullet_current_hp_percentage_damage = 0
+        self.bullet_lose_hp_percentage_damage = 0
+        self.explosion_damage = explosion_level * 10  # +10 damage per explosion level
+        self.explosion_max_hp_percentage_damage = 0
+        self.explosion_current_hp_percentage_damage = 0
+        self.explosion_lose_hp_percentage_damage = 0
+        self.explosion_element = element
+        self.collision_cooldown = 0.2
+        self.pass_wall = False
+        self.cause_death = True
         
-        self.collision_cooldown = collision_cooldown
-        
-        self.explosion_range = explosion_range
-        self.explosion_damage = explosion_damage
-        self.explosion_max_hp_percentage_damage = explosion_max_hp_percentage_damage
-        self.explosion_current_hp_percentage_damage = explosion_current_hp_percentage_damage
-        self.explosion_lose_hp_percentage_damage = explosion_lose_hp_percentage_damage
-        self.explosion_element = explosion_element
-        self.explosion_buffs = [ELEMENTAL_BUFFS[explosion_element]] if element_buff_enable else []
-        
-        self.pass_wall = pass_wall
+        self.bullet_effects = [ELEMENTAL_BUFFS[element]] if self.element_buff_enable else []
+        self.explosion_buffs = [ELEMENTAL_BUFFS[element]] if self.element_buff_enable else []
 
     def activate(self, player: 'Player', game: 'Game', target_position: Tuple[float, float], current_time: float) -> None:
         if player.energy < self.energy_cost:
@@ -80,7 +76,7 @@ class ShootingSkill(Skill):
             buffs=self.bullet_effects,
             damage_to_element=damage_to_element,
             atk_element=self.element,
-            damage=self.damage,
+            damage=self.bullet_damage,
             max_hp_percentage_damage=self.bullet_max_hp_percentage_damage,
             current_hp_percentage_damage=self.bullet_current_hp_percentage_damage,
             lose_hp_percentage_damage=self.bullet_lose_hp_percentage_damage,
@@ -95,4 +91,4 @@ class ShootingSkill(Skill):
             explosion_buffs=self.explosion_buffs,
             pass_wall=self.pass_wall
         )
-        game.entity_manager.player_bullet_group.add(bullet)
+        game.entity_manager.bullet_group.add(bullet)

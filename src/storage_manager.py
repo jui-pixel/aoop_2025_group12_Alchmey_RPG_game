@@ -1,9 +1,10 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 import json
 from .entities.player.player import Player
 from .config import TILE_SIZE
-from .entities.skill.skill import create_skill_from_dict
-
+from .entities.skill.shoot_skill import ShootingSkill
+from .entities.skill.buff_skill import BuffSkill
+from .entities.skill.abstract_skill import Skill
 class StorageManager:
     def __init__(self, game: 'Game'):
         """Initialize the storage manager to manage game data (stats, skills, elements, amplifiers).
@@ -87,6 +88,13 @@ class StorageManager:
         self.save_to_json()  # Save to JSON after adding skill
         print(f"StorageManager: Added skill {skill_dict['name']} to library")
 
+    def get_skill_instance(self, name: str) -> Optional[Skill]:
+        """Retrieve a skill instance by name from the skills library."""
+        for d in self.skills_library:
+            if d['name'] == name:
+                return self.create_skill_from_dict(d)
+        return None
+
     def get_skills_library(self) -> List[Dict]:
         """Get the skill library.
 
@@ -94,6 +102,52 @@ class StorageManager:
             List[Dict]: List of all skill data.
         """
         return self.skills_library
+
+    def create_skill_from_dict(self, data: Dict) -> Optional['Skill']:
+        """Create a skill instance from a dictionary.
+
+        Args:
+            data: Dictionary containing skill data with 'name', 'type', 'element', and 'params'.
+
+        Returns:
+            Optional[Skill]: The created skill instance or None if type is unknown.
+        """
+        name = data.get('name')
+        skill_type = data.get('type')
+        element = data.get('element', 'untyped')
+        params = data.get('params', {})
+        energy_cost = params.get('energy_cost', 20.0)
+
+        if skill_type == 'shooting':
+            return ShootingSkill(
+                name=name,
+                element=element,
+                energy_cost=energy_cost,
+                damage_level=params.get('damage', 0),
+                penetration_level=params.get('penetration', 0),
+                elebuff_level=params.get('elebuff', 0),
+                explosion_level=params.get('explosion', 0),
+                speed_level=params.get('speed', 0)
+            )
+        elif skill_type == 'buff':
+            return BuffSkill(
+                name=name,
+                type=skill_type,
+                element=element,
+                buff_name=params.get('sub_type', None),
+                energy_cost=energy_cost,
+                buff_duration_level=params.get('duration', 0),
+                element_resistance_level=params.get('element_resistance', 0),
+                counter_element_resistance_level=params.get('counter_element_resistance', 0),
+                shield_level=params.get('shield', 0),
+                remove_element_debuff=params.get('remove_element', 0) > 0,
+                remove_counter_element_debuff=params.get('remove_counter', 0) > 0,
+                avoid_level=params.get('avoid', 0),
+                speed_level=params.get('speed', 0)
+            )
+        else:
+            print(f"StorageManager: Unknown skill type {skill_type}")
+            return None
 
     def apply_stats_to_player(self) -> None:
         """Apply current stat levels to the player."""
@@ -125,14 +179,11 @@ class StorageManager:
         player.current_skill_idx = 0
         # Add skills to the first skill chain
         for skill_dict in self.skills_library:
-            skill = create_skill_from_dict(skill_dict)
+            skill = self.create_skill_from_dict(skill_dict)
             if skill:
                 player.add_skill_to_chain(skill, chain_idx=0)
         print(f"StorageManager: Applied {len(self.skills_library)} skills to player skill chain")
 
-    def create_skill_from_dict(self, skill_dict: Dict) -> 'Skill':
-        pass
-    
     def apply_elements_to_player(self) -> None:
         """Apply awakened elements to the player."""
         if not self.game.entity_manager.player:

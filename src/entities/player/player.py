@@ -3,7 +3,7 @@ from ..attack_entity import AttackEntity
 from ..buffable_entity import BuffableEntity
 from ..health_entity import HealthEntity
 from ..movement_entity import MovementEntity
-from ..skill.skill import Skill
+from ..skill.abstract_skill import Skill
 from ...config import TILE_SIZE, MAX_SKILLS_DEFAULT
 import pygame
 import math
@@ -32,12 +32,12 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         BuffableEntity.__init__(self, x, y, w, h, image, shape, game, tag, init_basic=False)
         
         # Player-specific attributes
-        self.skill_chain = [[]]  # List[List[Skill]] for skill chains
+        self.skill_chain = [[] for _ in range(9)]  # List[List[Skill]] for 9 skill chains
         self.current_skill_chain_idx = 0
         self.current_skill_idx = 0
         self.max_skills = MAX_SKILLS_DEFAULT
         self.max_skill_chains = 9
-        self.max_skill_chain_length = 5
+        self.max_skill_chain_length = 8  # Updated to 8 as per menu description
         self.base_max_energy = 100.0
         self.max_energy = self.base_max_energy
         self.energy = self.max_energy
@@ -45,24 +45,21 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         self.original_energy_regen_rate = 20.0
         self.fog = True
         self.vision_radius = vision_radius  # In tiles
-        
-        
 
     def update(self, dt: float, current_time: float) -> None:
-        # Call parent classes' update methods in MRO order
-        MovementEntity.update(self, dt, current_time)  # This will chain to all parents
+        # Call parent classes' update methods in order
+        MovementEntity.update(self, dt, current_time)
         HealthEntity.update(self, dt, current_time)
         AttackEntity.update(self, dt, current_time)
         BuffableEntity.update(self, dt, current_time)
-        # Update energy
-        self.energy = min(self.max_energy, self.energy + self.energy_regen_rate * dt)
-        
+
     def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
-        BasicEntity.draw(self, screen, camera_offset)
-        # Additional player-specific drawing (e.g., HUD) can be added here
+        # Draw the player as a white rectangle
+        pygame.draw.rect(screen, (255, 255, 255), 
+                         (self.x - camera_offset[0], self.y - camera_offset[1], self.w, self.h))
 
     def add_skill_to_chain(self, skill: Skill, chain_idx: int = 0) -> bool:
-        """Add a skill to the specified skill chain."""
+        """Add a skill to the specified skill chain if space is available."""
         if chain_idx >= self.max_skill_chains:
             print(f"Invalid chain index: {chain_idx}. Maximum is {self.max_skill_chains - 1}.")
             return False

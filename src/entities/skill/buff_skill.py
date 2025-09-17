@@ -35,7 +35,7 @@ class BuffSkill(Skill):
                         entity.remove_buff(buff)
 
         self.buff = Buff(
-            name=buff_name or self.ELEMENT_TO_BUFF_NAME.get(self.element, 'Untyped'),
+            name=buff_name ,
             duration=buff_duration_level + 1.0,
             element=self.element,
             multipliers=multipliers,

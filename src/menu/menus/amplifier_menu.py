@@ -78,7 +78,7 @@ class AmplifierMenu(AbstractMenu):
                     if self.game.menu_manager.menus['amplifier_stat_menu'] is not None:
                         self.game.menu_manager.menus['amplifier_stat_menu'].update_type(amplifier_type)
                     data = {'type': amplifier_type}
-                    self.game.show_menu('amplifier_stat_menu', data=data)
+                    self.game.show_menu('amplifier_stat_menu')
                     return action
         for button in self.buttons:
             active, action = button.handle_event(event)
@@ -92,7 +92,7 @@ class AmplifierMenu(AbstractMenu):
                     if self.game.menu_manager.menus['amplifier_stat_menu'] is not None:
                         self.game.menu_manager.menus['amplifier_stat_menu'].update_type(amplifier_type)
                     data = {'type': amplifier_type}
-                    self.game.show_menu('amplifier_stat_menu', data=data)
+                    self.game.show_menu('amplifier_stat_menu')
                     return action
         return ""
 

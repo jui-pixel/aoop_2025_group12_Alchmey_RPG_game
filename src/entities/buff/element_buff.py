@@ -250,8 +250,8 @@ ELEMENTAL_BUFFS = {
         on_apply=None,
         on_remove=None,
     ),
-    'Untyped': ElementBuff(
-        name='Untyped',
+    'untyped': ElementBuff(
+        name='untyped',
         duration=1.0,
         element='untyped',
         multipliers={},
