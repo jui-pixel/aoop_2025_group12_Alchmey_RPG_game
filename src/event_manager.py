@@ -141,7 +141,33 @@ class EventManager:
             elif event.key in (pygame.K_a, pygame.K_d):
                 self.game.entity_manager.player.displacement = (0, current_disp[1])  # Reset horizontal displacement
                 print(f"EventManager: Lobby - Reset horizontal displacement to {self.game.entity_manager.player.displacement}")
-
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1: 
+                mouse_pos = pygame.mouse.get_pos()  # Get mouse position
+                target_pos = (mouse_pos[0] + self.game.render_manager.camera_offset[0], 
+                              mouse_pos[1] + self.game.render_manager.camera_offset[1])  # Calculate target position
+                dx = target_pos[0] - (self.game.entity_manager.player.x + self.game.entity_manager.player.w / 2)
+                dy = target_pos[1] - (self.game.entity_manager.player.y + self.game.entity_manager.player.h / 2)
+                magnitude = math.sqrt(dx**2 + dy**2)  # Calculate distance
+                direction = (dx / magnitude, dy / magnitude) if magnitude > 0 else (0, 0)  # Calculate direction vector
+                self.game.entity_manager.player.activate_skill(direction, self.game.current_time, target_pos)  # Activate skill
+                self.game.audio_manager.play_sound_effect("skill_activate")  # Play skill sound effect
+                print("EventManager: Playing - Activated skill")
+            elif event.button == 2:
+                pass
+            elif event.button == 3:
+                pass
+            elif event.button == 4:  # Mouse wheel up: switch to next skill chain
+                current_idx = self.game.entity_manager.player.current_skill_chain_idx
+                next_idx = (current_idx + 1) % self.game.entity_manager.player.max_skill_chains
+                self.game.entity_manager.player.switch_skill_chain(next_idx)
+                print(f"EventManager: Playing - Switched to next skill chain {next_idx}")
+            elif event.button == 5:  # Mouse wheel down: switch to previous skill chain
+                current_idx = self.game.entity_manager.player.current_skill_chain_idx
+                prev_idx = (current_idx - 1) % self.game.entity_manager.player.max_skill_chains
+                self.game.entity_manager.player.switch_skill_chain(prev_idx)
+                print(f"EventManager: Playing - Switched to previous skill chain {prev_idx}")
+                
     def _handle_playing_event(self, event: pygame.event.Event) -> None:
         """Handle events in playing state.
 
@@ -161,18 +187,7 @@ class EventManager:
             elif event.key in range(pygame.K_1, pygame.K_9 + 1):
                 chain_idx = event.key - pygame.K_1  # 1-9 keys map to chain_idx 0-8
                 self.game.entity_manager.player.switch_skill_chain(chain_idx)
-                print(f"EventManager: Playing - Switched skill chain to {chain_idx}")
-            elif event.key == pygame.K_SPACE:
-                mouse_pos = pygame.mouse.get_pos()  # Get mouse position
-                target_pos = (mouse_pos[0] + self.game.render_manager.camera_offset[0], 
-                              mouse_pos[1] + self.game.render_manager.camera_offset[1])  # Calculate target position
-                dx = target_pos[0] - (self.game.entity_manager.player.x + self.game.entity_manager.player.w / 2)
-                dy = target_pos[1] - (self.game.entity_manager.player.y + self.game.entity_manager.player.h / 2)
-                magnitude = math.sqrt(dx**2 + dy**2)  # Calculate distance
-                direction = (dx / magnitude, dy / magnitude) if magnitude > 0 else (0, 0)  # Calculate direction vector
-                self.game.entity_manager.player.activate_skill(direction, self.game.current_time, target_pos)  # Activate skill
-                self.game.audio_manager.play_sound_effect("skill_activate")  # Play skill sound effect
-                print("EventManager: Playing - Activated skill")
+                print(f"EventManager: Playing - Switched skill chain to {chain_idx}")          
             elif event.key == pygame.K_w:
                 current_disp = self.game.entity_manager.player.displacement
                 self.game.entity_manager.player.displacement = (current_disp[0], -1)  # Move up
@@ -198,7 +213,22 @@ class EventManager:
                 self.game.entity_manager.player.displacement = (0, current_disp[1])  # Reset horizontal displacement
                 print(f"EventManager: Playing - Reset horizontal displacement to {self.game.entity_manager.player.displacement}")
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 4:  # Mouse wheel up: switch to next skill chain
+            if event.button == 1: 
+                mouse_pos = pygame.mouse.get_pos()  # Get mouse position
+                target_pos = (mouse_pos[0] + self.game.render_manager.camera_offset[0], 
+                              mouse_pos[1] + self.game.render_manager.camera_offset[1])  # Calculate target position
+                dx = target_pos[0] - (self.game.entity_manager.player.x + self.game.entity_manager.player.w / 2)
+                dy = target_pos[1] - (self.game.entity_manager.player.y + self.game.entity_manager.player.h / 2)
+                magnitude = math.sqrt(dx**2 + dy**2)  # Calculate distance
+                direction = (dx / magnitude, dy / magnitude) if magnitude > 0 else (0, 0)  # Calculate direction vector
+                self.game.entity_manager.player.activate_skill(direction, self.game.current_time, target_pos)  # Activate skill
+                self.game.audio_manager.play_sound_effect("skill_activate")  # Play skill sound effect
+                print("EventManager: Playing - Activated skill")
+            elif event.button == 2:
+                pass
+            elif event.button == 3:
+                pass
+            elif event.button == 4:  # Mouse wheel up: switch to next skill chain
                 current_idx = self.game.entity_manager.player.current_skill_chain_idx
                 next_idx = (current_idx + 1) % self.game.entity_manager.player.max_skill_chains
                 self.game.entity_manager.player.switch_skill_chain(next_idx)

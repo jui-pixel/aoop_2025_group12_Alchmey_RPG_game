@@ -17,7 +17,7 @@ class Bullet(MovementEntity, AttackEntity):
                  image: Optional[pygame.Surface] = None,
                  shape: str = "rect",
                  game: 'Game' = None,
-                 tag: str = "player_bullet",
+                 tag: str = "player",
                  max_speed: float = 300.0,
                  direction: Tuple[float, float] = (0.0, 0.0),
                  can_move: bool = True,

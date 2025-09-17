@@ -45,6 +45,7 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         self.original_energy_regen_rate = 20.0
         self.fog = True
         self.vision_radius = vision_radius  # In tiles
+        self.mana = 0 # 貨幣單位
 
     def update(self, dt: float, current_time: float) -> None:
         # Call parent classes' update methods in order

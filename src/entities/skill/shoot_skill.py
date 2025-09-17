@@ -68,7 +68,7 @@ class ShootingSkill(Skill):
             image=None,
             shape="rect",
             game=game,
-            tag="player_bullet",
+            tag="player",
             max_speed=self.bullet_speed,
             direction=direction,
             can_move=True,

@@ -242,7 +242,7 @@ class RenderManager:
         if self.game.entity_manager.player and self.game.entity_manager.player.skill_chain[self.game.entity_manager.player.current_skill_chain_idx]:
             font = pygame.font.SysFont(None, 36)
             skill_name = self.game.entity_manager.player.skill_chain[self.game.entity_manager.player.current_skill_chain_idx][self.game.entity_manager.player.current_skill_idx].name
-            skill_text = font.render(f"當前技能：{skill_name}", True, (255, 255, 255))
+            skill_text = font.render(f"current skill：{skill_name}", True, (255, 255, 255))
             self.screen.blit(skill_text, (10, 50))
         if self.game.menu_manager.current_menu:
             self.game.menu_manager.draw()
