@@ -16,7 +16,6 @@ class SkillLibraryMenu(AbstractMenu):
         self.game = game
         self.skills_per_page = 8
         self.current_page = 0
-        self.skill_cost = 200  # Mana cost to acquire a skill
         self.skills = self.game.storage_manager.skills_library if self.game.storage_manager.skills_library else []
         self.total_pages = ceil(len(self.skills) / self.skills_per_page)
         self.buttons = []
@@ -24,7 +23,7 @@ class SkillLibraryMenu(AbstractMenu):
         self.active = False
         self.font = pygame.font.SysFont(None, 48)
         self.message_font = pygame.font.SysFont(None, 36)
-        self.message = None
+        self.selected_description = None
         self._update_buttons()
 
     def _update_buttons(self):
@@ -34,7 +33,7 @@ class SkillLibraryMenu(AbstractMenu):
         end_idx = min(start_idx + self.skills_per_page, len(self.skills))
         for i, idx in enumerate(range(start_idx, end_idx)):
             skill = self.skills[idx]
-            button_text = f"{skill['name']} {'(Owned)' if skill['name'] in self.game.storage_manager.skills else f'(Cost: {self.skill_cost})'}"
+            button_text = f"{skill['name']}"
             self.buttons.append(
                 Button(
                     SCREEN_WIDTH // 2 - 150, 100 + i * 50, 300, 40,
@@ -81,6 +80,27 @@ class SkillLibraryMenu(AbstractMenu):
         self.selected_index = min(self.selected_index, len(self.buttons) - 1)
         self.buttons[self.selected_index].is_selected = True
 
+    def _get_skill_description(self, skill: Dict) -> str:
+        """Generate a description string for the skill.
+
+        Args:
+            skill: The skill dictionary.
+
+        Returns:
+            str: A formatted description of the skill's attributes.
+        """
+        desc = f"Name: {skill.get('name', 'Unknown')}\n"
+        desc += f"Type: {skill.get('type', 'Unknown')}\n"
+        if 'sub_type' in skill:
+            desc += f"Sub Type: {skill.get('sub_type', 'None')}\n"
+        desc += f"Element: {skill.get('element', 'Untyped')}\n"
+        params = skill.get('params', {})
+        if params:
+            desc += "Parameters:\n"
+            for key, value in params.items():
+                desc += f"  {key.capitalize()}: {value}\n"
+        return desc
+
     def draw(self, screen: pygame.Surface) -> None:
         """Draw the skill library menu, showing the current page of skills and navigation buttons."""
         if not self.active:
@@ -89,16 +109,22 @@ class SkillLibraryMenu(AbstractMenu):
         overlay.set_alpha(200)
         overlay.fill((0, 0, 0))
         screen.blit(overlay, (0, 0))
-        title_surface = self.font.render(f"{self.title} (Page {self.current_page + 1}/{self.total_pages})", True, (255, 255, 255))
+        title_surface = self.font.render(self.title, True, (255, 255, 255))
         screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 50))
         for button in self.buttons:
             button.draw(screen)
-        if self.message:
-            msg_surface = self.message_font.render(self.message, True, (255, 0, 0))
-            screen.blit(msg_surface, (SCREEN_WIDTH // 2 - msg_surface.get_width() // 2, SCREEN_HEIGHT - 100))
+        if self.selected_description:
+            # Render multiline description
+            lines = self.selected_description.split('\n')
+            y = 100
+            for line in lines:
+                desc_surface = self.message_font.render(line, True, (255, 255, 255))
+                # screen.blit(desc_surface, (SCREEN_WIDTH // 2 - desc_surface.get_width() // 2, y))
+                screen.blit(desc_surface, (SCREEN_WIDTH // 2 + 200, y))
+                y += desc_surface.get_height() + 5  # Spacing between lines
 
     def handle_event(self, event: pygame.event.Event) -> str:
-        """Handle keyboard and mouse events for navigating pages or selecting skills.
+        """Handle keyboard and mouse events for viewing skill descriptions or navigation.
 
         Returns:
             str: The triggered action name.
@@ -106,7 +132,7 @@ class SkillLibraryMenu(AbstractMenu):
         if not self.active:
             return ""
         if event.type in [pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN]:
-            self.message = None
+            self.selected_description = None
         if event.type == pygame.MOUSEMOTION:
             for i, button in enumerate(self.buttons):
                 if button.rect.collidepoint(event.pos):
@@ -139,13 +165,8 @@ class SkillLibraryMenu(AbstractMenu):
                     return "next"
                 elif action.startswith("skill_"):
                     skill_idx = int(action.split("_")[1])
-                    skill_name = self.skills[skill_idx]['name']
-                    success, reason = self.game.storage_manager.add_skill(skill_name, cost=self.skill_cost)
-                    if success:
-                        print(f"SkillLibraryMenu: Added skill {skill_name} to player")
-                        self._update_buttons()  # Update buttons to reflect ownership
-                    else:
-                        self.message = reason
+                    skill = self.skills[skill_idx]
+                    self.selected_description = self._get_skill_description(skill)
                     return action
         for button in self.buttons:
             active, action = button.handle_event(event)
@@ -164,13 +185,8 @@ class SkillLibraryMenu(AbstractMenu):
                     return "next"
                 elif action.startswith("skill_"):
                     skill_idx = int(action.split("_")[1])
-                    skill_name = self.skills[skill_idx]['name']
-                    success, reason = self.game.storage_manager.add_skill(skill_name, cost=self.skill_cost)
-                    if success:
-                        print(f"SkillLibraryMenu: Added skill {skill_name} to player")
-                        self._update_buttons()  # Update buttons to reflect ownership
-                    else:
-                        self.message = reason
+                    skill = self.skills[skill_idx]
+                    self.selected_description = self._get_skill_description(skill)
                     return action
         return ""
 
@@ -194,4 +210,4 @@ class SkillLibraryMenu(AbstractMenu):
             self.buttons[self.selected_index].is_selected = True
         else:
             self.buttons[self.selected_index].is_selected = False
-            self.message = None
+            self.selected_description = None

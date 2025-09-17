@@ -29,7 +29,7 @@ class AmplifierMenu(AbstractMenu):
         self.active = False
         self.font = pygame.font.SysFont(None, 48)
         self.buttons[self.selected_index].is_selected = True
-
+    
     def draw(self, screen: pygame.Surface) -> None:
         """Draw the amplifier menu, including title and buttons."""
         if not self.active:
@@ -75,7 +75,10 @@ class AmplifierMenu(AbstractMenu):
                     return "crystal_menu"
                 elif action.startswith("show_"):
                     amplifier_type = action.split("_")[1] + "_" + action.split("_")[2]
-                    self.game.show_menu('amplifier_stat_menu', type=amplifier_type)
+                    if self.game.menu_manager.menus['amplifier_stat_menu'] is not None:
+                        self.game.menu_manager.menus['amplifier_stat_menu'].update_type(amplifier_type)
+                    data = {'type': amplifier_type}
+                    self.game.show_menu('amplifier_stat_menu', data=data)
                     return action
         for button in self.buttons:
             active, action = button.handle_event(event)
@@ -86,7 +89,10 @@ class AmplifierMenu(AbstractMenu):
                     return "crystal_menu"
                 elif action.startswith("show_"):
                     amplifier_type = action.split("_")[1] + "_" + action.split("_")[2]
-                    self.game.show_menu('amplifier_stat_menu', type=amplifier_type)
+                    if self.game.menu_manager.menus['amplifier_stat_menu'] is not None:
+                        self.game.menu_manager.menus['amplifier_stat_menu'].update_type(amplifier_type)
+                    data = {'type': amplifier_type}
+                    self.game.show_menu('amplifier_stat_menu', data=data)
                     return action
         return ""
 

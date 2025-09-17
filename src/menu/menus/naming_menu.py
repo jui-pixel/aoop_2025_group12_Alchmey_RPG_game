@@ -53,3 +53,5 @@ class NamingMenu(AbstractMenu):
 
     def activate(self, active: bool) -> None:
         self.active = active
+        self.name = ""
+        self.message = ""

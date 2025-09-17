@@ -4,47 +4,93 @@ import pygame
 from typing import List, Dict, Tuple
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 
+
 class AmplifierStatMenu(AbstractMenu):
-    def __init__(self, game: 'Game', options: Dict):
-        """Initialize the amplifier effect menu for the specified amplifier type.
+    def __init__(self, game: 'Game', options: Dict = None):
+        """Initialize the amplifier effect menu for viewing effect descriptions.
 
         Args:
             game: The main game instance for accessing storage manager and menu management.
-            options: Dict containing 'type' for the amplifier type.
+            options: Dict containing 'type' for the amplifier type (default: 'magic_missile').
         """
-        amplifier_type = options.get('type', 'magic_missile')
-        self.title = f"{amplifier_type.replace('_', ' ').title()} Effects"
         self.game = game
-        self.amplifier_type = amplifier_type
-        self.effect_cost = 300  # Cost in mana to apply each effect
-        self.effects = {
-            "magic_missile": ["Increase Damage", "Increase Speed", "Pierce"],
-            "magic_shield": ["Increase Duration", "Increase Strength", "Reflect"],
-            "magic_step": ["Increase Speed", "Reduce Cooldown", "Dash Distance"]
-        }.get(amplifier_type, [])
-        self.buttons = [
-            Button(
-                SCREEN_WIDTH // 2 - 150, 100 + i * 50, 300, 40,
-                effect, pygame.Surface((300, 40)), f"apply_{effect.lower().replace(' ', '_')}",
-                pygame.font.SysFont(None, 36)
-            ) for i, effect in enumerate(self.effects)
-        ]
-        self.buttons.append(
-            Button(
-                SCREEN_WIDTH // 2 - 150, 100 + len(self.effects) * 50, 300, 40,
-                "Back", pygame.Surface((300, 40)), "back",
-                pygame.font.SysFont(None, 36)
-            )
-        )
+        self.amplifier_type = 'magic_missile'  # Default type
+        self.title = "Magic Missile Effects"  # Default title
+        self.effect_mapping = self._get_effect_mapping(self.amplifier_type)
+        self.buttons = self._create_buttons()
         self.selected_index = 0
         self.active = False
         self.font = pygame.font.SysFont(None, 48)
         self.message_font = pygame.font.SysFont(None, 36)
-        self.message = None
+        self.selected_description = None
+        # Apply initial options if provided
+        if options and 'type' in options:
+            self.update_type(options['type'])
         self.buttons[self.selected_index].is_selected = True
 
+    def _get_effect_mapping(self, amplifier_type: str) -> List[Tuple[str, str, str]]:
+        """Get the effect mapping for the given amplifier type."""
+        mapping = {
+            "magic_missile": [
+                ("Increase Damage", "damage_level", "Increases missile damage by 10 per level"),
+                ("Pierce", "penetration_level", "Allows missile to hit one additional enemy per level"),
+                ("Elemental Buff", "elebuff_level", "Enhances elemental damage by 5% (max level 1)"),
+                ("Explosion", "explosion_level", "Adds explosion with radius 50 per level"),
+                ("Increase Speed", "speed_level", "Increases missile speed by 50 units per level")
+            ],
+            "magic_shield": [
+                ("Element Resistance", "element_resistance_level", "Reduces elemental damage taken by 10% per level"),
+                ("Remove Element", "remove_element_level", "Grants chance to negate elemental effects (max level 1)"),
+                ("Counter Resistance", "counter_element_resistance_level", "Reflects 10% of elemental damage (max level 1)"),
+                ("Remove Counter", "remove_counter_level", "Grants chance to negate counterattacks (max level 1)"),
+                ("Increase Duration", "duration_level", "Extends shield duration by 1 second per level"),
+                ("Increase Strength", "shield_level", "Increases shield health by 20 per level")
+            ],
+            "magic_step": [
+                ("Reduce Cooldown", "avoid_level", "Reduces step cooldown by 0.5 seconds per level"),
+                ("Increase Speed", "speed_level", "Increases movement speed by 20 units per level"),
+                ("Dash Distance", "duration_level", "Extends dash distance by 10 units per level")
+            ]
+        }
+        return mapping.get(amplifier_type, [])
+
+    def _create_buttons(self) -> List[Button]:
+        """Create buttons based on current effect_mapping."""
+        buttons = [
+            Button(
+                SCREEN_WIDTH // 2 - 150, 100 + i * 50, 300, 40,
+                effect_name,
+                pygame.Surface((300, 40)), f"view_{effect_name.lower().replace(' ', '_')}",
+                pygame.font.SysFont(None, 36)
+            ) for i, (effect_name, _, description) in enumerate(self.effect_mapping)
+        ]
+        buttons.append(
+            Button(
+                SCREEN_WIDTH // 2 - 150, 100 + len(self.effect_mapping) * 50, 300, 40,
+                "Back", pygame.Surface((300, 40)), "back",
+                pygame.font.SysFont(None, 36)
+            )
+        )
+        return buttons
+
+    def update_type(self, amplifier_type: str) -> None:
+        """Update the menu to display effects for a new amplifier type.
+
+        Args:
+            amplifier_type: The new amplifier type (e.g., 'magic_shield').
+        """
+        self.amplifier_type = amplifier_type
+        self.title = f"{amplifier_type.replace('_', ' ').title()} Effects"
+        self.effect_mapping = self._get_effect_mapping(amplifier_type)
+        self.buttons = self._create_buttons()
+        self.selected_index = 0
+        self.selected_description = None
+        if self.buttons:
+            self.buttons[self.selected_index].is_selected = True
+        print(f"AmplifierStatMenu: Updated to type '{amplifier_type}'")
+
     def draw(self, screen: pygame.Surface) -> None:
-        """Draw the amplifier effect menu, including title and buttons."""
+        """Draw the amplifier effect menu, including title, buttons, and selected effect description."""
         if not self.active:
             return
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -55,12 +101,12 @@ class AmplifierStatMenu(AbstractMenu):
         screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 50))
         for button in self.buttons:
             button.draw(screen)
-        if self.message:
-            msg_surface = self.message_font.render(self.message, True, (255, 0, 0))
-            screen.blit(msg_surface, (SCREEN_WIDTH // 2 - msg_surface.get_width() // 2, SCREEN_HEIGHT - 100))
+        if self.selected_description:
+            desc_surface = self.message_font.render(self.selected_description, True, (255, 255, 255))
+            screen.blit(desc_surface, (SCREEN_WIDTH // 2 - desc_surface.get_width() // 2, SCREEN_HEIGHT - 150))
 
     def handle_event(self, event: pygame.event.Event) -> str:
-        """Handle keyboard and mouse events for applying effects or returning.
+        """Handle keyboard and mouse events to view effect descriptions or return.
 
         Returns:
             str: The triggered action name.
@@ -68,7 +114,7 @@ class AmplifierStatMenu(AbstractMenu):
         if not self.active:
             return ""
         if event.type in [pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN]:
-            self.message = None
+            self.selected_description = None
         if event.type == pygame.MOUSEMOTION:
             for i, button in enumerate(self.buttons):
                 if button.rect.collidepoint(event.pos):
@@ -91,13 +137,12 @@ class AmplifierStatMenu(AbstractMenu):
                     self.game.hide_menu('amplifier_stat_menu')
                     self.game.show_menu('amplifier_menu')
                     return "back"
-                elif action.startswith("apply_"):
-                    effect = action.split("_")[1]
-                    success, reason = self._apply_effect(effect)
-                    if success:
-                        print(f"AmplifierStatMenu: Applied {effect} to {self.amplifier_type}")
-                    else:
-                        self.message = reason
+                elif action.startswith("view_"):
+                    effect = "_".join(action.split("_")[1:])  # Join all parts after 'view_'
+                    for effect_name, _, description in self.effect_mapping:
+                        if effect_name.lower().replace(' ', '_') == effect:
+                            self.selected_description = description
+                            break
                     return action
         for button in self.buttons:
             active, action = button.handle_event(event)
@@ -106,26 +151,14 @@ class AmplifierStatMenu(AbstractMenu):
                     self.game.hide_menu('amplifier_stat_menu')
                     self.game.show_menu('amplifier_menu')
                     return "back"
-                elif action.startswith("apply_"):
-                    effect = action.split("_")[1]
-                    success, reason = self._apply_effect(effect)
-                    if success:
-                        print(f"AmplifierStatMenu: Applied {effect} to {self.amplifier_type}")
-                    else:
-                        self.message = reason
+                elif action.startswith("view_"):
+                    effect = "_".join(action.split("_")[1:])  # Join all parts after 'view_'
+                    for effect_name, _, description in self.effect_mapping:
+                        if effect_name.lower().replace(' ', '_') == effect:
+                            self.selected_description = description
+                            break
                     return action
         return ""
-
-    def _apply_effect(self, effect: str) -> Tuple[bool, str]:
-        """Apply the specified amplifier effect, checking mana.
-
-        Args:
-            effect: The effect name.
-
-        Returns:
-            Tuple[bool, str]: (Success, Reason message).
-        """
-        return self.game.storage_manager.add_amplifier_effect(self.amplifier_type, effect, cost=self.effect_cost)
 
     def get_selected_action(self) -> str:
         """Get the currently selected button action.
@@ -146,4 +179,4 @@ class AmplifierStatMenu(AbstractMenu):
             self.buttons[self.selected_index].is_selected = True
         else:
             self.buttons[self.selected_index].is_selected = False
-            self.message = None
+            self.selected_description = None

@@ -3,25 +3,66 @@
     "defense_level": 5,
     "movement_level": 5,
     "health_level": 5,
-    "mana": 499,
-    "skills": [
-        "112233",
-        "1"
-    ],
+    "mana": 495,
     "awakened_elements": [
-        "light",
-        "fire",
-        "untyped",
-        "wind",
+        "ice",
         "dark",
-        "water",
         "wood",
+        "fire",
         "metal",
         "earth",
+        "untyped",
         "thunder",
-        "ice"
+        "water",
+        "light",
+        "wind"
     ],
     "amplifiers": {},
     "skills_library": [
+        {
+            "name": "attack1",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "untyped",
+            "params": {
+                "damage": 1,
+                "penetration": 1,
+                "elebuff": 1,
+                "explosion": 1,
+                "speed": 1
+            }
+        },
+        {
+            "name": "def1",
+            "type": "buff",
+            "sub_type": "shield",
+            "element": "untyped",
+            "params": {
+                "element_resistance": 1,
+                "remove_element": 1,
+                "counter_element_resistance": 1,
+                "remove_counter": 1,
+                "duration": 1,
+                "shield": 1
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 1,
+                "speed": 1,
+                "duration": 1
+            }
+        },
+        {
+            "name": "123",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "untyped",
+            "params": {}
+        }
     ]
 }

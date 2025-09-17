@@ -20,11 +20,28 @@ class StorageManager:
         self.movement_level = 0
         self.health_level = 0
         # Initialize skills, awakened elements, and amplifiers
-        self.skills = []  # List of skill names or IDs
         self.awakened_elements = set()  # Set of awakened element names
         self.amplifiers = {}  # Dict of amplifiers {type: [effects]}
         self.load_from_json()  # Load data from JSON if available
 
+    def awaken_element(self, element: str, cost: int = 1) -> Tuple[bool, str]:
+        """Awaken a new element if enough mana is available.
+
+        Args:
+            element: The name of the element to awaken.
+            cost: Mana cost to awaken the element.
+        """
+        if self.mana < cost:
+            return False, "Not enough mana"
+        if element in self.awakened_elements:
+            return False, "Element already awakened"
+        self.awakened_elements.add(element)
+        self.mana -= cost
+        self.save_to_json()
+        self.apply_elements_to_player()
+        print(f"StorageManager: Awakened element {element}, deducted {cost} mana")
+        return True, ""
+            
     def load_from_json(self) -> None:
         """Load game data from a JSON file."""
         try:
@@ -35,10 +52,9 @@ class StorageManager:
                 self.movement_level = data.get('movement_level', 0)
                 self.health_level = data.get('health_level', 0)
                 self.mana = data.get('mana', 1000)  # Default to 1000 if not in JSON
-                self.skills = data.get('skills', [])
+                self.skills_library = data.get('skills_library', [])  # Directly load skills_library as List[Dict]
                 self.awakened_elements = set(data.get('awakened_elements', []))
                 self.amplifiers = data.get('amplifiers', {})
-                self.skills_library = data.get('skills_library', [])
                 print("StorageManager: Loaded data from player_data.json")
                 self.apply_all_to_player()  # Apply loaded data to player
         except FileNotFoundError:
@@ -54,7 +70,6 @@ class StorageManager:
             'movement_level': self.movement_level,
             'health_level': self.health_level,
             'mana': self.mana,
-            'skills': self.skills,
             'awakened_elements': list(self.awakened_elements),
             'amplifiers': self.amplifiers,
             'skills_library': self.skills_library
@@ -67,13 +82,10 @@ class StorageManager:
             print(f"StorageManager: Failed to save to player_data.json: {e}")
 
     def add_skill_to_library(self, skill_dict: Dict) -> None:
+        """Add a skill dictionary to the skills library."""
         self.skills_library.append(skill_dict)
-
-    def get_skill_instance(self, name: str):
-        for d in self.skills_library:
-            if d['name'] == name:
-                return create_skill_from_dict(d)
-        return None
+        self.save_to_json()  # Save to JSON after adding skill
+        print(f"StorageManager: Added skill {skill_dict['name']} to library")
 
     def get_skills_library(self) -> List[Dict]:
         """Get the skill library.
@@ -83,24 +95,6 @@ class StorageManager:
         """
         return self.skills_library
 
-    def add_skill(self, skill_name: str, cost: int = 200) -> Tuple[bool, str]:
-        """Add a skill to the player's skill list if enough mana is available.
-
-        Args:
-            skill_name: The name or ID of the skill to add.
-            cost: Mana cost to acquire the skill.
-        """
-        if self.mana < cost:
-            return False, "Not enough mana"
-        if skill_name in self.skills:
-            return False, "Skill already acquired"
-        self.skills.append(skill_name)
-        self.mana -= cost
-        self.save_to_json()
-        self.apply_skills_to_player()
-        print(f"StorageManager: Added skill {skill_name}, deducted {cost} mana")
-        return True, ""
-
     def apply_stats_to_player(self) -> None:
         """Apply current stat levels to the player."""
         if not self.game.entity_manager.player:
@@ -108,7 +102,7 @@ class StorageManager:
             return
         player = self.game.entity_manager.player
         # Apply attack level
-        # player.damage = 10 + self.attack_level * 5  # Example: +5 damage per level
+        player.damage = 10 + self.attack_level * 5  # Example: +5 damage per level
         # Apply defense level
         player.defense = 1 + self.defense_level  # Example: +1 defense per level
         # Apply movement level
@@ -126,19 +120,21 @@ class StorageManager:
             return
         player = self.game.entity_manager.player
         # Clear existing skill chains
-        player.skill_chain = [[]]
+        player.skill_chain = [[] for _ in range(player.max_skill_chains)]
         player.current_skill_chain_idx = 0
         player.current_skill_idx = 0
         # Add skills to the first skill chain
-        for skill_name in self.skills:
-            skill = self.get_skill_instance(skill_name)
+        for skill_dict in self.skills_library:
+            skill = create_skill_from_dict(skill_dict)
             if skill:
                 player.add_skill_to_chain(skill, chain_idx=0)
-        print(f"StorageManager: Applied {len(self.skills)} skills to player")
+        print(f"StorageManager: Applied {len(self.skills_library)} skills to player skill chain")
 
+    def create_skill_from_dict(self, skill_dict: Dict) -> 'Skill':
+        pass
+    
     def apply_elements_to_player(self) -> None:
         """Apply awakened elements to the player."""
-        return
         if not self.game.entity_manager.player:
             print("StorageManager: No player instance found")
             return
@@ -148,7 +144,6 @@ class StorageManager:
 
     def apply_amplifiers_to_player(self) -> None:
         """Apply amplifiers to the player."""
-        return
         if not self.game.entity_manager.player:
             print("StorageManager: No player instance found")
             return
