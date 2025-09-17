@@ -3,7 +3,7 @@
     "defense_level": 10,
     "movement_level": 10,
     "health_level": 10,
-    "mana": 18764273,
+    "mana": 18764267,
     "awakened_elements": [
         "wind",
         "ice"
@@ -49,11 +49,17 @@
             }
         },
         {
-            "name": "123",
+            "name": "owo",
             "type": "shooting",
             "sub_type": null,
-            "element": "untyped",
-            "params": {}
+            "element": "wind",
+            "params": {
+                "damage": 50,
+                "penetration": 7,
+                "elebuff": 1,
+                "explosion": 11,
+                "speed": 25
+            }
         }
     ]
 }

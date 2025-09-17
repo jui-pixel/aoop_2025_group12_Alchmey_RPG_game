@@ -11,7 +11,7 @@ class NamingMenu(AbstractMenu):
         self.message = "Enter skill name and press Enter"
         self.font = pygame.font.SysFont(None, 36)
         self.buttons = [
-            Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 100, 200, 40, "Confirm", pygame.Surface((200, 40)), "confirm", self.font),
+            Button(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 100, 200, 40, "Confirm", pygame.Surface((200, 40)), "back_to_lobby", self.font),
             Button(100, SCREEN_HEIGHT - 100, 200, 40, "Back", pygame.Surface((200, 40)), "back_to_alchemy", self.font)
         ]
         self.selected_index = 0
@@ -47,6 +47,7 @@ class NamingMenu(AbstractMenu):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.game.hide_menu('naming_menu')
+                self.game.show_menu('alchemy_menu')
                 return "back_to_alchemy"
             elif event.key == pygame.K_RETURN:
                 if self.skill_name:
@@ -58,7 +59,7 @@ class NamingMenu(AbstractMenu):
                             self.game.storage_manager.apply_skills_to_player()
                             self.game.hide_menu('naming_menu')
                             alchemy_menu.reset()
-                            return "confirm"
+                            return "back_to_lobby"
                         else:
                             self.message = "Invalid skill parameters"
                     else:
@@ -76,8 +77,9 @@ class NamingMenu(AbstractMenu):
             if active:
                 if action == "back_to_alchemy":
                     self.game.hide_menu('naming_menu')
+                    self.game.show_menu('alchemy_menu')
                     return "back_to_alchemy"
-                elif action == "confirm" and self.skill_name:
+                elif action == "back_to_lobby" and self.skill_name:
                     alchemy_menu = self.game.menu_manager.menus.get('alchemy_menu')
                     if alchemy_menu:
                         skill_dict = alchemy_menu.create_skill_dict(self.skill_name)
@@ -86,7 +88,7 @@ class NamingMenu(AbstractMenu):
                             self.game.storage_manager.apply_skills_to_player()
                             self.game.hide_menu('naming_menu')
                             alchemy_menu.reset()
-                            return "confirm"
+                            return "back_to_lobby"
                         else:
                             self.message = "Invalid skill parameters"
                     else:

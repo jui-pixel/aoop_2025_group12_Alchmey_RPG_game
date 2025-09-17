@@ -142,10 +142,12 @@ class SkillChainEditMenu(AbstractMenu):
                         return "assign_skill"
                 elif action == "previous" and self.current_page > 0:
                     self.current_page -= 1
+                    self.selected_index = 0
                     self._update_buttons()
                     return "previous"
                 elif action == "next" and self.current_page < self.total_pages - 1:
                     self.current_page += 1
+                    self.selected_index = 0
                     self._update_buttons()
                     return "next"
                 elif action == "skill_chain_menu":
