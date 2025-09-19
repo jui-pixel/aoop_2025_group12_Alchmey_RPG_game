@@ -162,6 +162,8 @@ class Bullet(MovementEntity, AttackEntity):
         for entity in entities:
             if not hasattr(entity, 'take_damage'):
                 continue
+            if self.tag == entity.tag:
+                continue  # Prevent self-damage or friendly fire
 
             entity_center = (entity.x + entity.w / 2, entity.y + entity.h / 2)
             distance = math.sqrt(

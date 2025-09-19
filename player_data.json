@@ -1,12 +1,13 @@
 {
-    "attack_level": 10,
-    "defense_level": 10,
-    "movement_level": 10,
-    "health_level": 10,
-    "mana": 18764267,
+    "attack_level": 11,
+    "defense_level": 11,
+    "movement_level": 22,
+    "health_level": 11,
+    "mana": 18763769,
     "awakened_elements": [
+        "ice",
         "wind",
-        "ice"
+        "water"
     ],
     "amplifiers": {},
     "skills_library": [
@@ -29,12 +30,12 @@
             "sub_type": "shield",
             "element": "untyped",
             "params": {
-                "element_resistance": 1,
+                "element_resistance": 100,
                 "remove_element": 1,
-                "counter_element_resistance": 1,
+                "counter_element_resistance": 100,
                 "remove_counter": 1,
-                "duration": 1,
-                "shield": 1
+                "duration": 1000,
+                "shield": 10000
             }
         },
         {
@@ -43,9 +44,9 @@
             "sub_type": "step",
             "element": "untyped",
             "params": {
-                "avoid": 1,
-                "speed": 1,
-                "duration": 1
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
             }
         },
         {
@@ -59,6 +60,19 @@
                 "elebuff": 1,
                 "explosion": 11,
                 "speed": 25
+            }
+        },
+        {
+            "name": "123",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "wind",
+            "params": {
+                "damage": 21,
+                "penetration": 1,
+                "elebuff": 1,
+                "explosion": 90,
+                "speed": 1
             }
         }
     ]

@@ -161,7 +161,9 @@ class StorageManager:
         player.defense = 1 + self.defense_level  # Example: +1 defense per level
         player.max_shield = 5 + self.defense_level ** 2  # Example: +2 shield per level
         # Apply movement level
-        player.max_speed = TILE_SIZE * (5 + self.movement_level * 0.2)  # Example: +0.2 speed per level
+        player._max_speed = TILE_SIZE * (5 + self.movement_level * 0.1)  # Example: +0.2 speed per level
+        player._base_max_speed = TILE_SIZE * (5 + self.movement_level * 0.1)  # Update base_max_speed
+        player.base_energy_regen_rate = 5 + self.movement_level * 2
         player.energy_regen_rate = 5 + self.movement_level * 2  # Example: +1 energy regen per level
         player.max_energy = 100 + self.movement_level * 20  # Example:
         # Apply health level

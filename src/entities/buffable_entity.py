@@ -188,9 +188,10 @@ class BuffableEntity(BasicEntity):
     def _apply_modifiers_to_entity(self) -> None:
         """Apply calculated modifiers to the entity's attributes."""
         # Apply speed multiplier
-        if hasattr(self, 'set_max_speed') and hasattr(self, 'base_max_speed'):
+        if hasattr(self, '_max_speed') and hasattr(self, '_base_max_speed'):
             speed_mult = self.modifiers.get('speed_multiplier', 1.0)
-            self.set_max_speed(self.base_max_speed * speed_mult)
+            self._max_speed = self._base_max_speed * speed_mult
+            
         
         # Apply health multiplier
         if hasattr(self, 'set_max_hp') and hasattr(self, 'base_max_hp'):
@@ -199,10 +200,9 @@ class BuffableEntity(BasicEntity):
             self.set_max_hp(new_max_hp)
         
         # Apply defense multiplier
-        if hasattr(self, 'set_base_defense') and hasattr(self, 'base_defense'):
+        if hasattr(self, '_defense') and hasattr(self, '_base_defense'):
             defense_mult = self.modifiers.get('defense_multiplier', 1.0)
-            new_defense = int(self._base_defense * defense_mult)
-            self.set_base_defense(new_defense)
+            self._defense = int(self._base_defense * defense_mult)
         
         # Apply damage multiplier (for AttackEntity)
         if hasattr(self, 'damage'):

@@ -22,7 +22,7 @@ class Dummy(HealthEntity):
                  element: str = "untyped",
                  defense: int = 0,
                  resistances: Optional[Dict[str, float]] = None,
-                 invulnerable: bool = True):
+                 invulnerable: bool = False):
         super().__init__(
             x=x, y=y, w=w, h=h, image=image, shape=shape, game=game, tag=tag,
             base_max_hp=base_max_hp, max_shield=max_shield, dodge_rate=dodge_rate,
