@@ -1,3 +1,4 @@
+# src/entities/npc/alchemy_pot_npc.py
 from typing import Optional, Dict, List, Tuple
 import pygame
 import math
