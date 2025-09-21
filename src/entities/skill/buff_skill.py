@@ -1,3 +1,4 @@
+# src/entities/skill/buff_skill.py
 from typing import Tuple, Dict
 from ..buff.buff import Buff
 from .abstract_skill import Skill
