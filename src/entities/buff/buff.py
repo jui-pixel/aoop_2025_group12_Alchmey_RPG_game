@@ -1,4 +1,4 @@
-
+# src/entities/buff/buff.py
 from typing import Dict, Callable, Optional
 class Buff:
     def __init__(self, name: str, duration: float, element: str, multipliers: Dict[str, float],
