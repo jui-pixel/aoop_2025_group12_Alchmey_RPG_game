@@ -1,4 +1,4 @@
-# src/dungeon/BSPnode.py
+# src/dungeon/bsp_node.py
 from dataclasses import dataclass
 from typing import Optional
 from src.dungeon.room import Room  # 引入 Room 類型，用於表示 BSP 樹節點中的房間
