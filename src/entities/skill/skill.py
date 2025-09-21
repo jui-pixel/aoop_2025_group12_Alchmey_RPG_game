@@ -1,4 +1,4 @@
-
+# src/entities/skill/skill.py
 from typing import Optional, Dict, Tuple, List
 from .abstract_skill import Skill
 from .shoot_skill import ShootingSkill
