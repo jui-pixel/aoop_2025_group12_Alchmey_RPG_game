@@ -1,3 +1,4 @@
+# src/menu_manager.py
 from src.menu.abstract_menu import AbstractMenu
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
