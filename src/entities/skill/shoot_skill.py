@@ -1,3 +1,4 @@
+# src/entities/skill/shoot_skill.py
 from typing import Optional, Dict, Tuple, List
 import math
 from ..buff.element_buff import ElementBuff, ELEMENTAL_BUFFS, apply_elemental_buff
