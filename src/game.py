@@ -1,3 +1,4 @@
+# src/game.py
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 from src.dungeon_manager import DungeonManager
