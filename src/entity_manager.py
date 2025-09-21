@@ -1,3 +1,4 @@
+# src/entity_manager.py
 from typing import List, Tuple
 from src.entities.player.player import Player
 from src.entities.npc.alchemy_pot_npc import AlchemyPotNPC
