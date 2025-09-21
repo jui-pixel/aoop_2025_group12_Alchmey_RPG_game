@@ -1,3 +1,4 @@
+# src/entities/basic_entity.py
 import pygame
 from typing import Optional, List
 
