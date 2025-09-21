@@ -1,3 +1,4 @@
+# src/config.py
 from enum import Enum
 
 ROOM_WIDTH = 20  # 單個房間的最大寬度（瓦片數，控制房間的最大尺寸）
