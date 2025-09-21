@@ -1,4 +1,4 @@
-
+# src/utils/elements.py
 ELEMENTS = [
     "untyped",
     "metal",
