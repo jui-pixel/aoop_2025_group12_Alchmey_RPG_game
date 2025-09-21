@@ -1,3 +1,4 @@
+# src/menu/button.py
 import pygame
 from typing import Tuple
 
