@@ -1,3 +1,4 @@
+# src/entities/damage_text.py
 import pygame
 from typing import Tuple
 
