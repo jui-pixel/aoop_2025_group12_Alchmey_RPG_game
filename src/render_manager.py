@@ -1,3 +1,4 @@
+# src/render_manager.py
 import pygame
 from typing import List
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT, MAX_WEAPONS_DEFAULT, TILE_SIZE, DARK_GRAY, PASSABLE_TILES, ROOM_FLOOR_COLORS
