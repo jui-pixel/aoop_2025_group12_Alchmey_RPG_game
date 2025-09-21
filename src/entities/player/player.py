@@ -1,3 +1,4 @@
+# src/entities/player/player.py
 from typing import List, Tuple, Optional, Dict
 from ..attack_entity import AttackEntity
 from ..buffable_entity import BuffableEntity
