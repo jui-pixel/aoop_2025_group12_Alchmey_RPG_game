@@ -1,3 +1,4 @@
+# src/entities/skill/abstract_skill.py
 from abc import ABC, abstractmethod
 from typing import Tuple
 
