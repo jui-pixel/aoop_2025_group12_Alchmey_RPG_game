@@ -1,3 +1,4 @@
+# src/audio_manager.py
 import pygame
 
 class AudioManager:
