@@ -1,3 +1,4 @@
+# src/entities/buffable_entity.py
 from typing import Dict, List, Optional
 import pygame
 from .basic_entity import BasicEntity
