@@ -164,6 +164,7 @@ class SkillChainEditMenu(AbstractMenu):
         if not self.slots:
             self.slots = []  # Keep empty if all were None
         self.game.entity_manager.player.skill_chain[self.chain_idx] = self.slots
+        self.game.entity_manager.player.current_skill_idx = 0
         print(f"Saved skill chain {self.chain_idx + 1}: {[s.name if s else 'None' for s in self.slots]}")
 
     def get_selected_action(self) -> str:
