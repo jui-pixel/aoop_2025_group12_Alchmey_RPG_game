@@ -385,10 +385,10 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         # Enemy-specific attributes
         self.current_action = 'idle'
         self.action_list = []
-        self.bullet_speed = 400.0
-        self.bullet_damage = 5
-        self.bullet_size = 5
-        self.bullet_effects = [ELEMENTAL_BUFFS['fire']] # Example effect
+        # self.bullet_speed = 400.0
+        # self.bullet_damage = 5
+        # self.bullet_size = 5
+        # self.bullet_effects = [ELEMENTAL_BUFFS['fire']] # Example effect
         self.vision_radius = 15  # In tiles
         self.patrol_points = [(x + i * TILE_SIZE * 2, y) for i in range(-2, 3)]
         
@@ -404,10 +404,10 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             ),
             'attack': AttackAction(
                 action_id='attack',
-                damage=self.bullet_damage,
-                bullet_speed=self.bullet_speed,
-                bullet_size=self.bullet_size,
-                effects=self.bullet_effects,
+                damage=5,
+                bullet_speed=400.0,
+                bullet_size=5,
+                effects=[ELEMENTAL_BUFFS['fire']],
                 tag = self.tag
             ),
             'pause': WaitAction(duration=0.3, action_id='pause'),
@@ -431,7 +431,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             ),
             'melee': MeleeAttackAction(
                 action_id='melee',
-                damage=self.bullet_damage
+                damage=5
             )
         }
         

@@ -104,7 +104,6 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         if not self.game or not self.skill_chain[self.current_skill_chain_idx]:
             print("No skills available in current chain or game not initialized.")
             return
-
         skill = self.skill_chain[self.current_skill_chain_idx][self.current_skill_idx]
         if self.energy < skill.energy_cost:
             print(f"Not enough energy for {skill.name} (required: {skill.energy_cost}, available: {self.energy})")
