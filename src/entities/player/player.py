@@ -66,7 +66,7 @@ class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
     def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
         # Draw the player as a white rectangle
         pygame.draw.rect(screen, (255, 255, 255), 
-                         (self.x - camera_offset[0], self.y - camera_offset[1], self.w, self.h))
+                         (self.x - camera_offset[0] -self.w//2, self.y - camera_offset[1] -self.h//2, self.w, self.h))
 
     def add_skill_to_chain(self, skill: Skill, chain_idx: int = 0) -> bool:
         """Add a skill to the specified skill chain if space is available."""
