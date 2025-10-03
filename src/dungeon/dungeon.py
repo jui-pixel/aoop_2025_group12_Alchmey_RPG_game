@@ -663,7 +663,7 @@ class Dungeon:
         
         # 步驟 13: 邊界牆（鄰接可通行區域的 Outside 轉為 Border_wall）
         self._convert_outside_to_border_wall()
-        
+        self.adjust_wall()
         print(f"初始化地牢：{len(self.rooms)} 個房間，{len(self.bridges)} 個橋接")
 
     def _place_rooms(self) -> None:
@@ -1055,6 +1055,7 @@ class Dungeon:
         self.total_appeared_rooms = len(self.rooms)
         self._place_room(lobby_room)
         self._add_walls()
+        self.adjust_wall()
         print(f"初始化大廳：房間 {lobby_room.id} 在 ({lobby_x}, {lobby_y})")
     
     def adjust_wall(self) -> None:
@@ -1062,7 +1063,8 @@ class Dungeon:
         調整邊界牆壁為不同變體，根據鄰居瓦片決定造型，支援12種牆壁類型：
         - 基本牆壁：上、下、左、右（4種）
         - 角落牆壁：左上、右上、左下、右下（4種）
-        - 凹凸牆壁：凹牆（內凹）、凸牆（外凸）（4種，針對特定鄰居模式）
+        - 凹牆：凹左上、凹右上、凹左下、凹右下（4種，僅單一角落可通行）
+        - 凸牆：凸左上、凸右上、凸左下、凸右下（4種，三個相鄰格子可通行）
         此方法遍歷所有 'Border_wall' 瓦片，根據8個鄰居的 PASSABLE_TILES 狀態選擇適當變體。
         """
         # 定義8個鄰居方向（順時針，從左上開始）
@@ -1090,49 +1092,61 @@ class Dungeon:
                     # 預設為一般牆壁
                     variant = 'Border_wall'
 
-                    # 基本牆壁（4種）
-                    # 上：上方三格（0,1,2）無可通行瓦片
-                    if not (neighbors & 0b00000111):
-                        variant = 'Border_wall_top'
-                    # 下：下方三格（4,5,6）無可通行瓦片
-                    elif not (neighbors & 0b01110000):
-                        variant = 'Border_wall_bottom'
-                    # 左：左方三格（0,6,7）無可通行瓦片
-                    elif not (neighbors & 0b11000001):
-                        variant = 'Border_wall_left'
-                    # 右：右方三格（2,3,4）無可通行瓦片
-                    elif not (neighbors & 0b00011100):
-                        variant = 'Border_wall_right'
+                    # 凹牆（僅單一角落可通行）
+                    # 僅左上可通行 -> 凹右下
+                    if neighbors == 0b00000001:
+                        variant = 'Border_wall_concave_bottom_right'
+                    # 僅右上可通行 -> 凹左下
+                    elif neighbors == 0b00000100:
+                        variant = 'Border_wall_concave_bottom_left'
+                    # 僅右下可通行 -> 凹左上
+                    elif neighbors == 0b00100000:
+                        variant = 'Border_wall_concave_top_left'
+                    # 僅左下可通行 -> 凹右上
+                    elif neighbors == 0b01000000:
+                        variant = 'Border_wall_concave_top_right'
+
+                    # 凸牆（三個相鄰格子可通行）
+                    # 左上、上、左可通行 -> 凸右下
+                    elif neighbors & 0b11000001 == 0b11000001:
+                        variant = 'Border_wall_convex_bottom_right'
+                    # 右上、上、右可通行 -> 凸左下
+                    elif neighbors & 0b00011100 == 0b00011100:
+                        variant = 'Border_wall_convex_bottom_left'
+                    # 右下、下、右可通行 -> 凸左上
+                    elif neighbors & 0b01111000 == 0b01111000:
+                        variant = 'Border_wall_convex_top_left'
+                    # 左下、下、左可通行 -> 凸右上
+                    elif neighbors & 0b11100001 == 0b11100001:
+                        variant = 'Border_wall_convex_top_right'
 
                     # 角落牆壁（4種）
-                    # 左上角落：左上、上、左（0,1,7）無可通行，且右或下有可通行
-                    elif (neighbors & 0b11000011) == 0 and (neighbors & 0b00011100):
+                    # 左上角落：左上、上、左無可通行，且右或下有可通行
+                    elif (neighbors & 0b11000001) == 0 and (neighbors & 0b01111010):
                         variant = 'Border_wall_top_left_corner'
-                    # 右上角落：右上、上、右（1,2,3）無可通行，且左或下有可通行
-                    elif (neighbors & 0b00011110) == 0 and (neighbors & 0b11000001):
+                    # 右上角落：右上、上、右無可通行，且左或下有可通行
+                    elif (neighbors & 0b00011100) == 0 and (neighbors & 0b11100011):
                         variant = 'Border_wall_top_right_corner'
-                    # 左下角落：左下、下、左（5,6,7）無可通行，且右或上有可通行
+                    # 左下角落：左下、下、左無可通行，且右或上有可通行
                     elif (neighbors & 0b11100001) == 0 and (neighbors & 0b00011110):
                         variant = 'Border_wall_bottom_left_corner'
-                    # 右下角落：右下、下、右（3,4,5）無可通行，且左或上有可通行
+                    # 右下角落：右下、下、右無可通行，且左或上有可通行
                     elif (neighbors & 0b01111000) == 0 and (neighbors & 0b11000011):
                         variant = 'Border_wall_bottom_right_corner'
 
-                    # 凹牆（內凹）：僅左右可通行（3,7）
-                    if (neighbors & 0b11001000) == 0b11001000 and (neighbors & 0b00110111) == 0:
-                        variant = 'Border_wall_concave_horizontal'
-                    # 凹牆（內凹）：僅上下可通行（1,5）
-                    elif (neighbors & 0b00100010) == 0b00100010 and (neighbors & 0b11011101) == 0:
-                        variant = 'Border_wall_concave_vertical'
-
-                    # 凸牆（外凸）：僅左右不可通行（3,7），且至少一對對角可通行
-                    if (neighbors & 0b11001000) == 0 and (neighbors & 0b00110111) and \
-                    ((neighbors & 0b10000001) or (neighbors & 0b00010010)):
-                        variant = 'Border_wall_convex_horizontal'
-                    # 凸牆（外凸）：僅上下不可通行（1,5），且至少一對對角可通行
-                    elif (neighbors & 0b00100010) == 0 and (neighbors & 0b11011101) and \
-                        ((neighbors & 0b10000001) or (neighbors & 0b00010010)):
-                        variant = 'Border_wall_convex_vertical'
+                    # 基本牆壁（4種）
+                    # 上：上方三格（0,1,2）無可通行
+                    elif not (neighbors & 0b00000111):
+                        variant = 'Border_wall_top'
+                    # 下：下方三格（4,5,6）無可通行
+                    elif not (neighbors & 0b01110000):
+                        variant = 'Border_wall_bottom'
+                    # 左：左方三格（0,6,7）無可通行
+                    elif not (neighbors & 0b11000001):
+                        variant = 'Border_wall_left'
+                    # 右：右方三格（2,3,4）無可通行
+                    elif not (neighbors & 0b00011100):
+                        variant = 'Border_wall_right'
 
                     # 更新瓦片類型
                     new_tiles[y][x] = variant
@@ -1147,8 +1161,26 @@ class Dungeon:
         
         # Map tile types to image filenames
         tile_mapping = {
-            'Border_wall': "Tileset_0_1.png",
-            
+            # 'Room_floor': 'floor_0_0.png',
+            # 'Bridge_floor': 'bridge_0_0.png',
+            # 'Door': 'door_0_0.png',
+            'Border_wall': 'Tileset_1_1.png',
+            'Border_wall_top': 'Tileset_1_1.png',
+            'Border_wall_bottom': 'Tileset_1_1.png',
+            'Border_wall_left': 'Tileset_1_1.png',
+            'Border_wall_right': 'Tileset_1_1.png',
+            'Border_wall_top_left_corner': 'Tileset_1_1.png',
+            'Border_wall_top_right_corner': 'Tileset_1_1.png',
+            'Border_wall_bottom_left_corner': 'Tileset_1_1.png',
+            'Border_wall_bottom_right_corner': 'Tileset_1_1.png',
+            'Border_wall_concave_top_left': 'Tileset_1_1.png',
+            'Border_wall_concave_top_right': 'Tileset_1_1.png',
+            'Border_wall_concave_bottom_left': 'Tileset_1_1.png',
+            'Border_wall_concave_bottom_right': 'Tileset_1_1.png',
+            'Border_wall_convex_top_left': 'Tileset_1_1.png',
+            'Border_wall_convex_top_right': 'Tileset_1_1.png',
+            'Border_wall_convex_bottom_left': 'Tileset_1_1.png',
+            'Border_wall_convex_bottom_right': 'Tileset_1_1.png',
             # Add more mappings as needed (e.g., "door": "door_0_0.png")
         }
 

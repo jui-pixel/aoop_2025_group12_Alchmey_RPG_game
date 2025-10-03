@@ -97,21 +97,22 @@ ROOM_FLOOR_COLORS = {
     'Alchemy_pot_NPC_spawn': AMBER,          # 煉金鍋NPC生成點 - 琥珀，溫暖高亮
     'Dummy_spawn': CRIMSON,                 # 假人出生點 - 深紅，警示
     'Border_wall': GRAY,          # 邊界牆 - 灰
-    'Border_wall_top': GRAY,          # 邊界牆 - 灰
-    'Border_wall_bottom': GRAY,          # 邊界牆 - 灰
-    'Border_wall_left': GRAY,          # 邊界牆 - 灰
-    'Border_wall_right': GRAY,          # 邊界牆 - 灰
-    'Border_wall_top_left_corner': GRAY,          # 邊界牆 - 灰
-    'Border_wall_top_right_corner': GRAY,          # 邊界牆 - 灰
-    'Border_wall_bottom_left_corner': GRAY,          # 邊界牆 - 灰
-    'Border_wall_bottom_right_corner': GRAY,          # 邊界牆 - 灰
-    'Border_wall': GRAY,          # 邊界牆 - 灰
-    'Border_wall': GRAY,          # 邊界牆 - 灰
-    'Border_wall': GRAY,          # 邊界牆 - 灰
-    'Border_wall': GRAY,          # 邊界牆 - 灰
-    'Border_wall': GRAY,          # 邊界牆 - 灰
-    'Border_wall': GRAY,          # 邊界牆 - 灰
-    'Border_wall': GRAY,          # 邊界牆 - 灰
+    'Border_wall_top':GRAY,
+    'Border_wall_bottom':GRAY,
+    'Border_wall_left': GRAY,
+    'Border_wall_right': GRAY,
+    'Border_wall_top_left_corner':GRAY,
+    'Border_wall_top_right_corner': GRAY,
+    'Border_wall_bottom_left_corner': GRAY,
+    'Border_wall_bottom_right_corner': GRAY,
+    'Border_wall_concave_top_left': GRAY,
+    'Border_wall_concave_top_right': GRAY,
+    'Border_wall_concave_bottom_left':GRAY,
+    'Border_wall_concave_bottom_right': GRAY,
+    'Border_wall_convex_top_left': GRAY,
+    'Border_wall_convex_top_right':GRAY,
+    'Border_wall_convex_bottom_left': GRAY,
+    'Border_wall_convex_bottom_right': GRAY,
 }
 
 PASSABLE_TILES = {
