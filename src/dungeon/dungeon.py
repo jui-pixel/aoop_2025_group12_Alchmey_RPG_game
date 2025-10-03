@@ -1281,6 +1281,7 @@ class Dungeon:
         Draw the dungeon foreground walls using tileset images as half-height rectangles
         to create a 2.5D effect on wall positions.
         """
+        return # 暫時不做2.5D效果
         offset_x, offset_y = camera_offset
         tile_size = TILE_SIZE
         half_tile = tile_size * 0.5
@@ -1298,8 +1299,8 @@ class Dungeon:
                 if tile_type not in PASSABLE_TILES:  # Wall or non-passable
                     tile_image = self.foreground_tileset.get(tile_type, None)
                     screen_x = tile_x * tile_size - offset_x
-                    # screen_y = (tile_y * tile_size - offset_y) - half_tile  # Bottom half for 2.5D effect
-                    screen_y = (tile_y * tile_size - offset_y) # 暫時不做2.5D效果
+                    screen_y = (tile_y * tile_size - offset_y) - half_tile  # Bottom half for 2.5D effect
+                    # screen_y = (tile_y * tile_size - offset_y) # 暫時不做2.5D效果
                     
                     if tile_image:
                         # Scale wall tile to half-height for 2.5D effect
