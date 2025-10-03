@@ -1069,10 +1069,10 @@ class Dungeon:
         """
         # 定義8個鄰居方向（順時針，從左上開始）
         directions = [
-            (-1, -1), (-1, 0), (-1, 1),  # 左上、上、右上
-            (0, 1),                     # 右
-            (1, 1), (1, 0), (1, -1),   # 右下、下、左下
-            (0, -1)                     # 左
+            (-1, 1), (0, 1), (1, 1),      # 左上、上、右上
+            (1, 0),                                # 右
+            (1, -1), (0, -1), (-1, -1),   # 右下、下、左下
+            (-1, 0),                      # 左
         ]
 
         # 建立新瓦片陣列，避免迭代時修改
@@ -1084,7 +1084,7 @@ class Dungeon:
                     # 檢查8個鄰居，生成位元遮罩
                     neighbors = 0
                     for i, (dx, dy) in enumerate(directions):
-                        nx, ny = x + dx, y + dy
+                        nx, ny = x + dx, y - dy
                         if 0 <= nx < self.grid_width and 0 <= ny < self.grid_height:
                             if self.dungeon_tiles[ny][nx] in PASSABLE_TILES:
                                 neighbors |= (1 << i)
@@ -1100,7 +1100,7 @@ class Dungeon:
                     elif neighbors == 0b00000100:
                         variant = 'Border_wall_concave_bottom_left'
                     # 僅右下可通行 -> 凹左上
-                    elif neighbors == 0b00100000:
+                    elif neighbors == 0b00010000:
                         variant = 'Border_wall_concave_top_left'
                     # 僅左下可通行 -> 凹右上
                     elif neighbors == 0b01000000:
@@ -1108,44 +1108,44 @@ class Dungeon:
 
                     # 凸牆（三個相鄰格子可通行）
                     # 左上、上、左可通行 -> 凸右下
-                    elif neighbors & 0b11000001 == 0b11000001:
+                    elif neighbors & 0b10000011 == 0b10000011:
                         variant = 'Border_wall_convex_bottom_right'
                     # 右上、上、右可通行 -> 凸左下
-                    elif neighbors & 0b00011100 == 0b00011100:
+                    elif neighbors & 0b00001110 == 0b00001110:
                         variant = 'Border_wall_convex_bottom_left'
                     # 右下、下、右可通行 -> 凸左上
-                    elif neighbors & 0b01111000 == 0b01111000:
+                    elif neighbors & 0b00111000 == 0b00111000:
                         variant = 'Border_wall_convex_top_left'
                     # 左下、下、左可通行 -> 凸右上
-                    elif neighbors & 0b11100001 == 0b11100001:
+                    elif neighbors & 0b11100000 == 0b11100000:
                         variant = 'Border_wall_convex_top_right'
 
-                    # 角落牆壁（4種）
-                    # 左上角落：左上、上、左無可通行，且右或下有可通行
-                    elif (neighbors & 0b11000001) == 0 and (neighbors & 0b01111010):
-                        variant = 'Border_wall_top_left_corner'
-                    # 右上角落：右上、上、右無可通行，且左或下有可通行
-                    elif (neighbors & 0b00011100) == 0 and (neighbors & 0b11100011):
-                        variant = 'Border_wall_top_right_corner'
-                    # 左下角落：左下、下、左無可通行，且右或上有可通行
-                    elif (neighbors & 0b11100001) == 0 and (neighbors & 0b00011110):
-                        variant = 'Border_wall_bottom_left_corner'
-                    # 右下角落：右下、下、右無可通行，且左或上有可通行
-                    elif (neighbors & 0b01111000) == 0 and (neighbors & 0b11000011):
-                        variant = 'Border_wall_bottom_right_corner'
+                    # # 角落牆壁（4種）
+                    # # 左上角落：左上、上、左無可通行，且右或下有可通行
+                    # elif (neighbors & 0b11000001) == 0 and (neighbors & 0b01111010):
+                    #     variant = 'Border_wall_top_left_corner'
+                    # # 右上角落：右上、上、右無可通行，且左或下有可通行
+                    # elif (neighbors & 0b00011100) == 0 and (neighbors & 0b11100011):
+                    #     variant = 'Border_wall_top_right_corner'
+                    # # 左下角落：左下、下、左無可通行，且右或上有可通行
+                    # elif (neighbors & 0b11100001) == 0 and (neighbors & 0b00011110):
+                    #     variant = 'Border_wall_bottom_left_corner'
+                    # # 右下角落：右下、下、右無可通行，且左或上有可通行
+                    # elif (neighbors & 0b01111000) == 0 and (neighbors & 0b11000011):
+                    #     variant = 'Border_wall_bottom_right_corner'
 
                     # 基本牆壁（4種）
-                    # 上：上方三格（0,1,2）無可通行
-                    elif not (neighbors & 0b00000111):
+                    # 上：下方一格（5）可通行
+                    elif (neighbors & 0b00100000):
                         variant = 'Border_wall_top'
-                    # 下：下方三格（4,5,6）無可通行
-                    elif not (neighbors & 0b01110000):
+                    # 下：下方一格（1）可通行
+                    elif (neighbors & 0b00000010):
                         variant = 'Border_wall_bottom'
-                    # 左：左方三格（0,6,7）無可通行
-                    elif not (neighbors & 0b11000001):
+                    # 左：右方一格（3）可通行
+                    elif (neighbors & 0b00001000):
                         variant = 'Border_wall_left'
-                    # 右：右方三格（2,3,4）無可通行
-                    elif not (neighbors & 0b00011100):
+                    # 右：左方一格（7）可通行
+                    elif (neighbors & 0b10000000):
                         variant = 'Border_wall_right'
 
                     # 更新瓦片類型
@@ -1168,19 +1168,19 @@ class Dungeon:
             'Border_wall_top': 'Tileset_0_1.png',
             'Border_wall_bottom': 'Tileset_2_1.png',
             'Border_wall_left': 'Tileset_1_0.png',
-            'Border_wall_right': 'Tileset_1_3.png',
+            'Border_wall_right': 'Tileset_1_2.png',
             'Border_wall_top_left_corner': 'Tileset_1_1.png',
             'Border_wall_top_right_corner': 'Tileset_1_1.png',
             'Border_wall_bottom_left_corner': 'Tileset_1_1.png',
             'Border_wall_bottom_right_corner': 'Tileset_1_1.png',
-            'Border_wall_concave_top_left': 'Tileset_1_1.png',
-            'Border_wall_concave_top_right': 'Tileset_1_1.png',
-            'Border_wall_concave_bottom_left': 'Tileset_1_1.png',
-            'Border_wall_concave_bottom_right': 'Tileset_1_1.png',
-            'Border_wall_convex_top_left': 'Tileset_1_1.png',
-            'Border_wall_convex_top_right': 'Tileset_1_1.png',
-            'Border_wall_convex_bottom_left': 'Tileset_1_1.png',
-            'Border_wall_convex_bottom_right': 'Tileset_1_1.png',
+            'Border_wall_concave_top_left': 'Tileset_0_0.png',
+            'Border_wall_concave_top_right': 'Tileset_0_2.png',
+            'Border_wall_concave_bottom_left': 'Tileset_2_0.png',
+            'Border_wall_concave_bottom_right': 'Tileset_2_2.png',
+            'Border_wall_convex_top_left': 'Tileset_5_1.png',
+            'Border_wall_convex_top_right': 'Tileset_5_0.png',
+            'Border_wall_convex_bottom_left': 'Tileset_6_0.png',
+            'Border_wall_convex_bottom_right': 'Tileset_6_1.png',
             # Add more mappings as needed (e.g., "door": "door_0_0.png")
         }
 
@@ -1262,6 +1262,7 @@ class Dungeon:
         Draw the dungeon foreground walls using tileset images as half-height rectangles
         to create a 2.5D effect on wall positions.
         """
+        return
         offset_x, offset_y = camera_offset
         tile_size = TILE_SIZE
         half_tile = tile_size * 0.5
