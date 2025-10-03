@@ -1057,6 +1057,82 @@ class Dungeon:
         self._add_walls()
         print(f"初始化大廳：房間 {lobby_room.id} 在 ({lobby_x}, {lobby_y})")
     
+    def adjust_wall(self) -> None:
+        """
+        Adjust border walls to use variants based on neighboring tiles for richer visuals.
+        This method iterates over all 'Border_wall' tiles and replaces them with specific
+        variants (e.g., 'Border_wall_top', 'Border_wall_bottom_left') depending on adjacent
+        passable tiles (floors or paths). This creates a more complete and natural wall appearance.
+        """
+        directions = [
+            (-1, -1), (-1, 0), (-1, 1),  # Top row
+            (0, -1),           (0, 1),   # Middle row (left and right)
+            (1, -1),  (1, 0),  (1, 1)    # Bottom row
+        ]
+
+        # Create a copy of the grid to avoid modifying while iterating
+        new_tiles = [row[:] for row in self.dungeon_tiles]
+
+        for y in range(self.grid_height):
+            for x in range(self.grid_width):
+                if self.dungeon_tiles[y][x] == 'Border_wall':
+                    # Check 8 neighbors
+                    neighbors = 0  # Bitmask for passable neighbors
+                    for i, (dx, dy) in enumerate(directions):
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < self.grid_width and 0 <= ny < self.grid_height:
+                            if self.dungeon_tiles[ny][nx] in PASSABLE_TILES:
+                                neighbors |= (1 << i)
+
+                    # Determine variant based on neighbor bitmask
+                    variant = 'Border_wall'  # Default
+
+                    # Examples:
+                    # - If right has path (bit 4: 0,1 -> bit 4=16)
+                    if neighbors & (1 << 4):  # Right neighbor is passable
+                        variant = 'Border_wall_right_open'  # Custom variant for right path
+
+                    # - Bottom-left corner open (bit 5: 1,-1 -> bit 5=32, but adjust index)
+                    # Note: Directions index: 0:UL,1:U,2:UR,3:L,4:R,5:DL,6:D,7:DR
+                    if neighbors & (1 << 5):  # Bottom-left is passable
+                        variant = 'Border_wall_bottom_left_open'
+
+                    # Add more rules for completeness:
+                    # Top edge: no top neighbors passable
+                    if not (neighbors & 0b00000111):  # No top row passable
+                        variant = 'Border_wall_top'
+
+                    # Bottom edge
+                    if not (neighbors & 0b11100000):  # No bottom row passable (shifted bits)
+                        variant = 'Border_wall_bottom'
+
+                    # Left edge
+                    if not (neighbors & 0b00101001):  # Left column: bits 0,3,5
+                        variant = 'Border_wall_left'
+
+                    # Right edge
+                    if not (neighbors & 0b10001010):  # Right column: bits 2,4,7
+                        variant = 'Border_wall_right'
+
+                    # Corners (combinations)
+                    if (neighbors & (1 << 0)) == 0 and (neighbors & (1 << 1)) == 0 and (neighbors & (1 << 3)) == 0:
+                        variant = 'Border_wall_top_left_corner'
+
+                    if (neighbors & (1 << 2)) == 0 and (neighbors & (1 << 1)) == 0 and (neighbors & (1 << 4)) == 0:
+                        variant = 'Border_wall_top_right_corner'
+
+                    if (neighbors & (1 << 5)) == 0 and (neighbors & (1 << 6)) == 0 and (neighbors & (1 << 3)) == 0:
+                        variant = 'Border_wall_bottom_left_corner'
+
+                    if (neighbors & (1 << 7)) == 0 and (neighbors & (1 << 6)) == 0 and (neighbors & (1 << 4)) == 0:
+                        variant = 'Border_wall_bottom_right_corner'
+
+                    # Update the tile type
+                    new_tiles[y][x] = variant
+
+        # Apply the new tiles back to the dungeon
+        self.dungeon_tiles = new_tiles
+        
     def load_background_tileset(self) -> dict:
         """Load tileset images from src/assets/tiles/ and map to tile types."""
         tileset = {}
@@ -1065,6 +1141,7 @@ class Dungeon:
         # Map tile types to image filenames
         tile_mapping = {
             'Border_wall': "Tileset_0_1.png",
+            
             # Add more mappings as needed (e.g., "door": "door_0_0.png")
         }
 
