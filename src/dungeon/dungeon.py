@@ -114,7 +114,8 @@ class Dungeon:
         self.next_room_id = 0  # 下一個房間 ID
         self.total_appeared_rooms = 0  # 總房間數
         self.bsp_tree: Optional[BSPNode] = None  # BSP 樹根節點
-        self.tileset = self.load_tileset()  # 載入瓦片圖集
+        self.background_tileset = self.load_background_tileset()  # 載入後景瓦片圖集
+        self.foreground_tileset = self.load_foreground_tileset()  # 載入前景瓦片圖集
 
     def _initialize_grid(self) -> None:
         """
@@ -1056,15 +1057,42 @@ class Dungeon:
         self._add_walls()
         print(f"初始化大廳：房間 {lobby_room.id} 在 ({lobby_x}, {lobby_y})")
     
-    def load_tileset(self) -> dict:
-        """Load tileset images from src/assets/processed/ and map to tile types."""
+    def load_background_tileset(self) -> dict:
+        """Load tileset images from src/assets/tiles/ and map to tile types."""
         tileset = {}
-        tileset_dir = get_project_path("src", "assets", "processed")
+        tileset_dir = get_project_path("src", "assets", "tiles")
         
         # Map tile types to image filenames
         tile_mapping = {
-            "floor": "floor_0_0.png",  # Example: floor tile
-            "wall": "wall_0_0.png",    # Example: wall tile
+            'Border_wall': "Tileset_0_1.png",
+            # Add more mappings as needed (e.g., "door": "door_0_0.png")
+        }
+
+        for tile_type, filename in tile_mapping.items():
+            file_path = os.path.join(tileset_dir, filename)
+            try:
+                image = pygame.image.load(file_path).convert_alpha()
+                # Scale image to TILE_SIZE if needed
+                if image.get_width() != TILE_SIZE or image.get_height() != TILE_SIZE:
+                    image = pygame.transform.scale(image, (TILE_SIZE, TILE_SIZE))
+                tileset[tile_type] = image
+            except pygame.error as e:
+                print(f"無法載入圖塊 {file_path}: {e}")
+                # Create a fallback colored surface
+                fallback = pygame.Surface((TILE_SIZE, TILE_SIZE))
+                fallback.fill(GRAY if tile_type in PASSABLE_TILES else DARK_GRAY)
+                tileset[tile_type] = fallback
+
+        return tileset
+    
+    def load_foreground_tileset(self) -> dict:
+        """Load tileset images from src/assets/tiles/ and map to tile types."""
+        tileset = {}
+        tileset_dir = get_project_path("src", "assets", "tiles")
+        
+        # Map tile types to image filenames
+        tile_mapping = {
+            'Border_wall': "Tileset_1_1.png",
             # Add more mappings as needed (e.g., "door": "door_0_0.png")
         }
 
@@ -1102,7 +1130,7 @@ class Dungeon:
         for tile_y in range(start_tile_y, end_tile_y):
             for tile_x in range(start_tile_x, end_tile_x):
                 tile_type = self.dungeon_tiles[tile_y][tile_x]
-                tile_image = self.tileset.get(tile_type, None)
+                tile_image = self.background_tileset.get(tile_type, None)
                 screen_x = tile_x * tile_size - offset_x
                 screen_y = tile_y * tile_size - offset_y
 
@@ -1133,15 +1161,15 @@ class Dungeon:
             for tile_x in range(start_tile_x, end_tile_x):
                 tile_type = self.dungeon_tiles[tile_y][tile_x]
                 if tile_type not in PASSABLE_TILES:  # Wall or non-passable
-                    tile_image = self.tileset.get(tile_type, None)
+                    tile_image = self.foreground_tileset.get(tile_type, None)
                     screen_x = tile_x * tile_size - offset_x
-                    screen_y = (tile_y * tile_size - offset_y) + half_tile  # Bottom half for 2.5D effect
+                    screen_y = (tile_y * tile_size - offset_y) - half_tile  # Bottom half for 2.5D effect
 
                     if tile_image:
                         # Scale wall tile to half-height for 2.5D effect
-                        wall_image = pygame.transform.scale(tile_image, (tile_size, int(half_tile)))
+                        wall_image = pygame.transform.scale(tile_image, (tile_size, tile_size))
                         screen.blit(wall_image, (screen_x, screen_y))
                     else:
                         # Fallback to colored rectangle
                         wall_color = DARK_GRAY
-                        pygame.draw.rect(screen, wall_color, (screen_x, screen_y, tile_size, half_tile))
+                        pygame.draw.rect(screen, wall_color, (screen_x, screen_y, tile_size, tile_size))
