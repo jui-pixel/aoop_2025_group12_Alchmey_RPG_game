@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from typing import List, Tuple, Optional, Dict, Set
 import pygame
+import os
 from src.config import *
 from src.dungeon.room import Room, RoomType
 from src.dungeon.bridge import Bridge
@@ -41,6 +42,11 @@ import heapq
 - 自然路徑：使用 A* 生成符合直覺的走廊路徑
 - 視覺完整性：透過邊界牆和門的處理，創造完整的地牢外觀
 """
+
+def get_project_path(*subpaths):
+    """Get absolute path to project root (roguelike_dungeon/) and join subpaths."""
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    return os.path.join(project_root, *subpaths)
 
 class Dungeon:
     """
@@ -108,6 +114,7 @@ class Dungeon:
         self.next_room_id = 0  # 下一個房間 ID
         self.total_appeared_rooms = 0  # 總房間數
         self.bsp_tree: Optional[BSPNode] = None  # BSP 樹根節點
+        self.tileset = self.load_tileset()  # 載入瓦片圖集
 
     def _initialize_grid(self) -> None:
         """
@@ -1048,15 +1055,44 @@ class Dungeon:
         self._place_room(lobby_room)
         self._add_walls()
         print(f"初始化大廳：房間 {lobby_room.id} 在 ({lobby_x}, {lobby_y})")
+    
+    def load_tileset(self) -> dict:
+        """Load tileset images from src/assets/processed/ and map to tile types."""
+        tileset = {}
+        tileset_dir = get_project_path("src", "assets", "processed")
         
+        # Map tile types to image filenames
+        tile_mapping = {
+            "floor": "floor_0_0.png",  # Example: floor tile
+            "wall": "wall_0_0.png",    # Example: wall tile
+            # Add more mappings as needed (e.g., "door": "door_0_0.png")
+        }
+
+        for tile_type, filename in tile_mapping.items():
+            file_path = os.path.join(tileset_dir, filename)
+            try:
+                image = pygame.image.load(file_path).convert_alpha()
+                # Scale image to TILE_SIZE if needed
+                if image.get_width() != TILE_SIZE or image.get_height() != TILE_SIZE:
+                    image = pygame.transform.scale(image, (TILE_SIZE, TILE_SIZE))
+                tileset[tile_type] = image
+            except pygame.error as e:
+                print(f"無法載入圖塊 {file_path}: {e}")
+                # Create a fallback colored surface
+                fallback = pygame.Surface((TILE_SIZE, TILE_SIZE))
+                fallback.fill(GRAY if tile_type in PASSABLE_TILES else DARK_GRAY)
+                tileset[tile_type] = fallback
+
+        return tileset
+    
     def draw_background(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
         """
-        Draw the dungeon background tiles, including the camera view and 2 tiles outside.
+        Draw the dungeon background tiles using tileset images, including camera view + 2 tiles outside.
         """
         offset_x, offset_y = camera_offset
         tile_size = TILE_SIZE
 
-        # Calculate the tile range: camera view + 2 tiles outside
+        # Calculate tile range: camera view + 2 tiles outside
         start_tile_x = max(0, int((offset_x - 2 * tile_size) / tile_size))
         end_tile_x = min(self.grid_width, int((offset_x + SCREEN_WIDTH + 2 * tile_size) / tile_size))
         start_tile_y = max(0, int((offset_y - 2 * tile_size) / tile_size))
@@ -1066,14 +1102,20 @@ class Dungeon:
         for tile_y in range(start_tile_y, end_tile_y):
             for tile_x in range(start_tile_x, end_tile_x):
                 tile_type = self.dungeon_tiles[tile_y][tile_x]
-                color = ROOM_FLOOR_COLORS.get(tile_type, GRAY)  # Default to GRAY if not found
+                tile_image = self.tileset.get(tile_type, None)
                 screen_x = tile_x * tile_size - offset_x
                 screen_y = tile_y * tile_size - offset_y
-                pygame.draw.rect(screen, color, (screen_x, screen_y, tile_size, tile_size))
+
+                if tile_image:
+                    screen.blit(tile_image, (screen_x, screen_y))
+                else:
+                    # Fallback to colored rectangle if tile image is missing
+                    color = GRAY if tile_type in PASSABLE_TILES else DARK_GRAY
+                    pygame.draw.rect(screen, color, (screen_x, screen_y, tile_size, tile_size))
 
     def draw_foreground(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
         """
-        Draw the dungeon foreground walls as half-height (0.5 TILE_SIZE) rectangles
+        Draw the dungeon foreground walls using tileset images as half-height rectangles
         to create a 2.5D effect on wall positions.
         """
         offset_x, offset_y = camera_offset
@@ -1086,12 +1128,20 @@ class Dungeon:
         start_tile_y = max(0, int((offset_y - 2 * tile_size) / tile_size))
         end_tile_y = min(self.grid_height, int((offset_y + SCREEN_HEIGHT + 2 * tile_size) / tile_size))
 
-        # Draw walls as half-height rectangles at the bottom of non-passable tiles
+        # Draw walls as half-height tiles at the bottom of non-passable tiles
         for tile_y in range(start_tile_y, end_tile_y):
             for tile_x in range(start_tile_x, end_tile_x):
                 tile_type = self.dungeon_tiles[tile_y][tile_x]
                 if tile_type not in PASSABLE_TILES:  # Wall or non-passable
+                    tile_image = self.tileset.get(tile_type, None)
                     screen_x = tile_x * tile_size - offset_x
-                    screen_y = (tile_y * tile_size - offset_y) - half_tile  # Bottom half of the tile
-                    wall_color = DARK_GRAY  # Or a specific wall color from config
-                    pygame.draw.rect(screen, wall_color, (screen_x, screen_y, tile_size, tile_size))
+                    screen_y = (tile_y * tile_size - offset_y) + half_tile  # Bottom half for 2.5D effect
+
+                    if tile_image:
+                        # Scale wall tile to half-height for 2.5D effect
+                        wall_image = pygame.transform.scale(tile_image, (tile_size, int(half_tile)))
+                        screen.blit(wall_image, (screen_x, screen_y))
+                    else:
+                        # Fallback to colored rectangle
+                        wall_color = DARK_GRAY
+                        pygame.draw.rect(screen, wall_color, (screen_x, screen_y, tile_size, half_tile))
