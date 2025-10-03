@@ -1208,7 +1208,26 @@ class Dungeon:
         
         # Map tile types to image filenames
         tile_mapping = {
-            'Border_wall': "Tileset_1_1.png",
+            # 'Room_floor': 'floor_0_0.png',
+            # 'Bridge_floor': 'bridge_0_0.png',
+            # 'Door': 'door_0_0.png',
+            'Border_wall': 'Tileset_1_1.png',
+            'Border_wall_top': 'Tileset_0_1.png',
+            'Border_wall_bottom': 'Tileset_2_1.png',
+            'Border_wall_left': 'Tileset_1_0.png',
+            'Border_wall_right': 'Tileset_1_2.png',
+            'Border_wall_top_left_corner': 'Tileset_1_1.png',
+            'Border_wall_top_right_corner': 'Tileset_1_1.png',
+            'Border_wall_bottom_left_corner': 'Tileset_1_1.png',
+            'Border_wall_bottom_right_corner': 'Tileset_1_1.png',
+            'Border_wall_concave_top_left': 'Tileset_0_0.png',
+            'Border_wall_concave_top_right': 'Tileset_0_2.png',
+            'Border_wall_concave_bottom_left': 'Tileset_2_0.png',
+            'Border_wall_concave_bottom_right': 'Tileset_2_2.png',
+            'Border_wall_convex_top_left': 'Tileset_5_1.png',
+            'Border_wall_convex_top_right': 'Tileset_5_0.png',
+            'Border_wall_convex_bottom_left': 'Tileset_6_0.png',
+            'Border_wall_convex_bottom_right': 'Tileset_6_1.png',
             # Add more mappings as needed (e.g., "door": "door_0_0.png")
         }
 
@@ -1254,7 +1273,7 @@ class Dungeon:
                     screen.blit(tile_image, (screen_x, screen_y))
                 else:
                     # Fallback to colored rectangle if tile image is missing
-                    color = GRAY if tile_type in PASSABLE_TILES else DARK_GRAY
+                    color = GRAY if tile_type in PASSABLE_TILES else BLACK
                     pygame.draw.rect(screen, color, (screen_x, screen_y, tile_size, tile_size))
 
     def draw_foreground(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
@@ -1262,7 +1281,6 @@ class Dungeon:
         Draw the dungeon foreground walls using tileset images as half-height rectangles
         to create a 2.5D effect on wall positions.
         """
-        return
         offset_x, offset_y = camera_offset
         tile_size = TILE_SIZE
         half_tile = tile_size * 0.5
@@ -1280,13 +1298,14 @@ class Dungeon:
                 if tile_type not in PASSABLE_TILES:  # Wall or non-passable
                     tile_image = self.foreground_tileset.get(tile_type, None)
                     screen_x = tile_x * tile_size - offset_x
-                    screen_y = (tile_y * tile_size - offset_y) - half_tile  # Bottom half for 2.5D effect
-
+                    # screen_y = (tile_y * tile_size - offset_y) - half_tile  # Bottom half for 2.5D effect
+                    screen_y = (tile_y * tile_size - offset_y) # 暫時不做2.5D效果
+                    
                     if tile_image:
                         # Scale wall tile to half-height for 2.5D effect
                         wall_image = pygame.transform.scale(tile_image, (tile_size, tile_size))
                         screen.blit(wall_image, (screen_x, screen_y))
                     else:
                         # Fallback to colored rectangle
-                        wall_color = DARK_GRAY
+                        wall_color = BLACK
                         pygame.draw.rect(screen, wall_color, (screen_x, screen_y, tile_size, tile_size))

@@ -1,7 +1,7 @@
 # src/render_manager.py
 import pygame
 from typing import List
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT, MAX_WEAPONS_DEFAULT, TILE_SIZE, DARK_GRAY, PASSABLE_TILES, ROOM_FLOOR_COLORS
+from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT, MAX_WEAPONS_DEFAULT, TILE_SIZE, DARK_GRAY, PASSABLE_TILES, ROOM_FLOOR_COLORS, BLACK
 import math
 class RenderManager:
     def __init__(self, game: 'Game', screen: pygame.Surface):
@@ -145,7 +145,7 @@ class RenderManager:
         未探索區域為全黑色，探索過但不在視野內為半透明黑色，視野內為完全透明。
         """
         dungeon = self.game.dungeon_manager.get_dungeon()
-        self.fog_surface.fill(DARK_GRAY)  # 深灰色，不透明（未探索）
+        self.fog_surface.fill(BLACK)  # 深灰色，不透明（未探索）
 
         for y in range(dungeon.grid_height):
             for x in range(dungeon.grid_width):
