@@ -62,6 +62,7 @@ class EntityManager:
 
         根據瓦片類型生成玩家和 NPC，若無特定瓦片則使用備用瓦片或房間中心。
         """
+        self.clear_entities()  # 清除現有實體和投射物，保留玩家實例
         spawn_map = {
             'Player': ['Player_spawn'],  # 玩家生成瓦片
             'AlchemyPotNPC': ['Alchemy_pot_NPC_spawn'],  # 煉金鍋 NPC 生成瓦片
@@ -136,14 +137,19 @@ class EntityManager:
             'Player': ['Player_spawn'],  # 玩家生成瓦片
             'Enemy1': ['Monster_spawn'],  # 敵人1生成瓦片
         }
-
+        self.clear_entities()  # 清除現有實體和投射物，保留玩家實例
         # 初始化敵人
-        # self.entity_group.empty()  # 清空現有敵人
         for y in range(int(self.game.dungeon_manager.dungeon.grid_height)):
             for x in range(int(self.game.dungeon_manager.dungeon.grid_width)):
                 if self.game.dungeon_manager.dungeon.dungeon_tiles[y][x] == 'Monster_spawn':
                     enemy_x, enemy_y = self.tile_to_pixel(x, y)
                     self.entity_group.add(Enemy1(x=enemy_x, y=enemy_y, game=self.game, tag="enemy"))  # 添加敵人
+                elif self.game.dungeon_manager.dungeon.dungeon_tiles[y][x] == 'End_room_portal':
+                    if not any(isinstance(e, DungeonPortalNPC) for e in self.entity_group):
+                        portal_x, portal_y = self.tile_to_pixel(x, y)
+                        self.entity_group.add(DungeonPortalNPC(x=portal_x, y=portal_y, game=self.game, 
+                                                               available_dungeons=[{'name': 'Test Dungeon', 'level': 1, 'room_id': 1}]))  # 添加地牢入口 NPC
+                    
                 elif self.game.dungeon_manager.dungeon.dungeon_tiles[y][x] == 'Player_spawn':
                     if not self.player:
                         player_x, player_y = self.tile_to_pixel(x, y)
@@ -193,3 +199,15 @@ class EntityManager:
             entity.draw(screen, camera_offset)  # 繪製每個傷害文字  
         if self.player:
             self.player.draw(screen, camera_offset)  # 繪製玩家
+    
+    def clear_entities(self) -> None:
+        """清除所有實體和投射物，保留玩家實例。
+
+        用於重置房間或場景時。
+        """
+        self.entity_group.empty()  # 清空所有 實體
+        self.bullet_group.empty()  # 清空所有 投射物
+        self.damage_text_group.empty()  # 清空所有 傷害文字
+        if self.player:
+            self.entity_group.add(self.player)  # 保留玩家實例
+        print("EntityManager: 已清除所有實體和投射物，保留玩家")
