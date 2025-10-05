@@ -7,6 +7,7 @@ import math
 import random
 import copy
 from src.utils.elements import WEAKTABLE, ELEMENTS
+from .damage_text import DamageText
 
 # Base class for health and defense mechanics
 class HealthEntity(BasicEntity):
@@ -140,10 +141,14 @@ class HealthEntity(BasicEntity):
                    max_hp_percentage_damage: int = 0, current_hp_percentage_damage: int = 0, 
                    lose_hp_percentage_damage: int = 0, cause_death: bool = True) -> Tuple[bool, int]:
         if self.invulnerable:
+            damage_text = DamageText((self.x + self.w / 2, self.y + self.h / 2), "Immune")
+            self.game.entity_manager.damage_text_group.add(damage_text)
             return False, 0
             
         if self.dodge_rate > 0:
             if random.random() < self.dodge_rate:
+                damage_text = DamageText((self.x + self.w / 2, self.y + self.h / 2), "Miss")
+                self.game.entity_manager.damage_text_group.add(damage_text)
                 return False, 0
         
         affinity_multiplier = self._calculate_affinity_multiplier(element)
@@ -175,6 +180,8 @@ class HealthEntity(BasicEntity):
         if killed:
             self.current_hp = 0
         
+        damage_text = DamageText((self.x + self.w / 2, self.y + self.h / 2), final_damage)
+        self.game.entity_manager.damage_text_group.add(damage_text)
         return killed, final_damage
     
     def _calculate_affinity_multiplier(self, element: str) -> float:

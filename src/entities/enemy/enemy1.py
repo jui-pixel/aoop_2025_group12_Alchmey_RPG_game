@@ -461,6 +461,9 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             # return ['special_attack']
             # return ['patrol']
             # return ['pause']
+            if self.current_hp <= 0:
+                raise ValueError("Enemy1 should be dead but is still executing actions")
+                return []
             if hp_ratio < 0.3:  # Low HP: prioritize dodge
                 return ['dodge', 'pause', 'attack', 'pause', 'chase']
             elif bullet_nearby:  # Nearby bullet: dodge

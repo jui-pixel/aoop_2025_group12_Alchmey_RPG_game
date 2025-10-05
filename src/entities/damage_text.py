@@ -4,7 +4,7 @@ from typing import Tuple
 
 class DamageText(pygame.sprite.Sprite):
     """A sprite to display floating damage numbers."""
-    def __init__(self, pos: Tuple[float, float], damage: int):
+    def __init__(self, pos: Tuple[float, float], damage: str):
         super().__init__()
         self.pos = list(pos)
         self.damage = damage

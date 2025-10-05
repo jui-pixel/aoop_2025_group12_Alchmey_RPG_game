@@ -156,7 +156,7 @@ class Bullet(MovementEntity, AttackEntity):
         """Trigger explosion and damage nearby entities."""
         if self.explosion_range <= 0:
             return
-
+        
         explosion_center = (self.x + self.w / 2, self.y + self.h / 2)
         damage_mult = getattr(self, 'get_modifier', lambda x: 1.0)('damage_multiplier')
 
@@ -184,9 +184,6 @@ class Bullet(MovementEntity, AttackEntity):
                     lose_hp_percentage_damage=self.explosion_lose_hp_percentage_damage,
                     cause_death=self.cause_death
                 )
-                if actual_damage > 0:
-                    damage_text = DamageText((entity.x + entity.w / 2, entity.y), actual_damage)
-                    self.game.entity_manager.damage_text_group.add(damage_text)
 
                 if self.explosion_buffs and hasattr(entity, 'add_buff'):
                     for buff in self.explosion_buffs:
