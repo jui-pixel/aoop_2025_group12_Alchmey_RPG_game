@@ -613,7 +613,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
                     break
             # return ['chase']
             # return ['attack']
-            return ['dodge']
+            # return ['dodge']
             # return ['melee']
             # return ['special_attack']
             # return ['patrol']
