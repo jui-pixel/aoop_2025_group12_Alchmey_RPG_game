@@ -270,6 +270,8 @@ class DodgeAction(Action):
         self.dodge_direction_timer: float = 0.0  # 固定閃避方向計時器
         self.chosen_dodge_direction: Tuple[float, float] = (0.0, 0.0)  # 當前選擇的閃避方向
         self.dodge_direction_duration: float = 0.5  # 固定方向 0.5 秒
+        self.player_threat_weight: float = 0.4  # 玩家威脅權重（0.0 ~ 1.0）
+        self.prediction_time: float = 0.2  # 預判子彈未來位置時間
 
     def start(self, entity: 'Enemy1', current_time: float) -> None:
         """
@@ -281,9 +283,10 @@ class DodgeAction(Action):
 
     def update(self, entity: 'Enemy1', dt: float, current_time: float) -> bool:
         """
-        更新閃避動作，優先左右閃避子彈，固定方向以避免抽搐。
-        - 計算子彈威脅向量，選擇垂直方向（左右），固定 0.5 秒。
-        - 若無子彈，遠離玩家或靜止。
+        更新閃避動作，同時考慮玩家的位置、子彈位置與速度，模擬像人一樣的閃躲。
+        - 計算子彈威脅向量（考慮未來位置和速度）。
+        - 計算玩家威脅向量（遠離玩家）。
+        - 結合向量，選擇垂直方向（左右）閃避，固定 0.5 秒。
         - 檢查目標位置是否可通行，避免卡牆。
         """
         if self.timer <= 0 or not entity.game:
@@ -292,104 +295,75 @@ class DodgeAction(Action):
 
         # 更新閃避方向計時器
         self.dodge_direction_timer -= dt
-        dungeon = entity.game.dungeon_manager.get_dungeon()
+        dungeon: Dungeon = entity.game.dungeon_manager.get_dungeon()
         move_direction = self.chosen_dodge_direction
         speed_multiplier = 1.0
 
         # 若計時器結束或無方向，重新計算
         if self.dodge_direction_timer <= 0 or move_direction == (0.0, 0.0):
-            # 尋找最威脅子彈（最近距離）
-            closest_bullet = None
-            min_distance = float('inf')
+            # 計算子彈威脅向量
+            bullet_threat = [0.0, 0.0]
+            bullet_threat_count = 0
             bullets = list(entity.game.entity_manager.bullet_group)[:self.max_bullets_to_check]
             for bullet in bullets:
                 if bullet.tag != "player":
                     continue
-                dx = bullet.x - entity.x
-                dy = bullet.y - entity.y
+                # 預判子彈未來位置
+                pred_x = bullet.x + bullet.velocity[0] * self.prediction_time
+                pred_y = bullet.y + bullet.velocity[1] * self.prediction_time
+                dx = pred_x - entity.x
+                dy = pred_y - entity.y
                 distance = math.sqrt(dx**2 + dy**2)
-                if 0 < distance < self.max_threat_distance and distance < min_distance:
-                    min_distance = distance
-                    closest_bullet = bullet
+                if 0 < distance < self.max_threat_distance:
+                    # 簡單距離加權
+                    weight = 1.0 / max(distance, 0.1)
+                    bullet_threat[0] += (dx / distance) * weight
+                    bullet_threat[1] += (dy / distance) * weight
+                    bullet_threat_count += 1
 
-            if closest_bullet:
-                # 計算叉積判斷子彈從哪邊經過
-                dx = closest_bullet.x - entity.x
-                dy = closest_bullet.y - entity.y
-                bvx, bvy = closest_bullet.velocity
-                mag = math.sqrt(bvx**2 + bvy**2)
-                bdx = bvx / mag if mag > 0 else 0
-                bdy = bvy / mag if mag > 0 else 0
-
-                cross = dx * bdy - dy * bdx
-
-                # 根據叉積選擇閃避方向
-                if cross > 0:
-                    # 從左經過，往右閃 (逆時針90度)
-                    dx_dodge, dy_dodge = bdy, -bdx
-                elif cross < 0:
-                    # 從右經過，往左閃 (順時針90度)
-                    dx_dodge, dy_dodge = -bdy, bdx
-                else:
-                    # 直線經過，隨機選擇左右
-                    directions = [(bdy, -bdx), (-bdy, bdx)]
-                    dx_dodge, dy_dodge = random.choice(directions)
-
-                # 正規化閃避方向
-                mag_dodge = math.sqrt(dx_dodge**2 + dy_dodge**2)
-                if mag_dodge > 0:
-                    dx_dodge /= mag_dodge
-                    dy_dodge /= mag_dodge
-
-                # 檢查是否可通行
-                new_x = entity.x + dx_dodge * entity.speed * self.dodge_speed_multiplier * dt
-                new_y = entity.y + dy_dodge * entity.speed * self.dodge_speed_multiplier * dt
-                if dungeon.get_tile_at((new_x, new_y)) in PASSABLE_TILES:
-                    move_direction = (dx_dodge, dy_dodge)
-                    speed_multiplier = self.dodge_speed_multiplier
-                    self.chosen_dodge_direction = move_direction
-                    self.dodge_direction_timer = self.dodge_direction_duration
-                else:
-                    # 若不可行，試另一方向
-                    dx_dodge, dy_dodge = -dx_dodge, -dy_dodge  # 相反方向
-                    new_x = entity.x + dx_dodge * entity.speed * self.dodge_speed_multiplier * dt
-                    new_y = entity.y + dy_dodge * entity.speed * self.dodge_speed_multiplier * dt
-                    if dungeon.get_tile_at((new_x, new_y)) in PASSABLE_TILES:
-                        move_direction = (dx_dodge, dy_dodge)
-                        speed_multiplier = self.dodge_speed_multiplier
-                        self.chosen_dodge_direction = move_direction
-                        self.dodge_direction_timer = self.dodge_direction_duration
-                    else:
-                        # 無可行方向，靜止
-                        move_direction = (0.0, 0.0)
-                        self.chosen_dodge_direction = move_direction
-                        self.dodge_direction_timer = self.dodge_direction_duration
-            elif entity.game.entity_manager.player:
-                # 無子彈，遠離玩家
+            # 計算玩家威脅向量（遠離玩家）
+            player_threat = [0.0, 0.0]
+            if entity.game.entity_manager.player:
                 dx = entity.x - entity.game.entity_manager.player.x
                 dy = entity.y - entity.game.entity_manager.player.y
                 distance = math.sqrt(dx**2 + dy**2)
-                if distance > TILE_SIZE:  # 保持一定距離
-                    move_dir_mag = math.sqrt(dx**2 + dy**2)
-                    if move_dir_mag > 0:
-                        dx /= move_dir_mag
-                        dy /= move_dir_mag
-                    new_x = entity.x + dx * entity.speed * dt
-                    new_y = entity.y + dy * entity.speed * dt
+                if distance > TILE_SIZE * 0.5:  # 避免太近時過度反應
+                    magnitude = max(distance, 0.1)
+                    player_threat = (dx / magnitude, dy / magnitude)
+
+            # 結合威脅向量（子彈優先，玩家權重較低）
+            threat_vector = [
+                bullet_threat[0] + player_threat[0] * self.player_threat_weight,
+                bullet_threat[1] + player_threat[1] * self.player_threat_weight
+            ]
+            magnitude = math.sqrt(threat_vector[0]**2 + threat_vector[1]**2)
+
+            if magnitude > 0:
+                threat_dir = (threat_vector[0] / magnitude, threat_vector[1] / magnitude)
+                # 計算垂直方向（左右，旋轉 ±90 度）
+                directions = [
+                    (-threat_dir[1], threat_dir[0]),  # 左（順時針 90 度）
+                    (threat_dir[1], -threat_dir[0])   # 右（逆時針 90 度）
+                ]
+                # 隨機打亂左右方向，增加自然感
+                random.shuffle(directions)
+                # 檢查哪個方向可通行
+                for dx, dy in directions:
+                    new_x = entity.x + dx * entity.speed * self.dodge_speed_multiplier * dt
+                    new_y = entity.y + dy * entity.speed * self.dodge_speed_multiplier * dt
                     if dungeon.get_tile_at((new_x, new_y)) in PASSABLE_TILES:
                         move_direction = (dx, dy)
+                        speed_multiplier = self.dodge_speed_multiplier
                         self.chosen_dodge_direction = move_direction
                         self.dodge_direction_timer = self.dodge_direction_duration
-                    else:
-                        move_direction = (0.0, 0.0)
-                        self.chosen_dodge_direction = move_direction
-                        self.dodge_direction_timer = self.dodge_direction_duration
+                        break
                 else:
+                    # 若左右不可行，保持靜止
                     move_direction = (0.0, 0.0)
                     self.chosen_dodge_direction = move_direction
                     self.dodge_direction_timer = self.dodge_direction_duration
             else:
-                # 無玩家或子彈，靜止
+                # 無威脅，靜止
                 move_direction = (0.0, 0.0)
                 self.chosen_dodge_direction = move_direction
                 self.dodge_direction_timer = self.dodge_direction_duration
