@@ -563,14 +563,14 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
                 tag = self.tag
             ),
             'pause': WaitAction(duration=0.3, action_id='pause'),
-            'pause2': WaitAction(duration=1.5, action_id='pause2'),
+            'pause2': WaitAction(duration=1.0, action_id='pause2'),
             'patrol': PatrolAction(
                 duration=5.0,
                 action_id='patrol',
                 waypoints=self.patrol_points
             ),
             'dodge': DodgeAction(
-                duration=0.5,
+                duration=0.3,
                 action_id='dodge'
             ),
             'special_attack': SpecialAttackAction(
@@ -637,9 +637,10 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             if not entity.game.entity_manager.player:
                 print("Interrupt: No player")
                 return True
-            if entity.current_action not in ['dodge', 'special_attack', 'attack'] and bullet_nearby_condition(entity, current_time):
+            if entity.current_action not in ['dodge'] and bullet_nearby_condition(entity, current_time):
+                entity.current_action = 'dodge'
                 entity.action_list = ['dodge', 'special_attack', 'pause2', 'random_move']
-                return True
+                return False
             dx = entity.game.entity_manager.player.x - entity.x
             dy = entity.game.entity_manager.player.y - entity.y
             distance = math.sqrt(dx**2 + dy**2)
