@@ -269,9 +269,10 @@ class DodgeAction(Action):
         self.max_bullets_to_check: int = 5  # 最多檢查 5 顆子彈
         self.dodge_direction_timer: float = 0.0  # 固定閃避方向計時器
         self.chosen_dodge_direction: Tuple[float, float] = (0.0, 0.0)  # 當前選擇的閃避方向
-        self.dodge_direction_duration: float = 0.5  # 固定方向 0.5 秒
+        self.dodge_direction_duration: float = 0.2  # 固定方向 0.2 秒
         self.player_threat_weight: float = 0.4  # 玩家威脅權重
-        self.max_prediction_time: float = 1.0  # 最大預判時間（秒）
+        self.max_prediction_time: float = 0.2  # 最大預判時間（秒）
+        self.close_bullet_threshold: float = 1.5 * TILE_SIZE  # 過近子彈閾值
 
     def start(self, entity: 'Enemy1', current_time: float) -> None:
         """
@@ -294,7 +295,6 @@ class DodgeAction(Action):
         dx = bullet_pos[0] - entity_pos[0]
         dy = bullet_pos[1] - entity_pos[1]
         
-        # 假設敵人靜止（簡化計算，閃避速度用於後續方向選擇）
         a = bullet_vel[0]**2 + bullet_vel[1]**2 - entity_speed**2
         b = 2 * (bullet_vel[0] * dx + bullet_vel[1] * dy)
         c = dx**2 + dy**2
@@ -306,7 +306,6 @@ class DodgeAction(Action):
         t1 = (-b + math.sqrt(discriminant)) / (2 * a)
         t2 = (-b - math.sqrt(discriminant)) / (2 * a)
         
-        # 選擇正值且最小的 t，限制最大預判時間
         t = min(t1, t2) if t1 > 0 and t2 > 0 else max(t1, t2) if max(t1, t2) > 0 else None
         if t is None or t < 0 or t > self.max_prediction_time:
             return None
@@ -318,8 +317,8 @@ class DodgeAction(Action):
     def update(self, entity: 'Enemy1', dt: float, current_time: float) -> bool:
         """
         更新閃避動作，結合子彈預判和玩家位置，模擬像人一樣的閃躲。
-        - 使用二次方程預判子彈交會點，生成威脅向量。
-        - 結合玩家位置（遠離玩家），選擇垂直閃避方向（左右）。
+        - 若子彈距離 < 1 TILE_SIZE，直接遠離該子彈。
+        - 否則使用預判子彈交會點和玩家位置，選擇垂直閃避方向（左右）。
         - 固定方向 0.5 秒避免抽搐，檢查可通行瓦片避免卡牆。
         """
         if self.timer <= 0 or not entity.game:
@@ -328,20 +327,43 @@ class DodgeAction(Action):
 
         # 更新閃避方向計時器
         self.dodge_direction_timer -= dt
-        dungeon: Dungeon = entity.game.dungeon_manager.get_dungeon()
+        dungeon = entity.game.dungeon_manager.get_dungeon()
         move_direction = self.chosen_dodge_direction
         speed_multiplier = 1.0
 
+        
+        closest_bullet = None
+        min_distance = float('inf')
+        bullets = list(entity.game.entity_manager.bullet_group)[:self.max_bullets_to_check]
+        for bullet in bullets:
+            if bullet.tag != "player":
+                continue
+            dx = bullet.x - entity.x
+            dy = bullet.y - entity.y
+            distance = math.sqrt(dx**2 + dy**2)
+            if distance < min_distance:
+                min_distance = distance
+                closest_bullet = bullet
+                
+        if closest_bullet and min_distance < self.close_bullet_threshold:
+            # 子彈過近，直接遠離
+            dx = closest_bullet.x - entity.x
+            dy = closest_bullet.y - entity.y
+            distance = max(min_distance, 0.1)
+            threat_dir = (-dx / distance, -dy / distance)  # 反向遠離
+            move_direction = threat_dir
+            speed_multiplier = self.dodge_speed_multiplier * 2
+            self.chosen_dodge_direction = move_direction
+            self.dodge_direction_timer = 0.0
+            
         # 若計時器結束或無方向，重新計算
-        if self.dodge_direction_timer <= 0 or move_direction == (0.0, 0.0):
-            # 計算子彈威脅向量（基於預判位置）
+        elif self.dodge_direction_timer <= 0 or move_direction == (0.0, 0.0):
+            # 無過近子彈，使用預判和玩家位置
             bullet_threat = [0.0, 0.0]
             bullet_threat_count = 0
-            bullets = list(entity.game.entity_manager.bullet_group)[:self.max_bullets_to_check]
             for bullet in bullets:
                 if bullet.tag != "player":
                     continue
-                # 預判子彈交會點
                 pred_pos = self.predict_intercept(
                     (entity.x, entity.y),
                     (bullet.x, bullet.y),
@@ -353,18 +375,18 @@ class DodgeAction(Action):
                     dy = pred_pos[1] - entity.y
                     distance = math.sqrt(dx**2 + dy**2)
                     if 0 < distance < self.max_threat_distance:
-                        weight = 1.0 / max(distance, 0.1)  # 距離加權
+                        weight = 1.0 / max(distance, 0.1)
                         bullet_threat[0] += (dx / distance) * weight
                         bullet_threat[1] += (dy / distance) * weight
                         bullet_threat_count += 1
 
-            # 計算玩家威脅向量（遠離玩家）
+            # 計算玩家威脅向量
             player_threat = [0.0, 0.0]
             if entity.game.entity_manager.player:
                 dx = entity.x - entity.game.entity_manager.player.x
                 dy = entity.y - entity.game.entity_manager.player.y
                 distance = math.sqrt(dx**2 + dy**2)
-                if distance > TILE_SIZE * 0.5:  # 避免太近時過度反應
+                if distance > TILE_SIZE * 0.5:
                     magnitude = max(distance, 0.1)
                     player_threat = (dx / magnitude, dy / magnitude)
 
@@ -377,14 +399,11 @@ class DodgeAction(Action):
 
             if magnitude > 0:
                 threat_dir = (threat_vector[0] / magnitude, threat_vector[1] / magnitude)
-                # 計算垂直方向（左右，旋轉 ±90 度）
                 directions = [
                     (-threat_dir[1], threat_dir[0]),  # 左（順時針 90 度）
                     (threat_dir[1], -threat_dir[0])   # 右（逆時針 90 度）
                 ]
-                # 隨機打亂左右方向，增加自然感
                 random.shuffle(directions)
-                # 檢查哪個方向可通行
                 for dx, dy in directions:
                     new_x = entity.x + dx * entity.speed * self.dodge_speed_multiplier * dt
                     new_y = entity.y + dy * entity.speed * self.dodge_speed_multiplier * dt
@@ -395,16 +414,14 @@ class DodgeAction(Action):
                         self.dodge_direction_timer = self.dodge_direction_duration
                         break
                 else:
-                    # 若左右不可行，保持靜止
                     move_direction = (0.0, 0.0)
                     self.chosen_dodge_direction = move_direction
                     self.dodge_direction_timer = self.dodge_direction_duration
             else:
-                # 無威脅，靜止
                 move_direction = (0.0, 0.0)
                 self.chosen_dodge_direction = move_direction
                 self.dodge_direction_timer = self.dodge_direction_duration
-
+                
         # 執行移動
         if move_direction != (0.0, 0.0):
             new_x = entity.x + move_direction[0] * entity.speed * speed_multiplier * dt
@@ -412,7 +429,6 @@ class DodgeAction(Action):
             if dungeon.get_tile_at((new_x, new_y)) in PASSABLE_TILES:
                 entity.move(move_direction[0], move_direction[1], dt * speed_multiplier)
             else:
-                # 若最終方向不可行，靜止並重置計時器
                 self.chosen_dodge_direction = (0.0, 0.0)
                 self.dodge_direction_timer = self.dodge_direction_duration
 
@@ -597,7 +613,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
                     break
             # return ['chase']
             # return ['attack']
-            # return ['dodge']
+            return ['dodge']
             # return ['melee']
             # return ['special_attack']
             # return ['patrol']
@@ -621,7 +637,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             if not entity.game.entity_manager.player:
                 print("Interrupt: No player")
                 return True
-            if entity.current_action in ['attack', 'melee', 'pause', 'chase', 'random_move', 'pause2'] and bullet_nearby_condition(entity, current_time):
+            if entity.current_action not in ['dodge', 'special_attack', 'attack'] and bullet_nearby_condition(entity, current_time):
                 entity.action_list = ['dodge', 'special_attack', 'pause2', 'random_move']
                 return True
             dx = entity.game.entity_manager.player.x - entity.x
