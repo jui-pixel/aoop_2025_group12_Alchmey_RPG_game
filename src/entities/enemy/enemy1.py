@@ -295,7 +295,7 @@ class DodgeAction(Action):
 
         # 更新閃避方向計時器
         self.dodge_direction_timer -= dt
-        dungeon: Dungeon = entity.game.dungeon_manager.get_dungeon()
+        dungeon = entity.game.dungeon_manager.get_dungeon()
         move_direction = self.chosen_dodge_direction
         speed_multiplier = 1.0
 
