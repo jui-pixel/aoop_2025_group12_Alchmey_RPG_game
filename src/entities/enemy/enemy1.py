@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple, Callable, Dict, Optional, Any
 import math
 import pygame
+import random
 from ..attack_entity import AttackEntity
 from ..buffable_entity import BuffableEntity
 from ..health_entity import HealthEntity
@@ -12,6 +13,7 @@ from ..bullet.bullet import Bullet
 from ..bullet.expand_circle_bullet import ExpandingCircleBullet
 from ..buff.element_buff import ELEMENTAL_BUFFS
 from ..basic_entity import BasicEntity
+from ...config import PASSABLE_TILES
 
 # 行為樹節點（與前次一致）
 class BehaviorNode(ABC):
@@ -113,6 +115,38 @@ class Action(ABC):
     def reset(self) -> None:
         self.timer = 0.0
         self.started = False
+
+class RandomMoveAction(Action):
+    def __init__(self, duration: float, action_id: str, speed: float):
+        super().__init__(action_id, duration)
+        self.speed = speed
+        self.direction: Tuple[float, float] = (0.0, 0.0)
+        self.change_interval: float = 1.0  # Change direction every second
+        self.change_timer: float = 0.0
+    
+    def start(self, entity: 'Enemy1', current_time: float) -> None:
+        self.timer = self.duration
+        self.change_timer = 0.0
+        entity.current_action = self.action_id
+        print(f"Starting {self.action_id}: timer={self.timer:.2f}")
+    
+    def update(self, entity: 'Enemy1', dt: float, current_time: float) -> bool:
+        if self.timer <= 0:
+            print(f"{self.action_id} completed")
+            return False
+        
+        self.change_timer -= dt
+        if self.change_timer <= 0:
+            angle = random.uniform(0, 2 * math.pi)
+            self.direction = (math.cos(angle), math.sin(angle))
+            self.change_timer = self.change_interval
+            print(f"{self.action_id} new direction: dx={self.direction[0]:.2f}, dy={self.direction[1]:.2f}")
+        
+        entity.move(self.direction[0] * self.speed / entity.speed, 
+                    self.direction[1] * self.speed / entity.speed, dt)
+        
+        self.timer -= dt
+        return True
 
 class ChaseAction(Action):
     def __init__(self, duration: float, action_id: str, 
@@ -230,56 +264,122 @@ class PatrolAction(Action):
 class DodgeAction(Action):
     def __init__(self, duration: float, action_id: str):
         super().__init__(action_id, duration)
-        self.direction = (0.0, 0.0)
-    
+        self.max_threat_distance: float = 5 * TILE_SIZE  # 最大威脅檢測範圍
+        self.dodge_speed_multiplier: float = 1.5  # 閃避時的速度倍率
+        self.max_bullets_to_check: int = 5  # 最多檢查 5 顆子彈
+        self.dodge_direction_timer: float = 0.0  # 固定閃避方向計時器
+        self.chosen_dodge_direction: Tuple[float, float] = (0.0, 0.0)  # 當前選擇的閃避方向
+        self.dodge_direction_duration: float = 1.0  # 固定方向 1.0 秒
+
     def start(self, entity: 'Enemy1', current_time: float) -> None:
+        """
+        開始閃避動作，初始化計時器和動作ID。
+        """
         self.timer = self.duration
         entity.current_action = self.action_id
-        print(f"Starting {self.action_id}: timer={self.timer:.2f}")
-    
+        print(f"開始動作 {self.action_id}: 計時器={self.timer:.2f}")
+
     def update(self, entity: 'Enemy1', dt: float, current_time: float) -> bool:
+        """
+        更新閃避動作，優先左右閃避子彈，固定方向以避免抽搐。
+        - 計算子彈威脅向量，選擇垂直方向（左右），固定 0.5 秒。
+        - 若無子彈，遠離玩家或靜止。
+        - 檢查目標位置是否可通行，避免卡牆。
+        """
         if self.timer <= 0 or not entity.game:
-            print(f"{self.action_id} {'completed' if self.timer <= 0 else 'failed: No game'}")
+            print(f"{self.action_id} {'完成' if self.timer <= 0 else '失敗：無遊戲實例'}")
             return False
-        
-        # Check for nearby player bullets
-        bullet_direction = None
-        min_distance = float('inf')
-        for bullet in entity.game.entity_manager.bullet_group:
-            if bullet.tag != "player_bullet":
-                continue
-            dx = bullet.x - entity.x
-            dy = bullet.y - entity.y
-            distance = math.sqrt(dx**2 + dy**2)
-            if distance < 3 * TILE_SIZE and distance > 0:
-                if distance < min_distance:
-                    min_distance = distance
-                    bullet_direction = (dx / distance, dy / distance)
-        
-        if bullet_direction:
-            # Move away from nearest bullet
-            entity.move(-bullet_direction[0], -bullet_direction[1], dt)
-        elif entity.game.entity_manager.player:
-            # Move away from player if no bullets
-            dx = entity.x - entity.game.entity_manager.player.x
-            dy = entity.y - entity.game.entity_manager.player.y
-            distance = math.sqrt(dx**2 + dy**2)
-            if distance > 0:
-                direction = (dx / distance, dy / distance)
-                entity.move(direction[0], direction[1], dt)
+
+        # 更新閃避方向計時器
+        self.dodge_direction_timer -= dt
+        dungeon: Dungeon = entity.game.dungeon_manager.get_dungeon()
+        move_direction = self.chosen_dodge_direction
+        speed_multiplier = 1.0
+
+        # 若計時器結束或無方向，重新計算
+        if self.dodge_direction_timer <= 0 or move_direction == (0.0, 0.0):
+            # 計算子彈威脅向量，僅考慮當前位置
+            threat_vector = [0.0, 0.0]
+            threat_count = 0
+            bullets = list(entity.game.entity_manager.bullet_group)[:self.max_bullets_to_check]
+            for bullet in bullets:
+                if bullet.tag != "player":
+                    continue
+                dx = bullet.x - entity.x
+                dy = bullet.y - entity.y
+                distance = math.sqrt(dx**2 + dy**2)
+                if 0 < distance < self.max_threat_distance:
+                    weight = 1.0 / max(distance, 0.1)  # 簡單距離加權
+                    threat_vector[0] += (dx / distance) * weight
+                    threat_vector[1] += (dy / distance) * weight
+                    threat_count += 1
+
+            if threat_count > 0:
+                # 有子彈威脅，優先左右閃避
+                magnitude = math.sqrt(threat_vector[0]**2 + threat_vector[1]**2)
+                if magnitude > 0:
+                    # 正規化威脅向量
+                    threat_dir = (threat_vector[0] / magnitude, threat_vector[1] / magnitude)
+                    # 計算垂直方向（左右，旋轉 ±90 度）
+                    directions = [
+                        (-threat_dir[1], threat_dir[0]),  # 左（順時針 90 度）
+                        (threat_dir[1], -threat_dir[0])   # 右（逆時針 90 度）
+                    ]
+                    # 隨機打亂左右方向，增加自然感
+                    random.shuffle(directions)
+                    # 檢查哪個方向可通行
+                    for dx, dy in directions:
+                        new_x = entity.x + dx * entity.speed * self.dodge_speed_multiplier * dt
+                        new_y = entity.y + dy * entity.speed * self.dodge_speed_multiplier * dt
+                        if dungeon.get_tile_at((new_x, new_y)) in PASSABLE_TILES:
+                            move_direction = (dx, dy)
+                            speed_multiplier = self.dodge_speed_multiplier
+                            self.chosen_dodge_direction = move_direction
+                            self.dodge_direction_timer = self.dodge_direction_duration
+                            break
+                    else:
+                        # 若左右不可行，保持靜止
+                        move_direction = (0.0, 0.0)
+                        self.chosen_dodge_direction = move_direction
+                        self.dodge_direction_timer = self.dodge_direction_duration
+            elif entity.game.entity_manager.player:
+                # 無子彈，遠離玩家
+                dx = entity.x - entity.game.entity_manager.player.x
+                dy = entity.y - entity.game.entity_manager.player.y
+                distance = math.sqrt(dx**2 + dy**2)
+                if distance > TILE_SIZE:  # 保持一定距離
+                    move_direction = (dx / distance, dy / distance)
+                    # 檢查是否可通行
+                    new_x = entity.x + move_direction[0] * entity.speed * dt
+                    new_y = entity.y + move_direction[1] * entity.speed * dt
+                    if dungeon.get_tile_at((new_x, new_y)) in PASSABLE_TILES:
+                        self.chosen_dodge_direction = move_direction
+                        self.dodge_direction_timer = self.dodge_direction_duration
+                    else:
+                        move_direction = (0.0, 0.0)
+                        self.chosen_dodge_direction = move_direction
+                        self.dodge_direction_timer = self.dodge_direction_duration
+                else:
+                    move_direction = (0.0, 0.0)
+                    self.chosen_dodge_direction = move_direction
+                    self.dodge_direction_timer = self.dodge_direction_duration
             else:
-                # Random movement if too close
-                import random
-                if self.direction == (0.0, 0.0):
-                    self.direction = (random.uniform(-1, 1), random.uniform(-1, 1))
-                entity.move(direction, dt)
-        else:
-            # Random movement if no player or bullets
-            import random
-            if self.direction == (0.0, 0.0):
-                self.direction = (random.uniform(-1, 1), random.uniform(-1, 1))
-            entity.move(direction, dt)
-        
+                # 無玩家或子彈，靜止
+                move_direction = (0.0, 0.0)
+                self.chosen_dodge_direction = move_direction
+                self.dodge_direction_timer = self.dodge_direction_duration
+
+        # 執行移動
+        if move_direction != (0.0, 0.0):
+            new_x = entity.x + move_direction[0] * entity.speed * speed_multiplier * dt
+            new_y = entity.y + move_direction[1] * entity.speed * speed_multiplier * dt
+            if dungeon.get_tile_at((new_x, new_y)) in PASSABLE_TILES:
+                entity.move(move_direction[0], move_direction[1], dt * speed_multiplier)
+            else:
+                # 若最終方向不可行，靜止並重置計時器
+                self.chosen_dodge_direction = (0.0, 0.0)
+                self.dodge_direction_timer = self.dodge_direction_duration
+
         self.timer -= dt
         return True
 
@@ -418,7 +518,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
                 waypoints=self.patrol_points
             ),
             'dodge': DodgeAction(
-                duration=0.2,
+                duration=0.5,
                 action_id='dodge'
             ),
             'special_attack': SpecialAttackAction(
@@ -432,7 +532,12 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             'melee': MeleeAttackAction(
                 action_id='melee',
                 damage=5
-            )
+            ),
+            'random_move': RandomMoveAction(
+                duration=0.5,
+                action_id='random_move',
+                speed=self.max_speed
+            ),
         }
         
         # Dynamic combo
@@ -461,9 +566,6 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             # return ['special_attack']
             # return ['patrol']
             # return ['pause']
-            if self.current_hp <= 0:
-                raise ValueError("Enemy1 should be dead but is still executing actions")
-                return []
             if hp_ratio < 0.3:  # Low HP: prioritize dodge
                 return ['dodge', 'pause', 'attack', 'pause', 'chase']
             elif bullet_nearby:  # Nearby bullet: dodge
@@ -471,7 +573,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             elif distance < 2 * TILE_SIZE:  # Player too close: dodge or melee
                 return ['chase', 'melee', 'pause']
             elif distance < entity.vision_radius * TILE_SIZE:  # Player in range
-                return ['attack', 'dodge', 'special_attack', 'pause2', 'special_attack', 'pause2', 'special_attack', 'pause2', 'chase']
+                return ['attack', 'dodge', 'attack', 'chase', 'random_move']
             else:  # Player out of range
                 return ['patrol', 'pause']
         
@@ -483,6 +585,9 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             if not entity.game.entity_manager.player:
                 print("Interrupt: No player")
                 return True
+            if entity.current_action in ['attack', 'melee', 'pause', 'chase', 'random_move', 'pause2'] and bullet_nearby_condition(entity, current_time):
+                entity.action_list = ['dodge', 'special_attack', 'pause2', 'random_move']
+                return True
             dx = entity.game.entity_manager.player.x - entity.x
             dy = entity.game.entity_manager.player.y - entity.y
             distance = math.sqrt(dx**2 + dy**2)
@@ -493,7 +598,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         
         def bullet_nearby_condition(entity: 'Enemy1', current_time: float) -> bool:
             for bullet in entity.game.entity_manager.bullet_group:
-                if bullet.tag != "player_bullet":
+                if bullet.tag != "player":
                     continue
                 dx = bullet.x - entity.x
                 dy = bullet.y - entity.y
@@ -564,3 +669,4 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
     
     def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
         BasicEntity.draw(self, screen, camera_offset)
+        self.draw_health_bar(screen, camera_offset)

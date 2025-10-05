@@ -136,11 +136,6 @@ class Bullet(MovementEntity, AttackEntity):
             cause_death=self.cause_death
         )
 
-        # Add damage text
-        if actual_damage > 0:
-            damage_text = DamageText((enemy.x + enemy.w / 2, enemy.y), actual_damage)
-            self.game.entity_manager.damage_text_group.add(damage_text)
-
         # Apply buffs
         if self.buffs and hasattr(enemy, 'add_buff'):
             for buff in self.buffs:

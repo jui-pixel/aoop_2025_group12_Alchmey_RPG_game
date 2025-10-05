@@ -229,6 +229,31 @@ class HealthEntity(BasicEntity):
     def set_base_defense(self, value: int) -> None:
         self._base_defense = max(0, value)
         self._defense = self._base_defense  # Reset defense to base when updating base_defense
+    
+    def draw_health_bar(self, screen: pygame.Surface, camera_offset: List[float], bar_width: int = 40, bar_height: int = 6) -> None:
+        if self.max_hp <= 0:
+            return
+        
+        health_ratio = self.get_health_percentage()
+        shield_ratio = self.current_shield / self.max_shield if self.max_shield > 0 else 0.0
+        
+        bar_x = self.x - camera_offset[0] - bar_width // 2
+        bar_y = self.y - camera_offset[1] - self.h // 2 - 10
+        
+        # Draw background
+        pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height))
+        
+        # Draw health portion
+        health_width = int(bar_width * health_ratio)
+        pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, health_width, bar_height))
+        
+        # Draw shield portion on top of health
+        if shield_ratio > 0:
+            shield_width = int(bar_width * shield_ratio)
+            pygame.draw.rect(screen, (0, 0, 255), (bar_x + health_width, bar_y, shield_width, bar_height))
+        
+        # Draw border
+        pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
 
 
 # Example: Enemy class that inherits from all three (multiple inheritance)
