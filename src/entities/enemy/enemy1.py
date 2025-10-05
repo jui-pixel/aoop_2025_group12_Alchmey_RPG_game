@@ -270,8 +270,8 @@ class DodgeAction(Action):
         self.dodge_direction_timer: float = 0.0  # 固定閃避方向計時器
         self.chosen_dodge_direction: Tuple[float, float] = (0.0, 0.0)  # 當前選擇的閃避方向
         self.dodge_direction_duration: float = 0.5  # 固定方向 0.5 秒
-        self.player_threat_weight: float = 0.4  # 玩家威脅權重（0.0 ~ 1.0）
-        self.prediction_time: float = 0.2  # 預判子彈未來位置時間
+        self.player_threat_weight: float = 0.4  # 玩家威脅權重
+        self.max_prediction_time: float = 1.0  # 最大預判時間（秒）
 
     def start(self, entity: 'Enemy1', current_time: float) -> None:
         """
@@ -281,13 +281,46 @@ class DodgeAction(Action):
         entity.current_action = self.action_id
         print(f"開始動作 {self.action_id}: 計時器={self.timer:.2f}")
 
+    def predict_intercept(self, entity_pos: Tuple[float, float], bullet_pos: Tuple[float, float], 
+                        bullet_vel: Tuple[float, float], entity_speed: float) -> Tuple[float, float]:
+        """
+        預判子彈與敵人的交會點，基於二次方程。
+        - entity_pos: 敵人位置 (x, y)
+        - bullet_pos: 子彈當前位置 (x, y)
+        - bullet_vel: 子彈速度向量 (vx, vy)
+        - entity_speed: 敵人閃避速度
+        返回預測交會點 (pred_x, pred_y) 或 None（無解）。
+        """
+        dx = bullet_pos[0] - entity_pos[0]
+        dy = bullet_pos[1] - entity_pos[1]
+        
+        # 假設敵人靜止（簡化計算，閃避速度用於後續方向選擇）
+        a = bullet_vel[0]**2 + bullet_vel[1]**2 - entity_speed**2
+        b = 2 * (bullet_vel[0] * dx + bullet_vel[1] * dy)
+        c = dx**2 + dy**2
+        
+        discriminant = b**2 - 4 * a * c
+        if discriminant < 0:
+            return None
+        
+        t1 = (-b + math.sqrt(discriminant)) / (2 * a)
+        t2 = (-b - math.sqrt(discriminant)) / (2 * a)
+        
+        # 選擇正值且最小的 t，限制最大預判時間
+        t = min(t1, t2) if t1 > 0 and t2 > 0 else max(t1, t2) if max(t1, t2) > 0 else None
+        if t is None or t < 0 or t > self.max_prediction_time:
+            return None
+        
+        pred_x = bullet_pos[0] + bullet_vel[0] * t
+        pred_y = bullet_pos[1] + bullet_vel[1] * t
+        return (pred_x, pred_y)
+
     def update(self, entity: 'Enemy1', dt: float, current_time: float) -> bool:
         """
-        更新閃避動作，同時考慮玩家的位置、子彈位置與速度，模擬像人一樣的閃躲。
-        - 計算子彈威脅向量（考慮未來位置和速度）。
-        - 計算玩家威脅向量（遠離玩家）。
-        - 結合向量，選擇垂直方向（左右）閃避，固定 0.5 秒。
-        - 檢查目標位置是否可通行，避免卡牆。
+        更新閃避動作，結合子彈預判和玩家位置，模擬像人一樣的閃躲。
+        - 使用二次方程預判子彈交會點，生成威脅向量。
+        - 結合玩家位置（遠離玩家），選擇垂直閃避方向（左右）。
+        - 固定方向 0.5 秒避免抽搐，檢查可通行瓦片避免卡牆。
         """
         if self.timer <= 0 or not entity.game:
             print(f"{self.action_id} {'完成' if self.timer <= 0 else '失敗：無遊戲實例'}")
@@ -295,31 +328,35 @@ class DodgeAction(Action):
 
         # 更新閃避方向計時器
         self.dodge_direction_timer -= dt
-        dungeon = entity.game.dungeon_manager.get_dungeon()
+        dungeon: Dungeon = entity.game.dungeon_manager.get_dungeon()
         move_direction = self.chosen_dodge_direction
         speed_multiplier = 1.0
 
         # 若計時器結束或無方向，重新計算
         if self.dodge_direction_timer <= 0 or move_direction == (0.0, 0.0):
-            # 計算子彈威脅向量
+            # 計算子彈威脅向量（基於預判位置）
             bullet_threat = [0.0, 0.0]
             bullet_threat_count = 0
             bullets = list(entity.game.entity_manager.bullet_group)[:self.max_bullets_to_check]
             for bullet in bullets:
                 if bullet.tag != "player":
                     continue
-                # 預判子彈未來位置
-                pred_x = bullet.x + bullet.velocity[0] * self.prediction_time
-                pred_y = bullet.y + bullet.velocity[1] * self.prediction_time
-                dx = pred_x - entity.x
-                dy = pred_y - entity.y
-                distance = math.sqrt(dx**2 + dy**2)
-                if 0 < distance < self.max_threat_distance:
-                    # 簡單距離加權
-                    weight = 1.0 / max(distance, 0.1)
-                    bullet_threat[0] += (dx / distance) * weight
-                    bullet_threat[1] += (dy / distance) * weight
-                    bullet_threat_count += 1
+                # 預判子彈交會點
+                pred_pos = self.predict_intercept(
+                    (entity.x, entity.y),
+                    (bullet.x, bullet.y),
+                    bullet.velocity,
+                    entity.speed * self.dodge_speed_multiplier
+                )
+                if pred_pos:
+                    dx = pred_pos[0] - entity.x
+                    dy = pred_pos[1] - entity.y
+                    distance = math.sqrt(dx**2 + dy**2)
+                    if 0 < distance < self.max_threat_distance:
+                        weight = 1.0 / max(distance, 0.1)  # 距離加權
+                        bullet_threat[0] += (dx / distance) * weight
+                        bullet_threat[1] += (dy / distance) * weight
+                        bullet_threat_count += 1
 
             # 計算玩家威脅向量（遠離玩家）
             player_threat = [0.0, 0.0]
@@ -331,7 +368,7 @@ class DodgeAction(Action):
                     magnitude = max(distance, 0.1)
                     player_threat = (dx / magnitude, dy / magnitude)
 
-            # 結合威脅向量（子彈優先，玩家權重較低）
+            # 結合威脅向量
             threat_vector = [
                 bullet_threat[0] + player_threat[0] * self.player_threat_weight,
                 bullet_threat[1] + player_threat[1] * self.player_threat_weight
