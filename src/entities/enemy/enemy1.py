@@ -354,7 +354,7 @@ class DodgeAction(Action):
             move_direction = threat_dir
             speed_multiplier = self.dodge_speed_multiplier * 2
             self.chosen_dodge_direction = move_direction
-            self.dodge_direction_timer = 0.0
+            self.dodge_direction_timer = 0.1
             
         # 若計時器結束或無方向，重新計算
         elif self.dodge_direction_timer <= 0 or move_direction == (0.0, 0.0):
