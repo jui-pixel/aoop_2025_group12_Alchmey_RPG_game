@@ -485,7 +485,7 @@ class SpecialAttackAction(Action):
                 explosion_range=self.outer_radius,  # Synced with outer_radius
                 expansion_duration=self.expansion_duration,
                 wait_time=wait_time,
-                hide_time=0.3 * i,
+                hide_time=0.2 * i,
             )
             entity.game.entity_manager.bullet_group.add(bullet)
         print(f"{self.action_id} completed")
