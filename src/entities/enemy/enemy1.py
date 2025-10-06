@@ -463,24 +463,19 @@ class SpecialAttackAction(Action):
             print(f"{self.action_id} failed: Player out of range")
             return False
         direction = (dx / distance, dy / distance)
-        r = TILE_SIZE // 2
+        r = TILE_SIZE
         num_bullets = int(math.ceil(distance / r) + 5)  # Extend beyond player
         for i in range(num_bullets):
-            # Calculate position with sinusoidal offset
-            t = i * r / distance  # Normalized distance along path
-            offset_magnitude = r * 2 * math.sin(t * 2 * math.pi * 2)  # Wave with 2 cycles
-            # Perpendicular vector to direction
-            perp = (-direction[1], direction[0])  # Rotate 90 degrees
-            bullet_x = entity.x + i * r * direction[0] + offset_magnitude * perp[0]
-            bullet_y = entity.y + i * r * direction[1] + offset_magnitude * perp[1]
-            # Dynamic wait_time: starts at 0.1s, increases by 0.05s per bullet
-            wait_time = 0.1 + 0.02 * i
+            # Calculate position along straight line
+            bullet_x = entity.x + i * r * direction[0]
+            bullet_y = entity.y + i * r * direction[1]
+            wait_time = 0.1
             
             bullet = ExpandingCircleBullet(
                 x=bullet_x,
                 y=bullet_y,
-                w=TILE_SIZE // 2,
-                h=TILE_SIZE // 2,
+                w=TILE_SIZE//2,
+                h=TILE_SIZE//2,
                 game=entity.game,
                 tag=self.tag,
                 max_speed=0.0,  # Stationary bullet
@@ -490,6 +485,7 @@ class SpecialAttackAction(Action):
                 explosion_range=self.outer_radius,  # Synced with outer_radius
                 expansion_duration=self.expansion_duration,
                 wait_time=wait_time,
+                hide_time=0.3 * i,
             )
             entity.game.entity_manager.bullet_group.add(bullet)
         print(f"{self.action_id} completed")
@@ -577,7 +573,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
                 action_id='special_attack',
                 damage=10,
                 bullet_speed=0.0,
-                outer_radius=TILE_SIZE // 2,
+                outer_radius=TILE_SIZE,
                 expansion_duration=1.0,
                 tag = self.tag
             ),
