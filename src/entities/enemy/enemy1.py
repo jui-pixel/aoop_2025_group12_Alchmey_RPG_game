@@ -469,7 +469,7 @@ class SpecialAttackAction(Action):
             # Calculate position along straight line
             bullet_x = entity.x + i * r * direction[0]
             bullet_y = entity.y + i * r * direction[1]
-            wait_time = 0.1
+            wait_time = 0.06
             
             bullet = ExpandingCircleBullet(
                 x=bullet_x,
