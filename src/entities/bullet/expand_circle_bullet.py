@@ -1,13 +1,18 @@
-# src/entities/bullet/expand_circle_bullet.py
-from typing import Tuple, Optional, Dict, List
 import pygame
 import math
+from typing import Tuple, Optional, Dict, List
+import os
 from ..movement_entity import MovementEntity
 from ..attack_entity import AttackEntity
 from ..damage_text import DamageText
 from ..buff.buff import Buff
 from ...config import TILE_SIZE, PASSABLE_TILES
-from ..basic_entity import BasicEntity  # 添加 import
+from ..basic_entity import BasicEntity
+
+def get_project_path(*subpaths):
+    """Get the absolute path to the project root (roguelike_dungeon/) and join subpaths."""
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    return os.path.join(project_root, *subpaths)
 
 class ExpandingCircleBullet(MovementEntity, AttackEntity):
     def __init__(self,
@@ -36,7 +41,8 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
                  outer_radius: float = TILE_SIZE,
                  expansion_duration: float = 1.0,
                  wait_time: float = 0.0,
-                 lifetime: float = 5.0,):
+                 lifetime: float = 5.0,
+                 hide_time: float = 0.0):
         # Initialize BasicEntity first
         BasicEntity.__init__(self, x, y, w, h, None, "circle", game, tag)
         
@@ -45,54 +51,86 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
         AttackEntity.__init__(self, x, y, w, h, None, "circle", game, tag, can_attack, damage_to_element,
                               atk_element, damage, 0, 0, 0, True, [], max_penetration_count,
                               collision_cooldown, explosion_range, explosion_damage, explosion_element,
-                              explosion_buffs if explosion_buffs else [],explosion_max_hp_percentage_damage, 
+                              explosion_buffs if explosion_buffs else [], explosion_max_hp_percentage_damage, 
                               explosion_current_hp_percentage_damage, explosion_lose_hp_percentage_damage, init_basic=False)
 
         self._pass_wall = True  # Bullets can pass through walls
         self.tag = tag
-        # Bullet-specific attributes (無變動)
+        # Bullet-specific attributes
         self.direction = direction
         self.velocity = (direction[0] * max_speed, direction[1] * max_speed)
+        self.hide_time = hide_time  # Hidden time before wait_time starts
+        self.is_hidden = hide_time > 0  # Tracks if bullet is hidden
         self.wait_time = wait_time
         self.lifetime = lifetime
 
-        # Circle-specific attributes (無變動)
+        # Circle-specific attributes
         self.outer_radius = outer_radius
         self.initial_inner_radius = outer_radius * 0.1
         self.inner_radius = self.initial_inner_radius
         self.expansion_duration = expansion_duration
         self.expansion_time = 0.0
-        self.expanded = False  # Tracks if damage has been triggered
+        self.expanded = False  # Tracks if expansion is complete
+        self.explosion_animation_time = 0.0  # Tracks explosion animation progress
+        self.explosion_animation_done = False  # Tracks if explosion animation is complete
 
-        # Create surface for drawing (無變動)
+        # Load animation frames
+        self.animation_frames = []
+        for i in range(9):  # effect2_5_0 to effect2_5_8
+            frame_path = get_project_path("src", "assets", "bullets", f"effect2_5_{i}.png")
+            try:
+                frame = pygame.image.load(frame_path).convert_alpha()
+                frame = pygame.transform.scale(frame, (int(outer_radius * 2), int(outer_radius * 2)))
+                self.animation_frames.append(frame)
+            except Exception as e:
+                print(f"無法載入動畫圖片 {frame_path}: {e}")
+                self.animation_frames.append(pygame.Surface((outer_radius * 2, outer_radius * 2), pygame.SRCALPHA))
+
+        # Initialize surface for drawing
         self.image = pygame.Surface((outer_radius * 2, outer_radius * 2), pygame.SRCALPHA)
         self.rect = self.image.get_rect(center=(x, y))
 
     def update(self, dt: float, current_time: float) -> None:
-        """Update bullet position, expansion, and check collisions."""
+        """Update bullet position, expansion, explosion animation, and check collisions."""
+        if self.is_hidden:
+            self.hide_time -= dt
+            if self.hide_time <= 0:
+                self.is_hidden = False
+            return
+
         if self.wait_time > 0:
             self.wait_time -= dt
+            self._update_image()
             return
+
         # Update parent classes
         MovementEntity.update(self, dt, current_time)
         AttackEntity.update(self, dt, current_time)
+
         # Update lifetime
         self.lifetime -= dt
         if self.lifetime <= 0:
-            self.explode()
-            self.kill()
-            return
+            if not self.expanded:
+                self.expanded = True
+                self.explode()
+            if self.explosion_animation_done:
+                self.kill()
+                return
 
-        # Update inner circle expansion
+        # Update inner circle expansion or explosion animation
         if not self.expanded:
             self.expansion_time += dt
             expansion_progress = min(self.expansion_time / self.expansion_duration, 1.0)
             self.inner_radius = self.initial_inner_radius + (self.outer_radius - self.initial_inner_radius) * expansion_progress
 
-            # Trigger damage when inner circle reaches outer circle
-            if expansion_progress >= 1.0 and not self.expanded:
+            if expansion_progress >= 1.0:
                 self.expanded = True
                 self.explode()
+
+        elif not self.explosion_animation_done:
+            self.explosion_animation_time += dt
+            if self.explosion_animation_time >= self.expansion_duration:
+                self.explosion_animation_done = True
                 self.kill()
                 return
 
@@ -107,20 +145,35 @@ class ExpandingCircleBullet(MovementEntity, AttackEntity):
             if x_valid and y_valid:
                 tile = self.dungeon.dungeon_tiles[tile_y][tile_x]
                 if tile not in PASSABLE_TILES:
-                    self.explode()
-                    self.kill()
+                    if not self.expanded:
+                        self.expanded = True
+                        self.explode()
+                    if self.explosion_animation_done:
+                        self.kill()
 
     def _update_image(self) -> None:
-        """Update the bullet's image with expanding inner circle and fixed outer circle."""
+        """Update the bullet's image with animation frames based on expansion or explosion progress."""
         self.image.fill((0, 0, 0, 0))  # Clear surface with transparent background
-        # Draw outer circle (white border, transparent fill)
-        pygame.draw.circle(self.image, (255, 255, 255, 128), (self.outer_radius, self.outer_radius), self.outer_radius, 2)
-        # Draw inner circle (solid red)
-        pygame.draw.circle(self.image, (0, 0, 255), (self.outer_radius, self.outer_radius), self.inner_radius)
+
+        if not self.expanded:
+            # Expansion phase: map expansion_progress [0, 1] to frames 0-3
+            expansion_progress = min(self.expansion_time / self.expansion_duration, 1.0)
+            frame_index = int(expansion_progress * 4)  # 0 to 3
+            frame_index = min(frame_index, 3)  # Ensure not to exceed frame 3
+        else:
+            # Explosion phase: map explosion_animation_time [0, expansion_duration] to frames 4-8
+            explosion_progress = min(self.explosion_animation_time / self.expansion_duration, 1.0)
+            frame_index = 4 + int(explosion_progress * 5)  # 4 to 8
+            frame_index = min(frame_index, 8)  # Ensure not to exceed frame 8
+
+        # Draw the selected frame
+        self.image.blit(self.animation_frames[frame_index], (0, 0))
         self.rect = self.image.get_rect(center=(self.x, self.y))
 
     def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
-        """Draw the bullet with camera offset."""
+        """Draw the bullet with camera offset, skip if hidden."""
+        if self.is_hidden:
+            return
         screen_x = self.x - camera_offset[0] - self.outer_radius
         screen_y = self.y - camera_offset[1] - self.outer_radius
         screen.blit(self.image, (screen_x, screen_y))
