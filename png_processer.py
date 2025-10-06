@@ -1,9 +1,9 @@
-from PIL import Image
+import argparse
 import os
+from PIL import Image
 
 def get_project_path(*subpaths):
     """Get the absolute path to the project root (roguelike_dungeon/) and join subpaths."""
-    # Assume the script is in the project root (roguelike_dungeon/)
     project_root = os.path.abspath(os.path.dirname(__file__))
     return os.path.join(project_root, *subpaths)
 
@@ -64,14 +64,38 @@ def process_all_images(input_dir, output_dir, tile_size=32):
             split_image(input_path, output_dir, tile_size)
 
 if __name__ == "__main__":
-    # Define input and output directories relative to project root
-    input_dir = get_project_path("src", "assets", "original")
-    output_dir = get_project_path("src", "assets", "processed")
+    # Define default paths relative to project root
+    default_input_dir = get_project_path("src", "assets", "original")
+    default_output_dir = get_project_path("src", "assets", "processed")
+    default_tile_size = 32
 
-    # Print current working directory for debugging
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description="Split images into tiles for Alchemy RPG Game.")
+    parser.add_argument("--input_dir", type=str, default=default_input_dir,
+                        help=f"Input directory containing images to split (default: {default_input_dir})")
+    parser.add_argument("--output_dir", type=str, default=default_output_dir,
+                        help=f"Output directory for processed tiles (default: {default_output_dir})")
+    parser.add_argument("--tile_size", type=int, default=default_tile_size,
+                        help=f"Size of each tile in pixels (default: {default_tile_size})")
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Validate tile_size
+    if args.tile_size <= 0:
+        print(f"錯誤：tile_size 必須為正整數，收到 {args.tile_size}")
+        exit(1)
+
+    # Convert relative paths to absolute paths if necessary
+    input_dir = os.path.abspath(args.input_dir)
+    output_dir = os.path.abspath(args.output_dir)
+    tile_size = args.tile_size
+
+    # Print directories and tile size for debugging
     print(f"當前工作目錄: {os.getcwd()}")
     print(f"輸入資料夾: {input_dir}")
     print(f"輸出資料夾: {output_dir}")
+    print(f"瓦片大小: {tile_size}x{tile_size}")
 
     # Process all images
-    process_all_images(input_dir, output_dir, tile_size=32)
+    process_all_images(input_dir, output_dir, tile_size)
