@@ -543,11 +543,21 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         self.vision_radius = 15  # In tiles
         self.patrol_points = [(x + i * TILE_SIZE * 2, y) for i in range(-2, 3)]
         
+        self.half_hp_triggered = False
+        
         # Define actions
         self.actions = {
             'chase': ChaseAction(
                 duration=0.3,
                 action_id='chase',
+                direction_source=lambda e: (
+                    (e.game.entity_manager.player.x - e.x) / max(1e-10, math.sqrt((e.game.entity_manager.player.x - e.x)**2 + (e.game.entity_manager.player.y - e.y)**2)),
+                    (e.game.entity_manager.player.y - e.y) / max(1e-10, math.sqrt((e.game.entity_manager.player.x - e.x)**2 + (e.game.entity_manager.player.y - e.y)**2))
+                ) if e.game.entity_manager.player else (0, 0)
+            ),
+            'chase2': ChaseAction(
+                duration=0.5,
+                action_id='chase2',
                 direction_source=lambda e: (
                     (e.game.entity_manager.player.x - e.x) / max(1e-10, math.sqrt((e.game.entity_manager.player.x - e.x)**2 + (e.game.entity_manager.player.y - e.y)**2)),
                     (e.game.entity_manager.player.y - e.y) / max(1e-10, math.sqrt((e.game.entity_manager.player.x - e.x)**2 + (e.game.entity_manager.player.y - e.y)**2))
@@ -563,6 +573,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             ),
             'pause': WaitAction(duration=0.3, action_id='pause'),
             'pause2': WaitAction(duration=1.0, action_id='pause2'),
+            'pause3': WaitAction(duration=0.5, action_id='pause3'),
             'patrol': PatrolAction(
                 duration=5.0,
                 action_id='patrol',
@@ -617,14 +628,20 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             # return ['special_attack']
             # return ['patrol']
             # return ['pause']
-            if hp_ratio < 0.3:  # Low HP: prioritize dodge
-                return ['dodge', 'pause', 'attack', 'pause', 'chase']
+            if hp_ratio < 0.5 and not entity.half_hp_triggered:  # Low HP: prioritize dodge
+                entity.current_hp = entity.max_hp // 2
+                entity.half_hp_triggered = True
+                action = []
+                for _ in range(10):
+                    action.extend(['special_attack', 'pause3'])
+                return action
             elif bullet_nearby:  # Nearby bullet: dodge
                 return ['dodge', 'pause', 'attack', 'pause']
-            elif distance < 2 * TILE_SIZE:  # Player too close: dodge or melee
-                return ['chase', 'melee', 'pause']
+            elif distance < 3 * TILE_SIZE:  # Player too close: dodge or melee
+                return ['chase2', 'melee', 'pause', 'random_move']
             elif distance < entity.vision_radius * TILE_SIZE:  # Player in range
                 return ['attack', 'dodge', 'attack', 'chase', 'random_move']
+    
             else:  # Player out of range
                 return ['patrol', 'pause']
         
@@ -636,7 +653,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             if not entity.game.entity_manager.player:
                 print("Interrupt: No player")
                 return True
-            if entity.current_action not in ['dodge'] and bullet_nearby_condition(entity, current_time):
+            if entity.current_action not in ['dodge', 'special_attack', 'pause3'] and bullet_nearby_condition(entity, current_time):
                 entity.current_action = 'dodge'
                 entity.action_list = ['dodge', 'special_attack', 'pause2', 'random_move']
                 return False
@@ -722,3 +739,6 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
     def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
         BasicEntity.draw(self, screen, camera_offset)
         self.draw_health_bar(screen, camera_offset)
+        
+    def is_alive(self) -> bool:
+        return self.current_hp > 0 or not self.half_hp_triggered
