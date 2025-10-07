@@ -4,7 +4,7 @@ from ..utils.helpers import get_project_path
 
 class DamageText(pygame.sprite.Sprite):
     """A sprite to display floating damage numbers."""
-    def __init__(self, pos: Tuple[float, float], damage: str, font_size: int = 24):
+    def __init__(self, pos: Tuple[float, float], damage: str, font_size: int = 32):
         super().__init__()
         self.pos = list(pos)
         self.damage = damage

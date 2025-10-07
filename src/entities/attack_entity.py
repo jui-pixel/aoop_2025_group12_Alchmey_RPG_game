@@ -239,3 +239,7 @@ class AttackEntity(BasicEntity):
     def can_penetrate(self) -> bool:
         """Check if entity can still penetrate."""
         return self.max_penetration_count <= 0 or self.current_penetration_count < self.max_penetration_count
+    
+    def update(self, dt, current_time):
+        self.collision_update(dt, current_time)
+        return
