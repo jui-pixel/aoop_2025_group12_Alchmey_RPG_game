@@ -141,13 +141,13 @@ class HealthEntity(BasicEntity):
                    max_hp_percentage_damage: int = 0, current_hp_percentage_damage: int = 0, 
                    lose_hp_percentage_damage: int = 0, cause_death: bool = True) -> Tuple[bool, int]:
         if self.invulnerable:
-            damage_text = DamageText((self.x + self.w / 2, self.y + self.h / 2), "Immune")
+            damage_text = DamageText((self.x, self.y), "Immune")
             self.game.entity_manager.damage_text_group.add(damage_text)
             return False, 0
             
         if self.dodge_rate > 0:
             if random.random() < self.dodge_rate:
-                damage_text = DamageText((self.x + self.w / 2, self.y + self.h / 2), "Miss")
+                damage_text = DamageText((self.x, self.y), "Miss")
                 self.game.entity_manager.damage_text_group.add(damage_text)
                 return False, 0
         
@@ -180,7 +180,7 @@ class HealthEntity(BasicEntity):
         if killed:
             self.current_hp = 0
         
-        damage_text = DamageText((self.x + self.w / 2, self.y + self.h / 2), final_damage)
+        damage_text = DamageText((self.x, self.y), final_damage)
         self.game.entity_manager.damage_text_group.add(damage_text)
         return killed, final_damage
     
