@@ -504,7 +504,10 @@ class MeleeAttackAction(Action):
         if not entity.game.entity_manager.player or entity.game.entity_manager.player.invulnerable:
             print(f"{self.action_id} failed: No player or player invulnerable")
             return False
+        temp = entity.damage
+        entity.damage = self.damage
         entity.collision(entity.game.entity_manager.player)
+        entity.damage = temp
         return False
 
 class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
@@ -521,7 +524,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
         MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move, init_basic=False)
         HealthEntity.__init__(self, x, y, w, h, image, shape, game, tag, base_max_hp, max_shield, dodge_rate, element, defense, resistances, invulnerable, init_basic=False)
         AttackEntity.__init__(self, x, y, w, h, image, shape, game, tag, can_attack, damage_to_element, 
-                             atk_element=element, damage=0, max_penetration_count=0, collision_cooldown=0.2, 
+                             atk_element=element, damage=0, max_penetration_count=0, collision_cooldown=0.1, 
                              explosion_range=0.0, explosion_damage=0, init_basic=False)
         BuffableEntity.__init__(self, x, y, w, h, image, shape, game, tag, init_basic=False)
         
@@ -579,7 +582,7 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             ),
             'melee': MeleeAttackAction(
                 action_id='melee',
-                damage=5
+                damage=50
             ),
             'random_move': RandomMoveAction(
                 duration=0.5,

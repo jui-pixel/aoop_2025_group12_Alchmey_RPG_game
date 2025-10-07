@@ -1,15 +1,25 @@
-# src/entities/damage_text.py
 import pygame
 from typing import Tuple
+from ..utils.helpers import get_project_path
 
 class DamageText(pygame.sprite.Sprite):
     """A sprite to display floating damage numbers."""
-    def __init__(self, pos: Tuple[float, float], damage: str):
+    def __init__(self, pos: Tuple[float, float], damage: str, font_size: int = 24):
         super().__init__()
         self.pos = list(pos)
         self.damage = damage
-        self.font = pygame.font.SysFont(None, 24)
+        self.font_size = font_size
         self.color = (255, 0, 0)  # Red for damage
+
+        # Load Silver.ttf
+        font_path = get_project_path("assets", "fonts", "Silver.ttf")
+        try:
+            self.font = pygame.font.Font(font_path, self.font_size)
+            print(f"成功載入字體: {font_path}")
+        except Exception as e:
+            print(f"無法載入 Silver.ttf: {e}，使用預設字體")
+            self.font = pygame.font.SysFont(None, self.font_size)
+        
         self.image = self.font.render(str(damage), True, self.color)
         self.rect = self.image.get_rect(center=self.pos)
         self.lifetime = 1.0  # Display for 1 second

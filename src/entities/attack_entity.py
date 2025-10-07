@@ -142,7 +142,7 @@ class AttackEntity(BasicEntity):
         damage_mult = getattr(self, 'get_modifier', lambda x: 1.0)('damage_multiplier')
         multiplier = self._damage_to_element.get(self.atk_element, 1.0)
         effective_damage = int(self.damage * multiplier * damage_mult)
-        
+        print(f"AttackEntity collision: base damage {self.damage}, element {self.atk_element}, multiplier {multiplier}, damage_mult {damage_mult}, effective damage {effective_damage}")
         if effective_damage > 0:
             killed, actual_damage = target.take_damage(
                 factor=1.0,
