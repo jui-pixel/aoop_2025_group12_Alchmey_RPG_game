@@ -30,30 +30,6 @@ class BuffSynthesizer:
         }
     
     def synthesize_buffs(self, buffs: List['Buff'], entity: 'BuffableEntity') -> None:
-        """Check for and apply buff synthesis rules."""
-        buff_names = [buff.name for buff in buffs]
-        
-        for (buff1, buff2), result in self.synthesis_rules.items():
-            if buff1 in buff_names and buff2 in buff_names:
-                buff1_obj = next((b for b in buffs if b.name == buff1), None)
-                buff2_obj = next((b for b in buffs if b.name == buff2), None)
-                
-                if buff1_obj and buff2_obj:
-                    entity.remove_buff(buff1_obj)
-                self.remove_buff(buff)
-            else:
-                self._apply_buff_effects(buff, dt)
-        
-        self._update_modifiers()
-        
-        if self.buff_synthesizer:
-            self.buff_synthesizer.synthesize_buffs(self.buffs, self)
-    
-    def add_buff(self, buff: 'Buff') -> None:
-        """
-        Add a buff to the entity.
-        If a buff with the same name exists, replace it with the longer duration one.
-        """
         buff_copy = buff.deepcopy()
         
         for existing_buff in self.buffs[:]:

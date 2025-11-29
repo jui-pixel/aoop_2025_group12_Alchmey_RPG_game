@@ -334,12 +334,206 @@ class AttackEntity(BasicEntity):
         curr = self.current_penetration_count
         max_p = self.max_penetration_count
         if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
+            
+            for key in to_remove:
+                del c_list[key]
+    
+    def can_collide_with(self, other_entity: 'EntityInterface') -> bool:
+        """Check if this entity can collide with another entity."""
+        c_list = self.collision_list
+        curr_pen = self.current_penetration_count
+        max_pen = self.max_penetration_count
+        
+        if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
+            combat = self.game.ecs_world.component_for_entity(self.ecs_entity, Combat)
+            c_list = combat.collision_list
+            curr_pen = combat.current_penetration_count
+            max_pen = combat.max_penetration_count
+
+        if other_entity.id in c_list:
+            return False
+        
+        if max_pen > 0 and curr_pen >= max_pen:
+            return False
+        
+        return True
+    
+    def check_collision(self, other_entity: 'EntityInterface') -> bool:
+        """Check if this entity is colliding with another entity."""
+        if not other_entity:
+            return False
+        
+        rect1 = self.get_rect()
+        rect2 = other_entity.get_rect()
+        
+        return rect1.colliderect(rect2)
+    
+    def collision(self, target: 'EntityInterface', entities: List['EntityInterface'] = None) -> bool:
+        """
+        Handle collision with another entity, applying damage, buffs, and triggering explosion if applicable.
+        Returns True if collision was processed, False otherwise.
+        """
+        # Use the property getter for can_attack
+        if not self.can_attack or not self.can_collide_with(target) or self.tag == target.tag:
+            return False
+        
+        # Get combat component or use local attributes
+        combat_data = None
+        if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
+            combat_data = self.game.ecs_world.component_for_entity(self.ecs_entity, Combat)
+            combat_data.collision_list[target.id] = combat_data.collision_cooldown
+            combat_data.current_penetration_count += 1
+        else:
+            self.collision_list[target.id] = self.collision_cooldown
+            self.current_penetration_count += 1
+        
+        # Apply damage with buff multiplier
+        damage_mult = getattr(self, 'get_modifier', lambda x: 1.0)('damage_multiplier')
+        
+        # Get damage and element from combat_data or local attributes
+        atk_element = combat_data.atk_element if combat_data else self.atk_element
+        damage = combat_data.damage if combat_data else self.damage
+        damage_to_element_map = combat_data.damage_to_element if combat_data else self.damage_to_element
+        
+        multiplier = damage_to_element_map.get(atk_element, 1.0)
+        effective_damage = int(damage * multiplier * damage_mult)
+        
+        print(f"AttackEntity collision: base damage {damage}, element {atk_element}, multiplier {multiplier}, damage_mult {damage_mult}, effective damage {effective_damage}")
+        if effective_damage > 0:
+            killed, actual_damage = target.take_damage(
+                factor=1.0,
+                element=atk_element,
+                base_damage=effective_damage,
+                max_hp_percentage_damage=self.max_hp_percentage_damage, # Not in Combat component yet
+                current_hp_percentage_damage=self.current_hp_percentage_damage, # Not in Combat component yet
+                lose_hp_percentage_damage=self.lose_hp_percentage_damage, # Not in Combat component yet
+                cause_death=self.cause_death # Not in Combat component yet
+            )
+            print(f"Collision damage: {actual_damage} to {target.__class__.__name__}")
+        
+        # Apply buffs
+        if self.buffs and hasattr(target, 'add_buff'): # Not in Combat component yet
+            for buff in self.buffs:
+                target.add_buff(buff.deepcopy())
+        
+        # Trigger explosion
+        explosion_range = combat_data.explosion_range if combat_data else self.explosion_range
+        if explosion_range > 0 and entities:
+            self.trigger_explosion(entities)
+        
+        return True
+    
+    def set_penetration_count(self, count: int) -> None:
+        """Set the maximum penetration count."""
+        self.max_penetration_count = count
+        self.current_penetration_count = 0
+        if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
+            combat = self.game.ecs_world.component_for_entity(self.ecs_entity, Combat)
+            combat.max_penetration_count = count
+            combat.current_penetration_count = 0
+    
+    def reset_penetration(self) -> None:
+        """Reset penetration count and collision list."""
+        self.current_penetration_count = 0
+        self.collision_list.clear()
+        if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
+            combat = self.game.ecs_world.component_for_entity(self.ecs_entity, Combat)
+            combat.current_penetration_count = 0
+            combat.collision_list.clear()
+    
+    def set_explosion_properties(self, range: float, damage: int, element: str,
+                                max_hp_percentage_damage: int = 0, 
+                                current_hp_percentage_damage: int = 0,
+                                lose_hp_percentage_damage: int = 0,
+                                buffs: List['Buff'] = None) -> None:
+        """Set explosion properties."""
+        self.explosion_range = range
+        self.explosion_damage = damage
+        self.explosion_element = element
+        self.explosion_max_hp_percentage_damage = max_hp_percentage_damage
+        self.explosion_current_hp_percentage_damage = current_hp_percentage_damage
+        self.explosion_lose_hp_percentage_damage = lose_hp_percentage_damage
+        self.explosion_buffs = [buff.deepcopy() for buff in buffs] if buffs else []
+        
+        if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
+            combat = self.game.ecs_world.component_for_entity(self.ecs_entity, Combat)
+            combat.explosion_range = range
+            combat.explosion_damage = damage
+            combat.explosion_element = element
+    
+    def trigger_explosion(self, entities: List['EntityInterface']) -> None:
+        """Trigger explosion and damage nearby entities."""
+        combat_data = None
+        if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
+            combat_data = self.game.ecs_world.component_for_entity(self.ecs_entity, Combat)
+
+        explosion_range = combat_data.explosion_range if combat_data else self.explosion_range
+        if explosion_range <= 0:
+            return
+        
+        explosion_center = (self.x + self.w / 2, self.y + self.h / 2)
+        damage_mult = getattr(self, 'get_modifier', lambda x: 1.0)('damage_multiplier')
+        
+        for entity in entities:
+            if not hasattr(entity, 'take_damage'):
+                continue
+            if self.tag == entity.tag:
+                continue  # Prevent self-damage or friendly fire
+            
+            entity_center = (entity.x + entity.w / 2, entity.y + entity.h / 2)
+            distance = math.sqrt(
+                (explosion_center[0] - entity_center[0])**2 + 
+                (explosion_center[1] - entity_center[1])**2
+            )
+            
+            if distance <= explosion_range:
+                explosion_element = combat_data.explosion_element if combat_data else self.explosion_element
+                explosion_damage = combat_data.explosion_damage if combat_data else self.explosion_damage
+                damage_to_element_map = combat_data.damage_to_element if combat_data else self.damage_to_element
+
+                multiplier = damage_to_element_map.get(explosion_element, 1.0)
+                effective_explosion_damage = int(explosion_damage * multiplier * damage_mult)
+                killed, actual_damage = entity.take_damage(
+                    factor=1.0,
+                    element=explosion_element,
+                    base_damage=effective_explosion_damage,
+                    max_hp_percentage_damage=self.explosion_max_hp_percentage_damage, # Not in Combat component yet
+                    current_hp_percentage_damage=self.explosion_current_hp_percentage_damage, # Not in Combat component yet
+                    lose_hp_percentage_damage=self.explosion_lose_hp_percentage_damage, # Not in Combat component yet
+                    cause_death=self.cause_death # Not in Combat component yet
+                )
+                print(f"Explosion damage: {actual_damage} to {entity.__class__.__name__}")
+                
+                if self.explosion_buffs and hasattr(entity, 'add_buff'): # Not in Combat component yet
+                    for buff in self.explosion_buffs:
+                        entity.add_buff(buff.deepcopy())
+
+    def set_collision_cooldown(self, cooldown: float) -> None:
+        """Set collision cooldown time."""
+        self.collision_cooldown = cooldown
+        if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
+            self.game.ecs_world.component_for_entity(self.ecs_entity, Combat).collision_cooldown = cooldown
+    
+    def get_penetration_remaining(self) -> int:
+        """Get remaining penetration count."""
+        curr = self.current_penetration_count
+        max_p = self.max_penetration_count
+        if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
+            combat = self.game.ecs_world.component_for_entity(self.ecs_entity, Combat)
+            curr = combat.current_penetration_count
+            max_p = combat.max_penetration_count
+        return max(0, max_p - curr)
+    
+    def can_penetrate(self) -> bool:
+        """Check if entity can still penetrate."""
+        curr = self.current_penetration_count
+        max_p = self.max_penetration_count
+        if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
             combat = self.game.ecs_world.component_for_entity(self.ecs_entity, Combat)
             curr = combat.current_penetration_count
             max_p = combat.max_penetration_count
         return max_p <= 0 or curr < max_p
     
     def update(self, dt, current_time):
-        self.collision_update(dt, current_time)
-        return
-```
+        # Logic moved to CombatSystem
+        pass

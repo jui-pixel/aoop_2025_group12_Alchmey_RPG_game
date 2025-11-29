@@ -1,42 +1,125 @@
+```python
+from src.ecs.components import Velocity, Collider
+import math
+from .basic_entity import BasicEntity
+from src.config import TILE_SIZE, PASSABLE_TILES
+
+class MovementEntity(BasicEntity):
+    def __init__(self, x: float = 0.0, y: float = 0.0, w: int = 32, h: int = 32,
+                 image=None, shape="rect", game=None, tag="", 
+                 max_speed: float = 100.0, can_move: bool = True, pass_wall: bool = False,
+                 init_basic: bool = True):
+        if init_basic:
+            super().__init__(x, y, w, h, image, shape, game, tag)
+            
+        self.max_speed = max_speed
+        self.can_move = can_move
+        self._pass_wall = pass_wall
+        self.velocity = (0.0, 0.0)
+        self.displacement = (0.0, 0.0)
+        
+        # ECS Setup
+        if self.game and hasattr(self.game, 'ecs_world') and self.ecs_entity is not None:
+            if not self.game.ecs_world.has_component(self.ecs_entity, Velocity):
+                self.game.ecs_world.add_component(self.ecs_entity, Velocity(x=0.0, y=0.0, speed=max_speed))
+            if not self.game.ecs_world.has_component(self.ecs_entity, Collider):
+                self.game.ecs_world.add_component(self.ecs_entity, Collider(w=w, h=h, pass_wall=pass_wall))
+
+    @property
+    def velocity(self):
+        if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
+            vel = self.game.ecs_world.component_for_entity(self.ecs_entity, Velocity)
+            return (vel.x, vel.y)
+        return self._velocity
+
+    @velocity.setter
+    def velocity(self, value):
+        if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
+            vel = self.game.ecs_world.component_for_entity(self.ecs_entity, Velocity)
+            vel.x = value[0]
+            vel.y = value[1]
+        self._velocity = value
+
+    def move(self, dx: float, dy: float, dt: float) -> None:
+        """Move the entity based on displacement (dx, dy)."""
+        # This method is kept for compatibility but should eventually delegate to ECS or be removed.
+        # Currently, InputSystem sets velocity, and MovementSystem handles position update.
+        # So this method might be redundant if called every frame by legacy code.
+        # If legacy code calls this, we should update Velocity component.
+        
+        if dx != 0 or dy != 0:
+            magnitude = math.sqrt(dx**2 + dy**2)
             if magnitude > 0:
                 dx /= magnitude
                 dy /= magnitude
             self.velocity = (dx * self.max_speed, dy * self.max_speed)
         else:
-            lerp_factor = 0.1
-            vx = self.velocity[0] * (1 - lerp_factor)
-            vy = self.velocity[1] * (1 - lerp_factor)
-            self.velocity = (vx, vy)
-            self.displacement = (0.0, 0.0)
-            if math.sqrt(vx**2 + vy**2) < self.max_speed * 0.05:
-                self.velocity = (0.0, 0.0)
+            # Friction logic handled in MovementSystem or here if we want to keep it hybrid
+```python
+from src.ecs.components import Velocity, Collider
+import math
+from .basic_entity import BasicEntity
+from src.config import TILE_SIZE, PASSABLE_TILES
 
-        new_x = self.x + self.velocity[0] * dt
-        new_y = self.y + self.velocity[1] * dt
+class MovementEntity(BasicEntity):
+    def __init__(self, x: float = 0.0, y: float = 0.0, w: int = 32, h: int = 32,
+                 image=None, shape="rect", game=None, tag="", 
+                 max_speed: float = 100.0, can_move: bool = True, pass_wall: bool = False,
+                 init_basic: bool = True):
+        if init_basic:
+            super().__init__(x, y, w, h, image, shape, game, tag)
+            
+        self.max_speed = max_speed
+        self.can_move = can_move
+        self._pass_wall = pass_wall
+        self.velocity = (0.0, 0.0)
+        self.displacement = (0.0, 0.0)
         
-        if not self._pass_wall:
-            tile_x, tile_y = int(new_x // TILE_SIZE), int(new_y // TILE_SIZE)
-            x_valid = 0 <= tile_x < self.dungeon.grid_width
-            y_valid = 0 <= tile_y < self.dungeon.grid_height
-            if x_valid and y_valid:
-                tile = self.dungeon.dungeon_tiles[tile_y][tile_x]
-                if tile in PASSABLE_TILES:
-                    self.set_position(new_x, new_y)
-                else:
-                    x_allowed = x_valid and self.dungeon.dungeon_tiles[int(self.y // TILE_SIZE)][tile_x] in PASSABLE_TILES
-                    y_allowed = y_valid and self.dungeon.dungeon_tiles[tile_y][int(self.x // TILE_SIZE)] in PASSABLE_TILES
-                    if x_allowed:
-                        self.set_position(new_x, self.y)
-                        self.velocity = (self.velocity[0], 0.0)
-                    if y_allowed:
-                        self.set_position(self.x, new_y)
-                        self.velocity = (0.0, self.velocity[1])
-                    if not (x_allowed or y_allowed):
-                        self.velocity = (0.0, 0.0)
+        # ECS Setup
+        if self.game and hasattr(self.game, 'ecs_world') and self.ecs_entity is not None:
+            if not self.game.ecs_world.has_component(self.ecs_entity, Velocity):
+                self.game.ecs_world.add_component(self.ecs_entity, Velocity(x=0.0, y=0.0, speed=max_speed))
+            if not self.game.ecs_world.has_component(self.ecs_entity, Collider):
+                self.game.ecs_world.add_component(self.ecs_entity, Collider(w=w, h=h, pass_wall=pass_wall))
+
+    @property
+    def velocity(self):
+        if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
+            vel = self.game.ecs_world.component_for_entity(self.ecs_entity, Velocity)
+            return (vel.x, vel.y)
+        return self._velocity
+
+    @velocity.setter
+    def velocity(self, value):
+        if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
+            vel = self.game.ecs_world.component_for_entity(self.ecs_entity, Velocity)
+            vel.x = value[0]
+            vel.y = value[1]
+        self._velocity = value
+
+    def move(self, dx: float, dy: float, dt: float) -> None:
+        """Move the entity based on displacement (dx, dy)."""
+        # This method is kept for compatibility but should eventually delegate to ECS or be removed.
+        # Currently, InputSystem sets velocity, and MovementSystem handles position update.
+        # So this method might be redundant if called every frame by legacy code.
+        # If legacy code calls this, we should update Velocity component.
+        
+        if dx != 0 or dy != 0:
+            magnitude = math.sqrt(dx**2 + dy**2)
+            if magnitude > 0:
+                dx /= magnitude
+                dy /= magnitude
+            self.velocity = (dx * self.max_speed, dy * self.max_speed)
         else:
-            self.set_position(new_x, new_y)
+            # Friction logic handled in MovementSystem or here if we want to keep it hybrid
+            pass
         
+        # We DO NOT update position here anymore to avoid double movement.
+        # MovementSystem will handle it.
+        pass
+
     def update(self, dt: float, current_time: float) -> None:
-        """Update movement entity position based on velocity."""  # 無變動
-        if self.can_move:
-            self.move(self.displacement[0], self.displacement[1], dt)
+        """Update movement entity position based on velocity."""
+        # Logic moved to MovementSystem
+        pass
+```

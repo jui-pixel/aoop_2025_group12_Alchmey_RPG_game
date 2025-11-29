@@ -87,28 +87,6 @@ from src.menu.menus.element_choose_menu import ElementChooseMenu
             self.menu_manager.set_menu(menu_name)
         print(f"Game: 已顯示菜單 {menu_name}，當前菜單：{self.menu_manager.current_menu.__class__.__name__ if self.menu_manager.current_menu else 'None'}")
 
-    def hide_menu(self, menu_name: str) -> None:
-        """Hide the specified menu if it's the current one.
-
-        Args:
-            menu_name: The name of the menu to hide.
-        """
-        if self.menu_manager.current_menu and self.menu_manager.current_menu.__class__.__name__.lower() == menu_name:
-            self.menu_manager.current_menu.activate(False)
-            self.menu_manager.current_menu = None
-            if self.menu_stack:
-                prev_menu = self.menu_stack.pop()
-                self.show_menu(prev_menu)
-            else:
-                self.event_manager.state = "lobby" if self.dungeon_manager.current_room_id == 0 else "playing"
-                print(f"Game: 無先前菜單，返回遊戲狀態 {self.event_manager.state}")
-            print(f"Game: 已隱藏菜單 {menu_name}，當前菜單：{self.menu_manager.current_menu.__class__.__name__ if self.menu_manager.current_menu else 'None'}")
-        else:
-            print(f"Game: 無法隱藏菜單 {menu_name}，當前菜單：{self.menu_manager.current_menu.__class__.__name__ if self.menu_manager.current_menu else 'None'}")
-
-    async def update(self, dt: float) -> bool:
-        """更新遊戲狀態。
-
         Args:
             dt: 每幀的時間間隔（秒）。
 
