@@ -150,60 +150,75 @@ class StorageManager:
             return None
 
     def apply_stats_to_player(self) -> None:
-        """Apply current stat levels to the player."""
+        """Apply current stat levels to the player. (與 ECS Facade 交互)"""
         if not self.game.entity_manager.player:
             print("StorageManager: No player instance found")
             return
         player = self.game.entity_manager.player
-        # Apply attack level
-        player.damage = 10 + self.attack_level * 5  # Example: +5 damage per level
-        # Apply defense level
-        player.defense = 1 + self.defense_level  # Example: +1 defense per level
-        player.max_shield = 5 + self.defense_level ** 2  # Example: +2 shield per level
-        # Apply movement level
-        player._max_speed = TILE_SIZE * (5 + self.movement_level * 0.1)  # Example: +0.2 speed per level
-        player._base_max_speed = TILE_SIZE * (5 + self.movement_level * 0.1)  # Update base_max_speed
-        player.base_energy_regen_rate = 5 + self.movement_level * 2
-        player.energy_regen_rate = 5 + self.movement_level * 2  # Example: +1 energy regen per level
-        player.max_energy = 100 + self.movement_level * 20  # Example:
-        # Apply health level
-        player.base_max_hp = 100 + self.health_level * 20  # Example: +20 HP per level
-        player.max_hp = player.base_max_hp  # Update max_hp
-        player.current_hp = min(player.current_hp, player.max_hp)  # Ensure current HP doesn't exceed max
-        print(f"StorageManager: Applied stats to player - Attack: {player.damage}, Defense: {player.defense}, Speed: {player.max_speed}, HP: {player.max_hp}")
+        
+        # 應用攻擊等級 (映射至 Combat.damage)
+        player.damage = 10 + self.attack_level * 5 
+        
+        # 應用防禦等級 (映射至 Defense.defense 和 Health.max_shield)
+        player.defense = 1 + self.defense_level
+        player.max_shield = 5 + self.defense_level ** 2 
+        # player.current_shield = min(player.current_shield, player.max_shield) # 建議在遊戲初始化/重置時做
+
+        # 應用移動等級 (映射至 Velocity.speed 和 PlayerComponent 能量/速度欄位)
+        new_speed = TILE_SIZE * (5 + self.movement_level * 0.1)
+        player.speed = new_speed
+        player._base_max_speed = new_speed  # 更新基底速度
+        
+        new_regen_rate = 5 + self.movement_level * 2
+        player.base_energy_regen_rate = new_regen_rate
+        player.energy_regen_rate = new_regen_rate # 能量回覆率
+        player.max_energy = 100 + self.movement_level * 20 
+
+        # 應用生命等級 (映射至 Health.base_max_hp, Health.max_hp, Health.current_hp)
+        player.base_max_hp = 100 + self.health_level * 20
+        player.max_hp = player.base_max_hp # 更新最大 HP
+        # 確保當前 HP 不超過新的最大 HP
+        player.current_hp = min(player.current_hp, player.max_hp) 
+        
+        print(f"StorageManager: Applied stats to player - Attack: {player.damage}, Defense: {player.defense}, Speed: {player.speed}, HP: {player.max_hp}")
     
     def apply_skills_to_player(self) -> None:
-        """Apply current skills to the player."""
+        """Apply current skills to the player. (與 ECS Facade 交互)"""
         if not self.game.entity_manager.player:
             print("StorageManager: No player instance found")
             return
         player = self.game.entity_manager.player
-        # Clear existing skill chains
+        
+        # 清除現有技能鏈 (操作 player.skill_chain property)
         player.skill_chain = [[] for _ in range(player.max_skill_chains)]
         player.current_skill_chain_idx = 0
         player.current_skill_idx = 0
-        # Add skills to the first skill chain
+        
+        # 將技能添加到第一個技能鏈
         for skill_dict in self.skills_library:
             skill = self.create_skill_from_dict(skill_dict)
             if skill:
-                player.add_skill_to_chain(skill, chain_idx=0)
+                player.add_skill_to_chain(skill, chain_idx=0) # add_skill_to_chain 方法內部會修改 PlayerComponent
+                
         print(f"StorageManager: Applied {len(self.skills_library)} skills to player skill chain")
 
     def apply_elements_to_player(self) -> None:
-        """Apply awakened elements to the player."""
+        """Apply awakened elements to the player. (與 ECS Facade 交互)"""
         if not self.game.entity_manager.player:
             print("StorageManager: No player instance found")
             return
         player = self.game.entity_manager.player
+        # 設置 player.elements property，更新 PlayerComponent.elements
         player.elements = self.awakened_elements
         print(f"StorageManager: Applied {len(self.awakened_elements)} awakened elements to player")
 
     def apply_amplifiers_to_player(self) -> None:
-        """Apply amplifiers to the player."""
+        """Apply amplifiers to the player. (與 ECS Facade 交互)"""
         if not self.game.entity_manager.player:
             print("StorageManager: No player instance found")
             return
         player = self.game.entity_manager.player
+        # 設置 player.amplifiers property，更新 PlayerComponent.amplifiers
         player.amplifiers = self.amplifiers
         print(f"StorageManager: Applied amplifiers to player")
 

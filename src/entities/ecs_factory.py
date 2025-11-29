@@ -58,16 +58,14 @@ def create_player_entity(
         collision_group="player"
     ))
 
-    # 4. 健康與防禦
+    # 4. 健康與防禦 (Health Component) - 新增 base_max_hp, max_shield, current_shield 欄位
     world.add_component(player_entity, Health(
         max_hp=100,
         current_hp=100,
-        regen_rate=1.0
-    ))
-    world.add_component(player_entity, Defense(
-        defense=5,
-        element="untyped",
-        invulnerable=False
+        regen_rate=1.0,
+        base_max_hp=100,  # 初始基底 HP
+        max_shield=5,    # 初始基底 Shield
+        current_shield=0 # 初始 Shield 值
     ))
 
     # 5. 戰鬥能力
@@ -80,12 +78,18 @@ def create_player_entity(
     # 6. 能力增益效果 (Buffs)
     world.add_component(player_entity, Buffs())
 
-    # 7. 玩家專屬組件 (如技能鏈、能量等)
+    # 7. 玩家專屬組件 (PlayerComponent) - 新增 base_max_speed, base_energy_regen_rate 等欄位
     world.add_component(player_entity, PlayerComponent(
         skill_chain=[],
         energy=100,
         max_energy=100,
-        energy_regen_rate=5.0
+        energy_regen_rate=5.0,
+        base_max_speed=TILE_SIZE * 5, # 初始基底速度
+        base_energy_regen_rate=5.0,  # 初始基底能量回覆
+        elements=set(),
+        amplifiers={},
+        fog=True,
+        vision_radius=5
     ))
 
     # 8. tag組件
