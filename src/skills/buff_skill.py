@@ -1,8 +1,8 @@
 # src/entities/skill/buff_skill.py
 from typing import Tuple, Dict
-from ..buff.buff import Buff
+from ..buffs.buff import Buff
 from .abstract_skill import Skill
-from ...utils.elements import ELEMENTS, WEAKTABLE
+from ..utils.elements import ELEMENTS, WEAKTABLE
 
 class BuffSkill(Skill):
     def __init__(self, name: str, type: str, element: str, energy_cost: float,

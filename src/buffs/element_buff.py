@@ -2,7 +2,7 @@
 from typing import Dict, List, Optional, Callable
 from .buff import Buff
 # from ..buffable_entity import BuffableEntity
-from ...utils.elements import WEAKTABLE
+from ..utils.elements import WEAKTABLE
 # Elemental affinities based on the game's interaction table (derived from combat_entity cycle and special affinities)
 
 

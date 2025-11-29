@@ -1,10 +1,10 @@
 # src/entities/skill/shoot_skill.py
 from typing import Optional, Dict, Tuple, List
 import math
-from ..buff.element_buff import ElementBuff, ELEMENTAL_BUFFS, apply_elemental_buff
-from ...entities.bullet.bullet import Bullet
+from ..buffs.element_buff import ElementBuff, ELEMENTAL_BUFFS, apply_elemental_buff
+from ..entities.bullet.bullet import Bullet
 from .abstract_skill import Skill
-from ...config import TILE_SIZE
+from ..config import TILE_SIZE
 
 class ShootingSkill(Skill):
     def __init__(self, name: str, element: str, energy_cost: float = 20.0,
