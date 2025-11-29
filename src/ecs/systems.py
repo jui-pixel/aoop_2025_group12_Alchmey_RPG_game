@@ -167,6 +167,7 @@ class HealthSystem(esper.Processor):
         
         # Check for dead entities and handle death
         for ent, health in  esper.get_component(Health):
+            self.heal(ent, int(health.regen_rate * args[0] if args else 0.0))
             if health.current_hp <= 0:
                 self._handle_death(ent, game)
     

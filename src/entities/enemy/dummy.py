@@ -56,29 +56,3 @@ def create_dummy_entity(
 
 
     return dummy_entity
-
-# src/ecs/systems/regeneration_system.py (新增)
-
-import esper
-from ...ecs.components import Health, Defense # 假設 Defense 組件用於檢查 invulnerable
-
-class RegenerationSystem(esper.Processor):
-    """
-    處理所有具有 RegenComponent 實體的生命值再生。
-    這取代了 Dummy 類別中的 update() 和 take_damage() 內部的自我治療邏輯。
-    """
-    def process(self, dt: float, *args, **kwargs) -> None:
-        
-        # 迭代所有有再生、生命和防禦組件的實體
-        for ent, (health, defense) in self.world.get_components(Health, Defense):
-            
-            if defense.invulnerable:
-                continue # 如果是無敵狀態，則不需要再生
-                
-            # 假人的核心邏輯：持續恢復生命
-            if health.current_hp < health.max_hp:
-                # 計算再生量
-                heal_amount = int(health.regen_rate * dt)
-                
-                # 應用再生：確保不超過最大生命值
-                health.current_hp = min(health.current_hp + heal_amount, health.max_hp)
