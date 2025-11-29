@@ -1,5 +1,7 @@
 import esper
 import pygame
+from src.config import TILE_SIZE
+from typing import Optional, List, Dict, Tuple
 from src.ecs.components import (
     Position, Renderable, Health, Defense, Buffs, Tag, Collider,
     NPCInteractComponent, DungeonPortalComponent
