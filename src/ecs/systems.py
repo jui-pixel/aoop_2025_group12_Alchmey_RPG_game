@@ -883,3 +883,24 @@ class EnergySystem(esper.Processor):
                 # 限制不超過最大值
                 if comp.energy > comp.max_energy:
                     comp.energy = comp.max_energy
+
+class AISystem(esper.Processor):
+    def __init__(self, game: 'Game'):
+        super().__init__()
+        self.game = game
+
+    def process(self, *args, **kwargs):
+        dt = args[0]
+        current_time = args[1] # 假設 update 傳遞了 current_time
+
+        for ent, (pos, ai_comp) in self.world.get_components(Position, AI):
+            # 創建 Context Facade
+            context = EnemyContext(self.world, ent, self.game)
+            
+            # 執行行為樹
+            ai_comp.behavior_tree.execute(context, dt, current_time)
+
+# 遊戲主循環應在 MovementSystem, RenderSystem 之前調用 AISystem:
+# self.world.add_processor(AISystem(self))
+# ...
+# self.world.process(dt, current_time)
