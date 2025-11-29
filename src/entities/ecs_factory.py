@@ -20,7 +20,7 @@ from ..ecs.components import (
 )
 
 # 假設這些是您自定義的 AI 行為和行為樹節點
-from .ai import (
+from ..ecs.ai import (
     EnemyContext,
     ChaseAction, AttackAction, WaitAction, PatrolAction, DodgeAction, 
     SpecialAttackAction, MeleeAttackAction, RandomMoveAction, # 動作類

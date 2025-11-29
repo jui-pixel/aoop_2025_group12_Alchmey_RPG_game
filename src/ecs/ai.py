@@ -3,6 +3,67 @@ from typing import List, Dict, Callable
 from abc import ABC, abstractmethod
 from src.ecs.components import AI
 
+# --- 實體操作 Facade（用於行為樹內部） ---
+
+class EnemyContext:
+    """ECS 實體上下文門面，用於在 Action 類中訪問和修改組件。"""
+    def __init__(self, world: esper.World, entity_id: int, game: 'Game'):
+        self.world = world
+        self.ecs_entity = entity_id
+        self.game = game # 遊戲主實例，用於訪問 entity_manager, dungeon_manager
+        
+    def _get_comp(self, component_type):
+        """安全地獲取組件，若無則報錯（ECS 實體應有此組件）"""
+        return self.world.component_for_entity(self.ecs_entity, component_type)
+
+    @property
+    def x(self) -> float: return self._get_comp(Position).x
+    @property
+    def y(self) -> float: return self._get_comp(Position).y
+    @property
+    def speed(self) -> float: return self._get_comp(Velocity).speed
+    @property
+    def current_hp(self) -> int: return self._get_comp(Health).current_hp
+    @property
+    def max_hp(self) -> int: return self._get_comp(Health).max_hp
+    @property
+    def can_attack(self) -> bool: return self._get_comp(Combat).can_attack
+    @property
+    def tag(self) -> str: return self._get_comp(Combat).tag
+    @property
+    def vision_radius(self) -> int: return self._get_comp(AI).vision_radius
+    @property
+    def current_action(self) -> str: return self._get_comp(AI).current_action
+
+    def set_current_action(self, action_id: str):
+        self._get_comp(AI).current_action = action_id
+
+    def move(self, dx: float, dy: float, dt: float):
+        """設定速度組件，交由 MovementSystem 處理移動。"""
+        vel = self._get_comp(Velocity)
+        magnitude = math.sqrt(dx**2 + dy**2)
+        if magnitude > 0:
+            vel.x = (dx / magnitude) * vel.speed
+            vel.y = (dy / magnitude) * vel.speed
+        else:
+            vel.x = 0
+            vel.y = 0
+
+    # 必須保留的舊方法，現在通過 game 訪問玩家 Facade
+    @property
+    def player(self):
+        return self.game.entity_manager.player # 假設 entity_manager.player 是一個 PlayerFacade
+
+    def is_alive(self) -> bool:
+        return self.current_hp > 0
+    
+    # 簡化：不實現 MeleeAttackAction 複雜的 collision 邏輯，僅發送傷害事件
+    def apply_melee_damage(self, damage: int):
+        if self.player and not self.player.invulnerable:
+            # 這是 ECS 實體對非 ECS 實體的攻擊，在 PlayerFacade 中應有受傷方法
+            self.player.take_damage(damage)
+
+
 # --- 行為樹節點 (BehaviorNode) ---
 # 這些 Node 類無需大改，但它們現在操作的是 Context 對象
 # 簽名: execute(self, context: EnemyContext, dt: float, current_time: float)
