@@ -1,118 +1,90 @@
-            
-        screen = game.screen
-        camera_offset = game.render_manager.camera_offset
-        
-        # Sort by layer if needed, for now just iterate
-        # We might want to collect all renderables and sort them by layer/y-pos
-        render_list = []
-        for ent, (pos, rend) in self.world.get_components(Position, Renderable):
-            if not rend.visible:
-                continue
-            render_list.append((pos, rend, ent))
-            
-        # Sort by layer then Y position for depth
-        render_list.sort(key=lambda x: (x[1].layer, x[0].y))
-        
-        for pos, rend, ent in render_list:
-            screen_x = pos.x - camera_offset[0] - rend.w // 2
-            screen_y = pos.y - camera_offset[1] - rend.h // 2
-            
-            # Culling: Don't draw if off screen
-            if (screen_x + rend.w < 0 or screen_x > SCREEN_WIDTH or 
-                screen_y + rend.h < 0 or screen_y > SCREEN_HEIGHT):
-                continue
+import esper
+import pygame
+import math
+from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider
+from src.config import TILE_SIZE, PASSABLE_TILES, SCREEN_WIDTH, SCREEN_HEIGHT
 
-            if rend.image:
-                screen.blit(rend.image, (screen_x, screen_y))
-            else:
-                pygame.draw.rect(screen, rend.color, (screen_x, screen_y, rend.w, rend.h))
+class MovementSystem(esper.Processor):
+    def process(self, dt):
+        # Get dungeon from game instance attached to world
+        game = getattr(self.world, 'game', None)
+        dungeon = game.dungeon_manager.get_dungeon() if game else None
+        
+        for ent, (pos, vel) in self.world.get_components(Position, Velocity):
+            if vel.x == 0 and vel.y == 0:
+                continue
+            
+            # Get Collider if exists, else default
+            collider = self.world.try_component(ent, Collider)
+            pass_wall = collider.pass_wall if collider else False
+            w = collider.w if collider else 32
+            h = collider.h if collider else 32
+            
+            # Calculate potential new position
+            new_x = pos.x + vel.x * dt
+            new_y = pos.y + vel.y * dt
+            
+            if not pass_wall and dungeon:
+                # Check bounds and walls
+                tile_x, tile_y = int(new_x // TILE_SIZE), int(new_y // TILE_SIZE)
+                x_valid = 0 <= tile_x < dungeon.grid_width
+                y_valid = 0 <= tile_y < dungeon.grid_height
                 
-            # Draw Health Bar if entity has Health component
-            if self.world.has_component(ent, Health):
-                health = self.world.component_for_entity(ent, Health)
-                self.draw_health_bar(screen, pos, health, rend, camera_offset)
+                if x_valid and y_valid:
+                    tile = dungeon.dungeon_tiles[tile_y][tile_x]
+                    if tile in PASSABLE_TILES:
+                        pos.x = new_x
+                        pos.y = new_y
+                    else:
+                        # Sliding logic
+                        # Check X only
+                        tile_x_curr = int(pos.x // TILE_SIZE)
+                        tile_y_new = int(new_y // TILE_SIZE)
+                        
+                        # Check Y only
+                        tile_x_new = int(new_x // TILE_SIZE)
+                        tile_y_curr = int(pos.y // TILE_SIZE)
+                        
+                        x_allowed = False
+                        y_allowed = False
+                        
+                        # Check if we can move in X direction (keeping Y same)
+                        if 0 <= tile_x_new < dungeon.grid_width and 0 <= tile_y_curr < dungeon.grid_height:
+                             if dungeon.dungeon_tiles[tile_y_curr][tile_x_new] in PASSABLE_TILES:
+                                 x_allowed = True
+                        
+                        # Check if we can move in Y direction (keeping X same)
+                        if 0 <= tile_x_curr < dungeon.grid_width and 0 <= tile_y_new < dungeon.grid_height:
+                             if dungeon.dungeon_tiles[tile_y_new][tile_x_curr] in PASSABLE_TILES:
+                                 y_allowed = True
+                                 
+                        if x_allowed:
+                            pos.x = new_x
+                            vel.y = 0 # Stop Y movement
+                        elif y_allowed:
+                            pos.y = new_y
+                            vel.x = 0 # Stop X movement
+                        else:
+                            vel.x = 0
+                            vel.y = 0
+                else:
+                    # Out of bounds, stop
+                    vel.x = 0
+                    vel.y = 0
+            else:
+                pos.x = new_x
+                pos.y = new_y
 
-    def draw_health_bar(self, screen, pos, health, rend, camera_offset):
-        if health.max_hp <= 0:
+class RenderSystem(esper.Processor):
+    def process(self, dt):
+        game = getattr(self.world, 'game', None)
+        if not game:
             return
             
-        bar_width = 40
-        bar_height = 6
-        health_ratio = health.current_hp / health.max_hp
-        shield_ratio = health.current_shield / health.max_shield if health.max_shield > 0 else 0.0
-        
-        bar_x = pos.x - camera_offset[0] - bar_width // 2
-        bar_y = pos.y - camera_offset[1] - rend.h // 2 - 10
-        
-        # Background
-        pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height))
-        # Health
-        health_width = int(bar_width * health_ratio)
-        pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, health_width, bar_height))
-        # Shield
-        if shield_ratio > 0:
-            shield_width = int(bar_width * shield_ratio)
-            pygame.draw.rect(screen, (0, 0, 255), (bar_x + health_width, bar_y, shield_width, bar_height))
-        # Border
-        pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
-
-class InputSystem(esper.Processor):
-    def process(self, dt):
-        keys = pygame.key.get_pressed()
-        
-        for ent, (inp, vel) in self.world.get_components(Input, Velocity):
-            # Reset velocity intent
-            vel.x = 0
-            vel.y = 0
-            
-            # WASD Movement
-            if keys[pygame.K_w]:
-                vel.y = -vel.speed
-            if keys[pygame.K_s]:
-                vel.y = vel.speed
-            if keys[pygame.K_a]:
-                vel.x = -vel.speed
-            if keys[pygame.K_d]:
-                vel.x = vel.speed
-                
-            # Normalize diagonal movement
-            if vel.x != 0 and vel.y != 0:
-                factor = 1.0 / math.sqrt(2)
-                vel.x *= factor
-                vel.y *= factor
-
-class HealthSystem(esper.Processor):
-    def process(self, dt):
-        for ent, health in self.world.get_component(Health):
-            # Simple regeneration logic could go here
-            # For now, just death check
-            if health.current_hp <= 0:
-                # Handle death
-                # For now, just print, or tag for removal
-                # Real removal should probably happen in a cleanup phase or via EventManager
-                pass
-
-class BuffSystem(esper.Processor):
-    def process(self, dt):
-        for ent, buffs in self.world.get_component(Buffs):
-            if not buffs.active_buffs:
-                continue
-                
-            for buff in buffs.active_buffs[:]:
-                buff.duration -= dt
-                if buff.duration <= 0:
-                    buffs.active_buffs.remove(buff)
-                    # Trigger on_remove if needed
-                else:
-                    # Apply effect per second
-                    if buff.effect_per_second:
-                        buff.effect_time += dt
-            
         screen = game.screen
         camera_offset = game.render_manager.camera_offset
         
-        # Sort by layer if needed, for now just iterate
-        # We might want to collect all renderables and sort them by layer/y-pos
+        # Collect and sort renderables
         render_list = []
         for ent, (pos, rend) in self.world.get_components(Position, Renderable):
             if not rend.visible:
