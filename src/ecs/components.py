@@ -110,6 +110,7 @@ class PlayerComponent:
     max_energy: float = field(default=100.0) 
     energy: float = field(default=100.0)
     
+    base_energy_regen_rate: float = 20.0
     energy_regen_rate: float = 20.0
     original_energy_regen_rate: float = 20.0
     
