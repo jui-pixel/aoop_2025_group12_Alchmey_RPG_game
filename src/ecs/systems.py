@@ -380,21 +380,147 @@ class CombatSystem(esper.Processor):
                     # Check cooldown
                     if ent2 in combat1.collision_list:
                         continue
+                    
+                    # Check penetration
+                    if combat1.max_penetration_count > 0 and combat1.current_penetration_count >= combat1.max_penetration_count:
+                        continue
                         
-                    # Use HealthSystem to apply damage
+                    # Apply Damage
                     if self.world.has_component(ent2, Health):
-                        health_system = game.ecs_world.get_processor(HealthSystem)
-                        if health_system:
-                            killed, actual_damage = health_system.take_damage(
-                                ent2,
-                                element=combat1.atk_element,
-                                base_damage=combat1.damage
-                            )
-                            
-                            # Add to cooldown
-                            combat1.collision_list[ent2] = combat1.collision_cooldown
-                            
-                            print(f"ECS Combat: Entity {ent1} hit {ent2} for {actual_damage} damage!")
+                        self._apply_collision_damage(ent1, ent2, combat1, game, entities)
+    
+    def _apply_collision_damage(self, attacker, target, combat, game, all_entities):
+        """Apply damage from attacker to target."""
+        # Get damage multiplier from buffs if attacker has buffs
+        damage_mult = 1.0
+        if self.world.has_component(attacker, Buffs):
+            buffs_comp = self.world.component_for_entity(attacker, Buffs)
+            damage_mult = buffs_comp.modifiers.get('damage_multiplier', 1.0)
+        
+        # Calculate element multiplier
+        element_mult = 1.0
+        if combat.damage_to_element:
+            element_mult = combat.damage_to_element.get(combat.atk_element, 1.0)
+        
+        # Calculate effective damage
+        effective_damage = int(combat.damage * element_mult * damage_mult)
+        
+        # Use HealthSystem to apply damage
+        health_system = game.ecs_world.get_processor(HealthSystem)
+        if health_system:
+            killed, actual_damage = health_system.take_damage(
+                target,
+                element=combat.atk_element,
+                base_damage=effective_damage,
+                max_hp_percentage_damage=combat.max_hp_percentage_damage,
+                current_hp_percentage_damage=combat.current_hp_percentage_damage,
+                lose_hp_percentage_damage=combat.lose_hp_percentage_damage,
+                cause_death=combat.cause_death
+            )
+            
+            # Add to cooldown
+            combat.collision_list[target] = combat.collision_cooldown
+            
+            # Increment penetration count
+            if combat.max_penetration_count > 0:
+                combat.current_penetration_count += 1
+            
+            print(f"ECS Combat: Entity {attacker} hit {target} for {actual_damage} damage!")
+            
+            # Apply buffs to target
+            if combat.buffs and self.world.has_component(target, Buffs):
+                target_buffs = self.world.component_for_entity(target, Buffs)
+                for buff in combat.buffs:
+                    # Deep copy buff before applying
+                    import copy
+                    buff_copy = copy.deepcopy(buff)
+                    target_buffs.active_buffs.append(buff_copy)
+                    print(f"Applied buff to entity {target}")
+            
+            # Trigger explosion if configured
+            if combat.explosion_range > 0:
+                self._trigger_explosion(attacker, combat, game, all_entities, damage_mult)
+    
+    def _trigger_explosion(self, source, combat, game, all_entities, damage_mult):
+        """Trigger explosion damage around source entity."""
+        if combat.explosion_range <= 0:
+            return
+        
+        # Get source position
+        if not self.world.has_component(source, Position):
+            return
+        
+        source_pos = self.world.component_for_entity(source, Position)
+        
+        # Get source size for center calculation
+        w, h = 32, 32
+        if self.world.has_component(source, Collider):
+            col = self.world.component_for_entity(source, Collider)
+            w, h = col.w, col.h
+        elif self.world.has_component(source, Renderable):
+            rend = self.world.component_for_entity(source, Renderable)
+            w, h = rend.w, rend.h
+        
+        explosion_center = (source_pos.x + w / 2, source_pos.y + h / 2)
+        
+        # Check all entities for explosion damage
+        for ent, ent_rect, ent_combat, ent_pos in all_entities:
+            if ent == source:
+                continue
+            
+            # Check team (don't damage same team)
+            is_player_source = self.world.has_component(source, Input)
+            is_player_target = self.world.has_component(ent, Input)
+            if is_player_source == is_player_target:
+                continue
+            
+            # Calculate distance
+            ent_w, ent_h = 32, 32
+            if self.world.has_component(ent, Collider):
+                col = self.world.component_for_entity(ent, Collider)
+                ent_w, ent_h = col.w, col.h
+            elif self.world.has_component(ent, Renderable):
+                rend = self.world.component_for_entity(ent, Renderable)
+                ent_w, ent_h = rend.w, rend.h
+            
+            entity_center = (ent_pos.x + ent_w / 2, ent_pos.y + ent_h / 2)
+            distance = math.sqrt(
+                (explosion_center[0] - entity_center[0])**2 + 
+                (explosion_center[1] - entity_center[1])**2
+            )
+            
+            if distance <= combat.explosion_range:
+                # Apply explosion damage
+                if self.world.has_component(ent, Health):
+                    # Calculate explosion element multiplier
+                    explosion_mult = 1.0
+                    if combat.damage_to_element:
+                        explosion_mult = combat.damage_to_element.get(combat.explosion_element, 1.0)
+                    
+                    effective_explosion_damage = int(combat.explosion_damage * explosion_mult * damage_mult)
+                    
+                    # Use HealthSystem to apply explosion damage
+                    health_system = game.ecs_world.get_processor(HealthSystem)
+                    if health_system:
+                        killed, actual_damage = health_system.take_damage(
+                            ent,
+                            element=combat.explosion_element,
+                            base_damage=effective_explosion_damage,
+                            max_hp_percentage_damage=combat.explosion_max_hp_percentage_damage,
+                            current_hp_percentage_damage=combat.explosion_current_hp_percentage_damage,
+                            lose_hp_percentage_damage=combat.explosion_lose_hp_percentage_damage,
+                            cause_death=combat.cause_death
+                        )
+                        
+                        print(f"Explosion damage: {actual_damage} to entity {ent}")
+                        
+                        # Apply explosion buffs
+                        if combat.explosion_buffs and self.world.has_component(ent, Buffs):
+                            target_buffs = self.world.component_for_entity(ent, Buffs)
+                            for buff in combat.explosion_buffs:
+                                import copy
+                                buff_copy = copy.deepcopy(buff)
+                                target_buffs.active_buffs.append(buff_copy)
 
 class AISystem(esper.Processor):
     def process(self, dt):

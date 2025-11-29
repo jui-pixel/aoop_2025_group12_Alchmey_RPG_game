@@ -40,6 +40,18 @@ class Combat:
     explosion_range: float = 0.0
     explosion_damage: int = 0
     explosion_element: str = "untyped"
+    # Percentage damage
+    max_hp_percentage_damage: int = 0
+    current_hp_percentage_damage: int = 0
+    lose_hp_percentage_damage: int = 0
+    cause_death: bool = True
+    # Buffs to apply on hit
+    buffs: List = field(default_factory=list)  # List[Buff]
+    # Explosion percentage damage
+    explosion_max_hp_percentage_damage: int = 0
+    explosion_current_hp_percentage_damage: int = 0
+    explosion_lose_hp_percentage_damage: int = 0
+    explosion_buffs: List = field(default_factory=list)  # List[Buff]
 
 @dataclass
 class Renderable:
