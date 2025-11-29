@@ -1,95 +1,150 @@
-# src/entities/npc/dungeon_portal_npc.py
+import esper
+import pygame
+from src.ecs.components import (
+    Position, Renderable, Health, Defense, Collider, Buffs, Tag, 
+    NPCInteractComponent # 使用通用交互組件
+)
+
+def create_magic_crystal_npc(
+    world: esper.World,
+    x: float = 0.0, 
+    y: float = 0.0, 
+    w: int = 64, 
+    h: int = 64, 
+    tag: str = "magic_crystal_npc",
+    base_max_hp: int = 999999, 
+    element: str = "light", 
+    defense: int = 100,
+    invulnerable: bool = True
+) -> int:
+    """創建一個 ECS 魔法水晶 NPC 實體。"""
+    
+    npc_entity = world.create_entity()
+
+    # 1. 核心位置與標籤
+    world.add_component(npc_entity, Tag(tag=tag))
+    world.add_component(npc_entity, Position(x=x, y=y))
+    
+    # 2. 視覺屬性
+    world.add_component(npc_entity, Renderable(
+        image=None, # 讓 RenderSystem 處理載入白色水晶圖像
+        shape="rect",
+        w=w,
+        h=h,
+        color=(255, 255, 255), # 白色
+        layer=0 
+    ))
+
+    # 3. 碰撞器
+    world.add_component(npc_entity, Collider(
+        w=w, 
+        h=h, 
+        pass_wall=False, 
+        collision_group="npc"
+    ))
+
+    # 4. 健康與防禦
+    world.add_component(npc_entity, Health(
+        max_hp=base_max_hp,
+        current_hp=base_max_hp
+    ))
+    world.add_component(npc_entity, Defense(
+        defense=defense,
+        element=element,
+        invulnerable=invulnerable
+    ))
+
+    # 5. 增益效果 (Buffs)
+    world.add_component(npc_entity, Buffs())
+
+    # 6. NPC 交互狀態 (interaction_range=80.0, is_interacting=False)
+    world.add_component(npc_entity, NPCInteractComponent(interaction_range=80.0)) 
+
+    return npc_entity
+
+# src/entities/npc/dungeon_portal_npc.py (重構後)
 from typing import Optional, Dict, Tuple, List
 import pygame
 import math
-from src.entities.basic_entity import BasicEntity
-from src.entities.health_entity import HealthEntity
-from src.entities.buffable_entity import BuffableEntity
-from src.entities.buff.buff import Buff
+import esper # 引入 ECS 庫
+# 假設所有 ECS Component 都可導入
+from src.ecs.components import NPCInteractComponent, Health, Defense, Position 
 from src.config import *
-from src.utils.elements import ELEMENTS
-from src.entities.buff.element_buff import ELEMENTAL_BUFFS
+# 移除 BasicEntity, HealthEntity, BuffableEntity 的舊式導入
 
-class MagicCrystalNPC(HealthEntity, BuffableEntity):
-    """A stationary NPC for magic crystal interactions, buffs, and elemental purchases."""
+class MagicCrystalNPC:
+    """
+    魔法水晶 NPC 門面 (Facade)。
+    它不包含狀態，而是透過 ecs_entity ID 來執行交互操作。
+    """
+    def __init__(self, game, ecs_entity: int):
+        self.game = game
+        self.ecs_entity = ecs_entity
+        self.world = game.world # 假設 game 實例持有 esper.World
+
+        # 移除所有父類構造函式調用
+
+    # --- 輔助方法：獲取核心組件 ---
+
+    def _get_crystal_comp(self) -> 'NPCInteractComponent':
+        return self.world.component_for_entity(self.ecs_entity, NPCInteractComponent)
     
-    def __init__(self, 
-                 x: float = 0.0, 
-                 y: float = 0.0, 
-                 w: int = 64, 
-                 h: int = 64, 
-                 image: Optional[pygame.Surface] = None, 
-                 shape: str = "rect", 
-                 game: 'Game' = None, 
-                 tag: str = "magic_crystal_npc",
-                 base_max_hp: int = 999999,  # High health
-                 max_shield: int = 0,
-                 dodge_rate: float = 0.0,
-                 element: str = "light",  # Light/magic element
-                 defense: int = 100,
-                 resistances: Optional[Dict[str, float]] = None,
-                 invulnerable: bool = True,
-                 ):
-        # Initialize HealthEntity
-        HealthEntity.__init__(
-            self, x=x, y=y, w=w, h=h, image=image, shape=shape, game=game, tag=tag,
-            base_max_hp=base_max_hp, max_shield=max_shield, dodge_rate=dodge_rate,
-            element=element, defense=defense, resistances=resistances, invulnerable=invulnerable,
-            init_basic=False
-        )
-        # Initialize BuffableEntity
-        BuffableEntity.__init__(self, x=x, y=y, w=w, h=h, image=image, shape=shape, game=game, tag=tag, init_basic=False)
-        # Initialize BasicEntity
-        BasicEntity.__init__(self, x=x, y=y, w=w, h=h, image=image, shape=shape, game=game, tag=tag)
-        
-        if self.image is None:
-            self.image = pygame.Surface((w, h))
-            self.image.fill((255, 255, 255))  # 白色方塊，代表魔法水晶
-            self.rect = self.image.get_rect(center=(x, y))
-        
-        self.interaction_range: float = 80.0
-        self.is_interacting: bool = False
-        self.show_interact_prompt: bool = False  # 新增：是否顯示提示
-        self.font = pygame.font.SysFont(None, 24)  # 用於提示文字
+    def _get_health_comp(self) -> 'Health':
+        return self.world.component_for_entity(self.ecs_entity, Health)
 
-    def update(self, dt: float, current_time: float) -> None:
-        """Update NPC state, check player proximity for interaction prompt."""
-        if self.game and self.game.entity_manager.player:
-            distance = self.calculate_distance_to(self.game.entity_manager.player)
-            self.show_interact_prompt = distance <= self.interaction_range
-        BuffableEntity.update(self, dt, current_time)
-        super().update(dt, current_time)
+    def _get_defense_comp(self) -> 'Defense':
+        return self.world.component_for_entity(self.ecs_entity, Defense)
+        
+    def _get_position_comp(self) -> 'Position':
+        return self.world.component_for_entity(self.ecs_entity, Position)
 
-    def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
-        """Draw NPC and interaction prompt if within range."""
-        super().draw(screen, camera_offset)
-        if self.show_interact_prompt:
-            screen_x = self.x - camera_offset[0] - self.w // 2
-            screen_y = self.y - camera_offset[1] - self.h // 2 - 20
-            prompt_text = self.font.render("Press E to interact", True, (255, 255, 255))
-            screen.blit(prompt_text, (screen_x - prompt_text.get_width() // 2 + self.w // 2, screen_y))
+    # --- 移除持續性更新與繪圖 ---
+    
+    # 移除 update 方法 (距離檢查移至 InteractionSystem)
+    # 移除 draw 方法 (繪圖移至 RenderSystem)
+
+    # --- 交互邏輯 (操作 Component) ---
 
     def start_interaction(self) -> None:
         """Open crystal shop/menu via MenuManager."""
-        self.is_interacting = True
+        comp = self._get_crystal_comp()
+        comp.is_interacting = True
         if self.game:
             self.game.show_menu('crystal_menu')
         print("Magic Crystal NPC: Browse elemental crystals and buffs.")
 
     def end_interaction(self) -> None:
         """Close shop."""
-        self.is_interacting = False
+        comp = self._get_crystal_comp()
+        comp.is_interacting = False
         if self.game:
             self.game.hide_menu('crystal_menu')
 
-    def take_damage(self, factor: float = 1.0, element: str = "untyped", base_damage: int = 0, 
-                    max_hp_percentage_damage: int = 0, current_hp_percentage_damage: int = 0, 
-                    lose_hp_percentage_damage: int = 0, cause_death: bool = True) -> Tuple[bool, int]:
-        """Regenerate damage."""
-        return False, 0
-    
+    # --- 距離計算 (使用 Component 數據) ---
+
+    @property
+    def interaction_range(self) -> float:
+        return self._get_crystal_comp().interaction_range
+
     def calculate_distance_to(self, other_entity) -> float:
         """Calculate the Euclidean distance to another entity."""
-        dx = self.x - other_entity.x
-        dy = self.y - other_entity.y
+        self_pos = self._get_position_comp()
+        # 假設 other_entity (Player Facade) 具有 x, y 屬性 (已在上一輪重構中實現)
+        dx = self_pos.x - other_entity.x
+        dy = self_pos.y - other_entity.y
         return math.sqrt(dx**2 + dy**2)
+    
+    # --- 傷害處理 (由 ECS System 負責，Facade 僅保留兼容接口) ---
+
+    def take_damage(self, factor: float = 1.0, element: str = "untyped", base_damage: int = 0, 
+                     max_hp_percentage_damage: int = 0, current_hp_percentage_damage: int = 0, 
+                     lose_hp_percentage_damage: int = 0, cause_death: bool = True) -> Tuple[bool, int]:
+        """
+        模擬 NPC 受到傷害邏輯，但由於 invulnerable=True，它不會實際受損。
+        在 ECS 中，此邏輯應由 CombatSystem 處理，但保留此方法用於兼容舊代碼。
+        """
+        if self._get_defense_comp().invulnerable:
+            return False, 0
+            
+        # 為了兼容舊的 return 格式，返回 (未被殺死, 0 傷害)
+        return False, 0
