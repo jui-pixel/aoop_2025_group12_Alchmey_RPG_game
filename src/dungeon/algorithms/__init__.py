@@ -4,9 +4,12 @@
 """
 from .bsp_generator import BSPGenerator
 from .graph_algorithms import GraphAlgorithms, UnionFind
+from .pathfinding import AStarPathfinder
 
 __all__ = [
     'BSPGenerator',
     'GraphAlgorithms',
     'UnionFind',
+    'AStarPathfinder',
 ]
+
