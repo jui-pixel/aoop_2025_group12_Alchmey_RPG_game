@@ -210,6 +210,8 @@ class AI:
     current_action: str = "idle"
     action_list: List[str] = field(default_factory=list)
     actions: Dict[str, object] = field(default_factory=dict)
+    vision_radius: int = 5
+    half_hp_triggered: bool = False
 
 @dataclass
 class Tag:
