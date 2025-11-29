@@ -25,7 +25,7 @@ class EntityManager:
         """初始化實體管理器。"""
         self.game = game 
         # 實體管理的核心：esper.World 實例
-        self.world: esper = game 
+        self.world: esper = esper 
         # 玩家 Facade，用於外部系統調用 (如 storage_manager.apply_all_to_player())
         self.player: Optional['Player'] = None 
         
@@ -189,7 +189,6 @@ class EntityManager:
         清除所有非玩家實體。
         """
         player_id = self.player.ecs_entity if self.player else None
-        
         entities_to_delete = []
         for entity_id in self.world._entities:
             # 確保不會刪除玩家實體

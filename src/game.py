@@ -36,7 +36,7 @@ class Game:
         self.running = True
         self.current_time = 0.0
         self.time_scale = 1.0 # 時間流逝速度
-
+        self.world = esper
         # 管理器初始化
         self.event_manager = EventManager(self)
         self.audio_manager = AudioManager(self)

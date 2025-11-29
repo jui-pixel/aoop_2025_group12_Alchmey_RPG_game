@@ -74,7 +74,6 @@ def create_player_entity(
     world.add_component(player_entity, Combat(
         damage=10,
         atk_element="physical",
-        tag="player",
         collision_cooldown=0.5
     ))
 
@@ -89,6 +88,9 @@ def create_player_entity(
         energy_regen_rate=5.0
     ))
 
+    # 8. tag組件
+    world.add_component(player_entity, Tag(tag="player"))
+    
     return player_entity
 
 def create_enemy1_entity(
