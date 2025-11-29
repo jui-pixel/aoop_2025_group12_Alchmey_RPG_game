@@ -225,3 +225,14 @@ class NPCInteractComponent:
     # 運行時狀態
     is_interacting: bool = False
     show_interact_prompt: bool = False # 用於 InteractionSystem 和 RenderSystem
+
+@dataclass
+class DungeonPortalComponent:
+    """
+    地牢傳送門專屬 ECS 組件。
+    包含可用的地牢列表和傳送門效果狀態。
+    """
+    available_dungeons: List[Dict] = field(
+        default_factory=lambda: [{'name': 'Test Dungeon', 'level': 1, 'dungeon_id': 1}]
+    )
+    portal_effect_active: bool = False
