@@ -40,59 +40,6 @@ class BuffSynthesizer:
                 
                 if buff1_obj and buff2_obj:
                     entity.remove_buff(buff1_obj)
-                    entity.remove_buff(buff2_obj)
-                    result_buff = ELEMENTAL_BUFFS[result]
-                    entity.add_buff(result_buff)
-                    print(f"Synthesized {buff1} + {buff2} = {result}")
-                    break
-
-class BuffableEntity(BasicEntity):
-    """
-    Entity class that handles all buff-related functionality.
-    """
-    
-    def __init__(self,
-                 x: float = 0.0,
-                 y: float = 0.0,
-                 w: int = 32,
-                 h: int = 32,
-                 image: Optional[pygame.Surface] = None,
-                 shape: str = "rect",
-                 game: 'Game' = None,
-                 tag: str = "",
-                 init_basic: bool = True):
-        if init_basic:
-            super().__init__(x, y, w, h, image, shape, game, tag)
-        self.buffs: List['Buff'] = []
-        self.modifiers: Dict[str, float] = {
-            'speed_multiplier': 1.0,
-            'health_multiplier': 1.0,
-            'defense_multiplier': 1.0,
-            'damage_multiplier': 1.0,
-            'vision_radius_multiplier': 1.0,
-            'can_attack_multiplier': 1.0,
-            'all_resistance_multiplier': 0.0,
-            'dodge_rate_add': 0.0,
-        }
-        for element in ELEMENTS:
-            self.modifiers[f'{element}_resistance_multiplier'] = 0.0
-        self.buff_synthesizer: Optional['BuffSynthesizer'] = BuffSynthesizer()
-    
-    def init(self) -> None:
-        """Initialize buff-related properties."""
-        self.buffs = []
-        multiplier_keys = [k for k in self.modifiers if 'resistance' not in k.lower() and 'add' not in k.lower()]
-        additive_keys = [k for k in self.modifiers if 'resistance' in k.lower() or 'add' in k.lower()]
-        for key in multiplier_keys:
-            self.modifiers[key] = 1.0
-        for key in additive_keys:
-            self.modifiers[key] = 0.0
-    
-    def update(self, dt: float, current_time: float) -> None:
-        """Update all active buffs and recalculate modifiers."""
-        for buff in self.buffs[:]:
-            buff.duration -= dt
-            if buff.duration <= 0:
                 self.remove_buff(buff)
             else:
                 self._apply_buff_effects(buff, dt)

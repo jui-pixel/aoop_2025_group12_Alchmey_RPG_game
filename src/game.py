@@ -17,37 +17,6 @@ from src.menu.menus.element_menu import ElementMenu
 from src.menu.menus.main_menu import MainMenu
 from src.menu.menus.main_material_menu import MainMaterialMenu
 from src.menu.menus.element_choose_menu import ElementChooseMenu
-from src.menu.menus.amplifier_choose_menu import AmplifierChooseMenu
-from src.menu.menus.naming_menu import NamingMenu
-from src.menu.menus.setting_menu import SettingsMenu
-from src.menu.menus.skill_library_menu import SkillLibraryMenu
-from src.menu.menus.stat_menu import StatMenu
-from src.menu.menus.skill_chain_menu import SkillChainMenu
-from src.menu.menus.skill_chain_edit_menu import SkillChainEditMenu
-
-class Game:
-    def __init__(self, screen: pygame.Surface, pygame_clock: pygame.time.Clock):
-        """初始化遊戲，設置核心組件和管理器。
-
-        Args:
-            screen: Pygame 的顯示表面，用於渲染畫面。
-            pygame_clock: Pygame 的時鐘對象，用於控制幀率。
-        """
-        self.screen = screen  # 保存顯示表面
-        self.clock = pygame_clock  # 保存時鐘對象
-        self.current_time = 0.0  # 當前遊戲時間，初始為 0
-        self.time_scale = 1.0  # 時間縮放因子，控制遊戲速度
-        self.menu_manager.register_menu('crystal_menu', CrystalMenu(self, None))
-        self.menu_manager.register_menu('stat_menu', StatMenu(self, None))
-        self.menu_manager.register_menu('main_material_menu', MainMaterialMenu(self, None))
-        self.menu_manager.register_menu('element_choose_menu', ElementChooseMenu(self, None))
-        self.menu_manager.register_menu('amplifier_choose_menu', AmplifierChooseMenu(self, None))
-        self.menu_manager.register_menu('naming_menu', NamingMenu(self, None))
-        self.menu_manager.register_menu('skill_library_menu', SkillLibraryMenu(self, None))
-        self.menu_manager.register_menu('amplifier_menu', AmplifierMenu(self, None))
-        self.menu_manager.register_menu('amplifier_stat_menu', AmplifierStatMenu(self, None))
-        self.menu_manager.register_menu('element_menu', ElementMenu(self, None))
-        self.menu_manager.register_menu('skill_chain_menu', SkillChainMenu(self, None))
         self.menu_manager.register_menu('skill_chain_edit_menu', None)  # 延遲初始化
         self.show_menu('main_menu')  # 顯示主菜單
 

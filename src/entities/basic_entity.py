@@ -1,37 +1,3 @@
-```python
-# src/entities/basic_entity.py
-import pygame
-from typing import Optional, List
-from src.ecs.components import Position
-
-class BasicEntity(pygame.sprite.Sprite):
-    def __init__(self, x: float = 0.0, y: float = 0.0, w: int = 32, h: int = 32,
-                 image: Optional[pygame.Surface] = None, shape: str = "rect",
-                 game: 'Game' = None, tag: str = "", **kwargs):
-        self.game = game
-        self.tag = tag
-        self.id = id(self)  # Unique identifier
-        self.w = w
-        self.h = h
-        self.image = image
-        self.shape = shape
-        
-        # ECS Initialization
-        self.ecs_entity = None
-        # Initialize _x and _y for cases where ECS is not used or not yet initialized
-        self._x = x
-        self._y = y
-        if self.game and hasattr(self.game, 'ecs_world'):
-            self.ecs_entity = self.game.ecs_world.create_entity()
-            self.game.ecs_world.add_component(self.ecs_entity, Position(x=x, y=y))
-        
-        # Initialize rect (depends on x/y, which now depend on ECS if available)
-        # We use the property setters here
-        self.rect = pygame.Rect(x - w // 2, y - h // 2, w, h) if image is None else image.get_rect(center=(x, y))
-        
-        self.dungeon = game.dungeon_manager.get_dungeon() if game else None
-        super().__init__(**kwargs)  # Pass remaining kwargs to next class in MRO
-
     @property
     def x(self) -> float:
         if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):

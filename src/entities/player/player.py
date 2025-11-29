@@ -2,42 +2,6 @@
 from typing import List, Tuple, Optional, Dict
 from ..attack_entity import AttackEntity
 from ..buffable_entity import BuffableEntity
-from ..health_entity import HealthEntity
-from ..movement_entity import MovementEntity
-from ..skill.abstract_skill import Skill
-from ...config import TILE_SIZE, MAX_SKILLS_DEFAULT
-import pygame
-import math
-from ..basic_entity import BasicEntity  # Import BasicEntity explicitly
-
-class Player(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
-    def __init__(self, x: float = 0.0, y: float = 0.0, w: int = TILE_SIZE // 2, h: int = TILE_SIZE // 2, 
-                 image: Optional[pygame.Surface] = None, shape: str = "rect", game: 'Game' = None, tag: str = "",
-                 base_max_hp: int = 100, max_shield: int = 0, dodge_rate: float = 0.0, max_speed: float = 3 * TILE_SIZE,
-                 element: str = "untyped", defense: int = 10, resistances: Optional[Dict[str, float]] = None, 
-                 damage_to_element: Optional[Dict[str, float]] = None, can_move: bool = True, can_attack: bool = True, 
-                 invulnerable: bool = False, pass_wall: bool = False, vision_radius: int = 8):
-        
-        # Initialize BasicEntity first to set core attributes
-        BasicEntity.__init__(self, x, y, w, h, image, shape, game, tag)
-        
-        # Initialize mixins without basic init
-        MovementEntity.__init__(self, x, y, w, h, image, shape, game, tag, max_speed, can_move, pass_wall=pass_wall, init_basic=False)
-        
-        HealthEntity.__init__(self, x, y, w, h, image, shape, game, tag, base_max_hp, max_shield, dodge_rate, element, defense, resistances, invulnerable, init_basic=False)
-        
-        AttackEntity.__init__(self, x, y, w, h, image, shape, game, tag, can_attack, damage_to_element, 
-                             atk_element=element, damage=0, max_penetration_count=0, collision_cooldown=0.2, 
-                             explosion_range=0.0, explosion_damage=0, init_basic=False)
-        
-        BuffableEntity.__init__(self, x, y, w, h, image, shape, game, tag, init_basic=False)
-        
-        # Player-specific attributes
-        self.skill_chain = [[] for _ in range(9)]  # List[List[Skill]] for 9 skill chains
-        self.current_skill_chain_idx = 0
-        self.current_skill_idx = 0
-        self.max_skills = MAX_SKILLS_DEFAULT
-        self.max_skill_chains = 9
         self.max_skill_chain_length = 8  # Updated to 8 as per menu description
         self.base_max_energy = 100.0
         self.max_energy = self.base_max_energy

@@ -683,47 +683,6 @@ class Enemy1(AttackEntity, BuffableEntity, HealthEntity, MovementEntity):
             dy = entity.game.entity_manager.player.y - entity.y
             distance = math.sqrt(dx**2 + dy**2)
             return distance < 2 * TILE_SIZE
-        
-        def action_list_has_actions(entity: 'Enemy1', current_time: float) -> bool:
-            # print(f"Action list: {entity.action_list}")
-            return len(entity.action_list) >= 1
-        
-        self.behavior_tree = Selector([
-            ConditionNode(
-                condition=interrupt_condition,
-                on_success=IdleNode()
-            ),
-            ConditionNode(
-                condition=action_list_has_actions,
-                on_success=PerformNextAction(self.actions)
-            ),
-            ConditionNode(
-                condition=low_hp_condition,
-                on_success=Sequence([
-                    RefillActionList(self.actions, get_default_combo)
-                ])
-            ),
-            ConditionNode(
-                condition=bullet_nearby_condition,
-                on_success=Sequence([
-                    RefillActionList(self.actions, get_default_combo)
-                ])
-            ),
-            ConditionNode(
-                condition=player_close_condition,
-                on_success=Sequence([
-                    RefillActionList(self.actions, get_default_combo)
-                ])
-            ),
-            RefillActionList(self.actions, get_default_combo),
-            IdleNode()
-        ])
-    
-    def is_alive(self) -> bool:
-        return self.current_hp > 0
-    
-    # def check_collision_with_player(self, current_time: float) -> int:
-    #     # Move collision damage to MeleeAttackAction
     #     return 0
     
     def update(self, dt: float, current_time: float) -> None:
