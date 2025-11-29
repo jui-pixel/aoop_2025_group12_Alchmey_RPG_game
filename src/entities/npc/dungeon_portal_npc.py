@@ -6,7 +6,7 @@ from src.ecs.components import (
 )
 
 def create_dungeon_portal_npc(
-    world: esper.World,
+    world: esper,
     x: float = 0.0, 
     y: float = 0.0, 
     w: int = 64, 
