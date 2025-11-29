@@ -88,14 +88,14 @@ class PlayerComponent:
     """
     # --- 技能鏈 (Skill Chain) 屬性 ---
     
-    # max_skill_chains (Player 類別中推斷為 4)
-    max_skill_chains: int = 4
+    # max_skill_chains (Player 類別中推斷為 9)
+    max_skill_chains: int = 9
     
     # max_skill_chain_length (程式碼中為 8)
     max_skill_chain_length: int = 8
     
     # skill_chain: 技能鏈列表。由於是可變類型 (List)，使用 field(default_factory) 確保每個實例獨立。
-    skill_chain: List[List[SkillType]] = field(default_factory=lambda: [[] for _ in range(4)])
+    skill_chain: List[List[SkillType]] = field(default_factory=lambda: [[] for _ in range(9)])
     
     # 當前活動技能鏈索引
     current_skill_chain_idx: int = 0
@@ -131,6 +131,7 @@ class Velocity:
 
 @dataclass
 class Health:
+    base_max_hp: int = 100  # 用於儲存基礎最大生命值
     max_hp: int = 100
     current_hp: int = 100
     max_shield: int = 0
