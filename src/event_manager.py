@@ -82,7 +82,12 @@ class EventManager:
 
         Allow player to select skills using keyboard and add to skill chain.
         """
-        max_skills = self.game.entity_manager.player.max_skills if self.game.entity_manager.player else MAX_SKILLS_DEFAULT
+        # --- 修正: 使用更符合 ECS/Facade 命名慣例的屬性 ---
+        # 假設 Player 門面已實現 max_skill_chain_length 屬性
+        player = self.game.entity_manager.player
+        max_skills = player.max_skill_chain_length if player else MAX_SKILLS_DEFAULT
+        # --------------------------------------------------
+        
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 self.selected_skill = (self.selected_skill - 1) % len(self.game.storage_manager.skills_library)  # Select previous skill
@@ -96,6 +101,7 @@ class EventManager:
                         self.selected_skills.append(skill)
                         print(f"EventManager: Selected skill {skill.name}")
                 if len(self.selected_skills) >= max_skills:
+                    # skill_chain 屬性應返回對 PlayerComponent.skill_chain 的引用
                     self.game.entity_manager.player.skill_chain[self.selected_skill_chain_idx] = self.selected_skills[:]  # Save skill chain
                     self.game.storage_manager.apply_skills_to_player()  # Apply skills to player
                     self.selected_skills = []  # Clear selected skills
@@ -113,6 +119,8 @@ class EventManager:
 
         Handle player movement (WASD keys) and NPC interaction or skill chain menu (E key).
         """
+        # 注意: 這裡的 player.displacement 屬性必須在 Player 門面中正確實現，
+        # 才能讀取並設定 Velocity 組件中的移動方向。
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_e:
                 interacted = self._handle_interaction()  # Handle NPC interaction
@@ -178,8 +186,8 @@ class EventManager:
         Handle player movement, skill switching (1-9 keys and mouse wheel), skill activation, and skill chain menu (E key if no NPC).
         """
         # if self.game.menu_manager.current_menu:
-        #     print(f"EventManager: Skipping event {event.type} due to active menu {self.game.menu_manager.current_menu.__class__.__name__}")
-        #     return
+        #     print(f"EventManager: Skipping event {event.type} due to active menu {self.game.menu_manager.current_menu.__class__.__name__}")
+        #     return
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_e:
                 interacted = self._handle_interaction()  # Handle NPC interaction

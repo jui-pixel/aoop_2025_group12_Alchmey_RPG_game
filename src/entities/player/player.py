@@ -299,3 +299,5 @@ class Player:
     def max_shield(self) -> int: return self._get_player_comp().max_shield
     @max_shield.setter
     def max_shield(self, value: int) -> None: self._get_player_comp().max_shield = value
+    
+    
