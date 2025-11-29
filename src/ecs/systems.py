@@ -1,7 +1,7 @@
 import esper
 import pygame
 import math
-from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider, Player
+from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider, Player, PlayerComponent
 from src.config import TILE_SIZE, PASSABLE_TILES, SCREEN_WIDTH, SCREEN_HEIGHT
 
 class MovementSystem(esper.Processor):
@@ -870,3 +870,15 @@ class AIEntityWrapper(EntityWrapper):
         if  esper.has_component(self.ecs_entity, Input):
             return "player"
         return "enemy"
+
+class EnergySystem(esper.Processor):
+    def process(self, dt: float, *args, **kwargs) -> None:
+        """處理所有擁有 PlayerComponent 的實體的能量再生。"""
+        
+        for ent, comp in self.world.get_component(PlayerComponent):
+            # 檢查是否需要再生
+            if comp.energy < comp.max_energy:
+                comp.energy += comp.energy_regen_rate * dt
+                # 限制不超過最大值
+                if comp.energy > comp.max_energy:
+                    comp.energy = comp.max_energy
