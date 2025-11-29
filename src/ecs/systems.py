@@ -308,25 +308,231 @@ class HealthSystem(esper.Processor):
         # self.world.delete_entity(entity)  # Careful: don't delete during iteration
 
 class BuffSystem(esper.Processor):
+    def __init__(self):
+        super().__init__()
+        # Buff synthesis rules
+        self.synthesis_rules = {
+            ('Burn', 'Humid'): 'Fog',
+            ('Burn', 'Mud'): 'Petrochemical',
+            ('Burn', 'Freeze'): 'Vulnerable',
+            ('Burn', 'Entangled'): 'Backdraft',
+            ('Humid', 'Cold'): 'Freeze',
+            ('Humid', 'Paralysis'): 'Taser',
+            ('Humid', 'Dist'): 'Mud',
+            ('Humid', 'Tear'): 'Bleeding',
+            ('Disorder', 'Dist'): 'Sandstorm',
+            ('Blind', 'Erosion'): 'Annihilation',
+            ('Mud', 'Humid'): 'Enpty',
+            ('Fog', 'Disorder'): 'Enpty',
+            ('Entangled', 'Disorder'): 'Enpty',
+            ('Tear', 'Dist'): 'Enpty',
+            ('Tear', 'Entangled'): 'Enpty',
+            ('Paralysis', 'Dist'): 'Enpty',
+        }
+    
     def process(self, dt):
+        game = getattr(self.world, 'game', None)
+        
         for ent, buffs in self.world.get_component(Buffs):
             if not buffs.active_buffs:
                 continue
-                
+            
+            # 1. Update buff durations and apply effects
             for buff in buffs.active_buffs[:]:
                 buff.duration -= dt
                 if buff.duration <= 0:
-                    buffs.active_buffs.remove(buff)
-                    # Trigger on_remove if needed
+                    # Buff expired, remove it
+                    self._remove_buff(ent, buff, buffs, game)
                 else:
                     # Apply effect per second
-                    if buff.effect_per_second:
-                        buff.effect_time += dt
-                        if buff.effect_time - buff.last_effect_time >= 1.0:
-                            # We need the entity object to pass to effect_per_second
-                            # This is tricky in pure ECS if effects expect an Entity object
-                            # We might need to pass the ID or a wrapper
-                            pass 
+                    self._apply_buff_effects(ent, buff, dt, game)
+            
+            # 2. Synthesize buffs
+            self._synthesize_buffs(ent, buffs, game)
+            
+            # 3. Update modifiers based on active buffs
+            self._update_modifiers(ent, buffs, game)
+    
+    def _apply_buff_effects(self, entity, buff, dt, game):
+        """Apply ongoing effects of a buff."""
+        if buff.effect_per_second:
+            buff.effect_time += dt
+            if buff.effect_time - buff.last_effect_time >= 1.0:
+                # Create entity wrapper for callback
+                wrapper = EntityWrapper(entity, self.world, game)
+                buff.effect_per_second(wrapper)
+                buff.last_effect_time = buff.effect_time
+        
+        # Apply health regen
+        health_regen = buff.multipliers.get('health_regen_per_second', 0.0)
+        if health_regen != 0 and self.world.has_component(entity, Health):
+            health_system = game.ecs_world.get_processor(HealthSystem) if game else None
+            if health_system:
+                if health_regen > 0:
+                    health_system.heal(entity, int(health_regen * dt))
+                else:
+                    # Negative regen = damage over time
+                    defense = self.world.try_component(entity, Defense)
+                    if not (defense and defense.invulnerable):
+                        health_system.take_damage(entity, base_damage=int(abs(health_regen) * dt), cause_death=False)
+    
+    def _remove_buff(self, entity, buff, buffs_comp, game):
+        """Remove a buff and trigger on_remove callback."""
+        buffs_comp.active_buffs.remove(buff)
+        
+        if buff.on_remove:
+            wrapper = EntityWrapper(entity, self.world, game)
+            buff.on_remove(wrapper)
+        
+        print(f"Removed buff: {buff.name} from entity {entity}")
+    
+    def _synthesize_buffs(self, entity, buffs_comp, game):
+        """Check for and apply buff synthesis rules."""
+        buff_names = [buff.name for buff in buffs_comp.active_buffs]
+        
+        for (buff1_name, buff2_name), result_name in self.synthesis_rules.items():
+            if buff1_name in buff_names and buff2_name in buff_names:
+                # Find the buff objects
+                buff1 = next((b for b in buffs_comp.active_buffs if b.name == buff1_name), None)
+                buff2 = next((b for b in buffs_comp.active_buffs if b.name == buff2_name), None)
+                
+                if buff1 and buff2:
+                    # Remove both buffs
+                    self._remove_buff(entity, buff1, buffs_comp, game)
+                    self._remove_buff(entity, buff2, buffs_comp, game)
+                    
+                    # Add synthesized buff
+                    from src.entities.buff.element_buff import ELEMENTAL_BUFFS
+                    if result_name in ELEMENTAL_BUFFS:
+                        new_buff = ELEMENTAL_BUFFS[result_name].deepcopy()
+                        buffs_comp.active_buffs.append(new_buff)
+                        
+                        # Trigger on_apply callback
+                        if new_buff.on_apply:
+                            wrapper = EntityWrapper(entity, self.world, game)
+                            new_buff.on_apply(wrapper)
+                        
+                        print(f"Synthesized {buff1_name} + {buff2_name} = {result_name} on entity {entity}")
+                    
+                    # Only synthesize once per frame
+                    break
+    
+    def _update_modifiers(self, entity, buffs_comp, game):
+        """Recalculate all modifiers based on active buffs."""
+        # Reset modifiers
+        multiplier_keys = [k for k in buffs_comp.modifiers if 'resistance' not in k.lower() and 'add' not in k.lower()]
+        additive_keys = [k for k in buffs_comp.modifiers if 'resistance' in k.lower() or 'add' in k.lower()]
+        
+        for key in multiplier_keys:
+            buffs_comp.modifiers[key] = 1.0
+        for key in additive_keys:
+            buffs_comp.modifiers[key] = 0.0
+        
+        # Accumulate modifiers from all active buffs
+        for buff in buffs_comp.active_buffs:
+            for modifier_name, value in buff.multipliers.items():
+                if modifier_name not in buffs_comp.modifiers:
+                    # Initialize new modifier
+                    if 'resistance' in modifier_name or 'add' in modifier_name:
+                        buffs_comp.modifiers[modifier_name] = 0.0
+                    else:
+                        buffs_comp.modifiers[modifier_name] = 1.0
+                
+                # Apply modifier
+                if 'resistance' in modifier_name or 'add' in modifier_name:
+                    buffs_comp.modifiers[modifier_name] += value
+                else:
+                    buffs_comp.modifiers[modifier_name] *= value
+
+class EntityWrapper:
+    """Wrapper class to provide entity-like interface for ECS entities."""
+    def __init__(self, ecs_entity, world, game):
+        self.ecs_entity = ecs_entity
+        self.world = world
+        self.game = game
+        self.id = ecs_entity
+    
+    @property
+    def x(self):
+        if self.world.has_component(self.ecs_entity, Position):
+            return self.world.component_for_entity(self.ecs_entity, Position).x
+        return 0
+    
+    @property
+    def y(self):
+        if self.world.has_component(self.ecs_entity, Position):
+            return self.world.component_for_entity(self.ecs_entity, Position).y
+        return 0
+    
+    @property
+    def w(self):
+        if self.world.has_component(self.ecs_entity, Collider):
+            return self.world.component_for_entity(self.ecs_entity, Collider).w
+        elif self.world.has_component(self.ecs_entity, Renderable):
+            return self.world.component_for_entity(self.ecs_entity, Renderable).w
+        return 32
+    
+    @property
+    def h(self):
+        if self.world.has_component(self.ecs_entity, Collider):
+            return self.world.component_for_entity(self.ecs_entity, Collider).h
+        elif self.world.has_component(self.ecs_entity, Renderable):
+            return self.world.component_for_entity(self.ecs_entity, Renderable).h
+        return 32
+    
+    @property
+    def buffs(self):
+        if self.world.has_component(self.ecs_entity, Buffs):
+            return self.world.component_for_entity(self.ecs_entity, Buffs).active_buffs
+        return []
+    
+    @property
+    def current_hp(self):
+        if self.world.has_component(self.ecs_entity, Health):
+            return self.world.component_for_entity(self.ecs_entity, Health).current_hp
+        return 0
+    
+    @property
+    def max_hp(self):
+        if self.world.has_component(self.ecs_entity, Health):
+            return self.world.component_for_entity(self.ecs_entity, Health).max_hp
+        return 0
+    
+    def take_damage(self, **kwargs):
+        """Delegate to HealthSystem."""
+        if self.game:
+            health_system = self.game.ecs_world.get_processor(HealthSystem)
+            if health_system:
+                return health_system.take_damage(self.ecs_entity, **kwargs)
+        return False, 0
+    
+    def heal(self, amount):
+        """Delegate to HealthSystem."""
+        if self.game:
+            health_system = self.game.ecs_world.get_processor(HealthSystem)
+            if health_system:
+                health_system.heal(self.ecs_entity, amount)
+    
+    def add_buff(self, buff):
+        """Add a buff to this entity."""
+        if self.world.has_component(self.ecs_entity, Buffs):
+            buffs_comp = self.world.component_for_entity(self.ecs_entity, Buffs)
+            
+            # Check if buff with same name exists, replace if new one has longer duration
+            for existing_buff in buffs_comp.active_buffs[:]:
+                if existing_buff.name == buff.name:
+                    if buff.duration > existing_buff.duration:
+                        buffs_comp.active_buffs.remove(existing_buff)
+                    else:
+                        return  # Keep existing buff
+            
+            buffs_comp.active_buffs.append(buff)
+            
+            # Trigger on_apply callback
+            if buff.on_apply:
+                buff.on_apply(self)
+            
+            print(f"Added buff: {buff.name} to entity {self.ecs_entity}")
 
 class CombatSystem(esper.Processor):
     def process(self, dt):
