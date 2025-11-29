@@ -37,11 +37,8 @@ class MovementSystem(esper.Processor):
                         pos.y = new_y
                     else:
                         # Sliding logic
-                        # Check X only
                         tile_x_curr = int(pos.x // TILE_SIZE)
                         tile_y_new = int(new_y // TILE_SIZE)
-                        
-                        # Check Y only
                         tile_x_new = int(new_x // TILE_SIZE)
                         tile_y_curr = int(pos.y // TILE_SIZE)
                         
@@ -60,15 +57,14 @@ class MovementSystem(esper.Processor):
                                  
                         if x_allowed:
                             pos.x = new_x
-                            vel.y = 0 # Stop Y movement
+                            vel.y = 0
                         elif y_allowed:
                             pos.y = new_y
-                            vel.x = 0 # Stop X movement
+                            vel.x = 0
                         else:
                             vel.x = 0
                             vel.y = 0
                 else:
-                    # Out of bounds, stop
                     vel.x = 0
                     vel.y = 0
             else:
@@ -164,14 +160,152 @@ class InputSystem(esper.Processor):
 
 class HealthSystem(esper.Processor):
     def process(self, dt):
+        game = getattr(self.world, 'game', None)
+        
+        # Check for dead entities and handle death
         for ent, health in self.world.get_component(Health):
-            # Simple regeneration logic could go here
-            # For now, just death check
             if health.current_hp <= 0:
-                # Handle death
-                # For now, just print, or tag for removal
-                # Real removal should probably happen in a cleanup phase or via EventManager
-                pass
+                self._handle_death(ent, game)
+    
+    def take_damage(self, entity, factor=1.0, element="untyped", base_damage=0,
+                   max_hp_percentage_damage=0, current_hp_percentage_damage=0,
+                   lose_hp_percentage_damage=0, cause_death=True):
+        """
+        Apply damage to an entity with Health and Defense components.
+        Returns: (killed: bool, actual_damage: int)
+        """
+        if not self.world.has_component(entity, Health):
+            return False, 0
+        
+        health = self.world.component_for_entity(entity, Health)
+        defense = self.world.try_component(entity, Defense)
+        
+        # Check invulnerability
+        if defense and defense.invulnerable:
+            self._create_damage_text(entity, "Immune")
+            return False, 0
+        
+        # Check dodge
+        if defense and defense.dodge_rate > 0:
+            import random
+            if random.random() < defense.dodge_rate:
+                self._create_damage_text(entity, "Miss")
+                return False, 0
+        
+        # Calculate affinity multiplier
+        affinity_multiplier = self._calculate_affinity_multiplier(element, defense.element if defense else "untyped")
+        
+        # Add percentage-based damage
+        if max_hp_percentage_damage > 0:
+            base_damage += health.max_hp * max_hp_percentage_damage / 100
+        if current_hp_percentage_damage > 0:
+            base_damage += health.current_hp * current_hp_percentage_damage / 100
+        if lose_hp_percentage_damage > 0:
+            base_damage += (health.max_hp - health.current_hp) * lose_hp_percentage_damage / 100
+        
+        # Calculate resistance
+        resistance = 0.0
+        if defense and defense.resistances:
+            resistance = defense.resistances.get(element, 0.0)
+        
+        # Calculate final damage
+        defense_value = defense.defense if defense else 0
+        final_damage = max(1, int(base_damage * affinity_multiplier * (1.0 - resistance) * factor - defense_value))
+        
+        # Apply to shield first
+        if health.current_shield > 0:
+            shield_damage = min(final_damage, health.current_shield)
+            health.current_shield -= shield_damage
+            final_damage -= shield_damage
+        
+        # Apply to health
+        if final_damage > 0:
+            remain_hp = health.current_hp - final_damage
+            if remain_hp <= 0 and not cause_death:
+                final_damage = health.current_hp - 1
+                health.current_hp = 1
+            else:
+                health.current_hp = max(0, remain_hp)
+        
+        killed = health.current_hp <= 0
+        
+        # Create damage text
+        self._create_damage_text(entity, final_damage)
+        
+        return killed, final_damage
+    
+    def heal(self, entity, amount):
+        """Heal an entity by the specified amount."""
+        if not self.world.has_component(entity, Health):
+            return
+        
+        health = self.world.component_for_entity(entity, Health)
+        health.current_hp = min(health.max_hp, health.current_hp + amount)
+    
+    def add_shield(self, entity, amount):
+        """Add shield to an entity by the specified amount."""
+        if not self.world.has_component(entity, Health):
+            return
+        
+        health = self.world.component_for_entity(entity, Health)
+        health.current_shield = min(health.max_shield, health.current_shield + amount)
+    
+    def set_max_hp(self, entity, new_max_hp):
+        """Set max HP and scale current HP proportionally."""
+        if not self.world.has_component(entity, Health):
+            return
+        
+        health = self.world.component_for_entity(entity, Health)
+        old_max = health.max_hp
+        health.max_hp = max(0, new_max_hp)
+        
+        if old_max > 0:
+            health.current_hp = int(health.current_hp * new_max_hp / old_max)
+        else:
+            health.current_hp = new_max_hp
+    
+    def set_max_shield(self, entity, new_max_shield):
+        """Set max shield and clamp current shield."""
+        if not self.world.has_component(entity, Health):
+            return
+        
+        health = self.world.component_for_entity(entity, Health)
+        health.max_shield = max(0, new_max_shield)
+        health.current_shield = min(health.max_shield, health.current_shield)
+    
+    def _calculate_affinity_multiplier(self, attack_element, defend_element):
+        """Calculate elemental affinity multiplier based on WEAKTABLE."""
+        if attack_element == 'untyped' or defend_element == 'untyped':
+            return 1.0
+        
+        from src.utils.elements import WEAKTABLE
+        
+        # Check WEAKTABLE for direct weakness
+        for attacker, defender in WEAKTABLE:
+            if attack_element == attacker and defend_element == defender:
+                return 1.5  # Weakness: attacker deals more damage
+            elif attack_element == defender and defend_element == attacker:
+                return 0.5  # Resistance: defender takes less damage
+        
+        return 1.0  # Neutral
+    
+    def _create_damage_text(self, entity, text):
+        """Create damage text at entity position."""
+        game = getattr(self.world, 'game', None)
+        if not game or not self.world.has_component(entity, Position):
+            return
+        
+        pos = self.world.component_for_entity(entity, Position)
+        
+        from src.entities.damage_text import DamageText
+        damage_text = DamageText((pos.x, pos.y), text)
+        game.entity_manager.damage_text_group.add(damage_text)
+    
+    def _handle_death(self, entity, game):
+        """Handle entity death."""
+        print(f"Entity {entity} died!")
+        # Option: Mark for deletion (to be handled by a cleanup system)
+        # self.world.delete_entity(entity)  # Careful: don't delete during iteration
 
 class BuffSystem(esper.Processor):
     def process(self, dt):
@@ -212,10 +346,6 @@ class CombatSystem(esper.Processor):
                     del combat.collision_list[key]
 
         # 2. Check Collisions
-        # Get all entities with Position, Combat, and Renderable (for size)
-        # If Renderable is missing, we might need a Size component or Collider
-        # We'll use Collider if available, else Renderable, else default 32x32
-        
         entities = []
         for ent, (pos, combat) in self.world.get_components(Position, Combat):
             if not combat.can_attack:
@@ -238,16 +368,7 @@ class CombatSystem(esper.Processor):
                 if i == j:
                     continue
                 
-                # Check if ent1 can damage ent2
-                # We need a way to distinguish teams (Player vs Enemy)
-                # Currently using 'tag' in Entity classes. 
-                # In ECS, we should use a Tag component or check specific components.
-                # For now, let's assume we can access the 'tag' from the Entity object wrapper if it exists,
-                # or add a Tag component.
-                # Let's add a simple Tag component check if we can, otherwise skip friendly fire check for now?
-                # No, friendly fire is bad.
-                # We can check if one has Input (Player) and other has AI (Enemy).
-                
+                # Check if ent1 can damage ent2 (Player vs Enemy)
                 is_player_1 = self.world.has_component(ent1, Input)
                 is_player_2 = self.world.has_component(ent2, Input)
                 
@@ -260,31 +381,20 @@ class CombatSystem(esper.Processor):
                     if ent2 in combat1.collision_list:
                         continue
                         
-                    # Apply Damage
+                    # Use HealthSystem to apply damage
                     if self.world.has_component(ent2, Health):
-                        health2 = self.world.component_for_entity(ent2, Health)
-                        defense2 = self.world.try_component(ent2, Defense)
-                        
-                        # Calculate Damage
-                        damage = combat1.damage
-                        # Element modifiers... (simplified for now)
-                        
-                        # Apply Defense
-                        def_val = defense2.defense if defense2 else 0
-                        actual_damage = max(1, damage - def_val) # Simplified formula
-                        
-                        # Apply to Health
-                        if not (defense2 and defense2.invulnerable):
-                            health2.current_hp -= actual_damage
-                            print(f"ECS Combat: Entity {ent1} hit {ent2} for {actual_damage} damage!")
+                        health_system = game.ecs_world.get_processor(HealthSystem)
+                        if health_system:
+                            killed, actual_damage = health_system.take_damage(
+                                ent2,
+                                element=combat1.atk_element,
+                                base_damage=combat1.damage
+                            )
                             
                             # Add to cooldown
                             combat1.collision_list[ent2] = combat1.collision_cooldown
                             
-                            # Handle Death (HealthSystem will pick it up, or do it here)
-                            if health2.current_hp <= 0:
-                                print(f"Entity {ent2} died!")
-                                # self.world.delete_entity(ent2) # Defer deletion
+                            print(f"ECS Combat: Entity {ent1} hit {ent2} for {actual_damage} damage!")
 
 class AISystem(esper.Processor):
     def process(self, dt):
@@ -295,12 +405,6 @@ class AISystem(esper.Processor):
             if ai.behavior_tree:
                 # We need to pass an 'entity' object to the behavior tree
                 # because existing nodes expect it.
-                # We can try to find the original entity object from EntityManager
-                # using the ID if we stored it, or if 'ent' is the ID.
-                # Currently, ECS entities are just IDs.
-                # The existing Entity objects (Enemy1) hold the ECS ID.
-                # So we might need to find the Entity object that corresponds to this ECS ID.
-                
                 # This is a hybrid approach issue.
                 # Ideally, BehaviorTree should operate on Components, not Entity objects.
                 # For now, we might skip this or assume the Entity object calls the tree in its update (which it does).
