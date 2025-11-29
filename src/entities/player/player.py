@@ -172,3 +172,105 @@ class Player:
     def damage_to_element(self) -> Dict[str, float]:
         # 假設 Combat 組件存在
         return self._get_combat_comp().damage_to_element
+
+    @property
+    def atk_element(self) -> str:
+        # 假設 Combat 組件存在
+        return self._get_combat_comp().atk_element
+    
+    @property
+    def speed(self) -> float:
+        return self.world.component_for_entity(self.ecs_entity, Velocity).speed
+
+    @max_energy.setter
+    def max_energy(self, value: float) -> None:
+        self._get_player_comp().max_energy = value
+
+    # --- Health / Shield Properties (Health Component) ---
+    @property
+    def current_hp(self) -> int: return self._get_health_comp().current_hp
+    @current_hp.setter
+    def current_hp(self, value: int) -> None: self._get_health_comp().current_hp = value
+    
+    @property
+    def max_hp(self) -> int: return self._get_health_comp().max_hp
+    @max_hp.setter
+    def max_hp(self, value: int) -> None: self._get_health_comp().max_hp = value
+    
+    @property
+    def base_max_hp(self) -> int: return self._get_health_comp().base_max_hp
+    @base_max_hp.setter
+    def base_max_hp(self, value: int) -> None: self._get_health_comp().base_max_hp = value
+
+    @property
+    def max_shield(self) -> int: return self._get_health_comp().max_shield
+    @max_shield.setter
+    def max_shield(self, value: int) -> None: self._get_health_comp().max_shield = value
+    
+    # --- Defense Properties (Defense Component) ---
+    @property
+    def defense(self) -> int: return self._get_defense_comp().defense
+    @defense.setter
+    def defense(self, value: int) -> None: self._get_defense_comp().defense = value
+    
+    # --- Combat Properties (Combat Component) ---
+    @property
+    def damage(self) -> int: return self._get_combat_comp().damage
+    @damage.setter
+    def damage(self, value: int) -> None: self._get_combat_comp().damage = value
+    
+    # --- Movement/Velocity Properties (Velocity/PlayerComponent) ---
+    @property
+    def speed(self) -> float: return self._get_velocity_comp().speed
+    @speed.setter
+    def speed(self, value: float) -> None: self._get_velocity_comp().speed = value
+    
+    @property
+    def _base_max_speed(self) -> float: return self._get_player_comp().base_max_speed
+    @_base_max_speed.setter
+    def _base_max_speed(self, value: float) -> None: self._get_player_comp().base_max_speed = value
+
+    # --- Energy Properties (PlayerComponent) ---
+    @property
+    def energy_regen_rate(self) -> float: return self._get_player_comp().energy_regen_rate
+    @energy_regen_rate.setter
+    def energy_regen_rate(self, value: float) -> None: self._get_player_comp().energy_regen_rate = value
+
+    @property
+    def base_energy_regen_rate(self) -> float: return self._get_player_comp().base_energy_regen_rate
+    @base_energy_regen_rate.setter
+    def base_energy_regen_rate(self, value: float) -> None: self._get_player_comp().base_energy_regen_rate = value
+
+    # --- Element/Amplifier/Skill Properties (PlayerComponent) ---
+    @property
+    def elements(self) -> set: return self._get_player_comp().elements
+    @elements.setter
+    def elements(self, value: set) -> None: self._get_player_comp().elements = value
+
+    @property
+    def amplifiers(self) -> Dict: return self._get_player_comp().amplifiers
+    @amplifiers.setter
+    def amplifiers(self, value: Dict) -> None: self._get_player_comp().amplifiers = value
+    
+    @property
+    def max_skill_chains(self) -> int: return self._get_player_comp().max_skill_chains
+    @property
+    def skill_chain(self) -> List: return self._get_player_comp().skill_chain
+    @skill_chain.setter
+    def skill_chain(self, value: List) -> None: self._get_player_comp().skill_chain = value
+    
+    @property
+    def current_skill_chain_idx(self) -> int: return self._get_player_comp().current_skill_chain_idx
+    @current_skill_chain_idx.setter
+    def current_skill_chain_idx(self, value: int) -> None: self._get_player_comp().current_skill_chain_idx = value
+
+    @property
+    def current_skill_idx(self) -> int: return self._get_player_comp().current_skill_idx
+    @current_skill_idx.setter
+    def current_skill_idx(self, value: int) -> None: self._get_player_comp().current_skill_idx = value
+    
+    # 視野屬性 (兼容 RenderManager)
+    @property
+    def fog(self) -> bool: return self._get_player_comp().fog 
+    @property
+    def vision_radius(self) -> int: return self._get_player_comp().vision_radius
