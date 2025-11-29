@@ -2,6 +2,10 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 
 @dataclass
+class Player:
+    pass
+
+@dataclass
 class Position:
     x: float
     y: float

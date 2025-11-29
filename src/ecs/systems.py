@@ -1,7 +1,7 @@
 import esper
 import pygame
 import math
-from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider
+from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider, Player
 from src.config import TILE_SIZE, PASSABLE_TILES, SCREEN_WIDTH, SCREEN_HEIGHT
 
 class MovementSystem(esper.Processor):
@@ -138,25 +138,27 @@ class InputSystem(esper.Processor):
         keys = pygame.key.get_pressed()
         
         for ent, (inp, vel) in self.world.get_components(Input, Velocity):
-            # Reset velocity intent
-            vel.x = 0
-            vel.y = 0
-            
-            # WASD Movement
-            if keys[pygame.K_w]:
-                vel.y = -vel.speed
-            if keys[pygame.K_s]:
-                vel.y = vel.speed
-            if keys[pygame.K_a]:
-                vel.x = -vel.speed
-            if keys[pygame.K_d]:
-                vel.x = vel.speed
+            if self.world.has_component(ent, Player):
+                # Reset velocity intent
+                vel.x = 0
+                vel.y = 0
                 
-            # Normalize diagonal movement
-            if vel.x != 0 and vel.y != 0:
-                factor = 1.0 / math.sqrt(2)
-                vel.x *= factor
-                vel.y *= factor
+                # WASD Movement
+                if keys[pygame.K_w]:
+                    vel.y = -vel.speed
+                if keys[pygame.K_s]:
+                    vel.y = vel.speed
+                if keys[pygame.K_a]:
+                    vel.x = -vel.speed
+                if keys[pygame.K_d]:
+                    vel.x = vel.speed
+                    
+                # Normalize diagonal movement
+                if vel.x != 0 and vel.y != 0:
+                    factor = 1.0 / math.sqrt(2)
+                    vel.x *= factor
+                    vel.y *= factor
+                
 
 class HealthSystem(esper.Processor):
     def process(self, dt):
