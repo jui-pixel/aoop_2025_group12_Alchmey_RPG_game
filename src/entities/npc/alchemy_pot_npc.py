@@ -1,115 +1,70 @@
-# src/entities/npc/alchemy_pot_npc.py
-from typing import Optional, Dict, List, Tuple
+# 假設此函數位於 src/entities/ecs_factory.py
+import esper
 import pygame
-import math
-from src.entities.basic_entity import BasicEntity
-from src.entities.health_entity import HealthEntity
-from src.entities.buffable_entity import BuffableEntity, BuffSynthesizer
-from src.config import *
-from src.utils.elements import ELEMENTS
-from src.entities.buff.buff import Buff
-from src.entities.buff.element_buff import ELEMENTAL_BUFFS
+from src.config import TILE_SIZE 
+from src.ecs.components import (
+    Position, Renderable, Health, Defense, Collider, Buffs, Tag, 
+    NPCInteractComponent 
+)
 
-class AlchemyPotNPC(HealthEntity, BuffableEntity):
-    """A stationary NPC for alchemy and item/skill synthesis in the lobby."""
+def create_alchemy_pot_npc(
+    world: esper.World,
+    x: float = 0.0, 
+    y: float = 0.0, 
+    w: int = 64, 
+    h: int = 64, 
+    tag: str = "alchemy_pot_npc",
+    base_max_hp: int = 999999, 
+    element: str = "earth", 
+    defense: int = 100,
+    invulnerable: bool = True
+) -> int:
+    """創建一個 ECS 煉金鍋 NPC 實體。"""
     
-    def __init__(self, 
-                 x: float = 0.0, 
-                 y: float = 0.0, 
-                 w: int = 64, 
-                 h: int = 64, 
-                 image: Optional[pygame.Surface] = None, 
-                 shape: str = "rect", 
-                 game: 'Game' = None, 
-                 tag: str = "alchemy_pot_npc",
-                 base_max_hp: int = 999999,  # High health, effectively indestructible
-                 max_shield: int = 0,
-                 dodge_rate: float = 0.0,
-                 element: str = "earth",  # Earth element for alchemy theme
-                 defense: int = 100,
-                 resistances: Optional[Dict[str, float]] = None,
-                 invulnerable: bool = True):
-        # Initialize HealthEntity first
-        HealthEntity.__init__(
-            self, x=x, y=y, w=w, h=h, image=image, shape=shape, game=game, tag=tag,
-            base_max_hp=base_max_hp, max_shield=max_shield, dodge_rate=dodge_rate,
-            element=element, defense=defense, resistances=resistances, invulnerable=invulnerable,
-            init_basic=False
-        )
-        # Initialize BuffableEntity for potential buffs
-        BuffableEntity.__init__(self, x=x, y=y, w=w, h=h, image=image, shape=shape, game=game, tag=tag, init_basic=False)
-        # Initialize BasicEntity last
-        BasicEntity.__init__(self, x=x, y=y, w=w, h=h, image=image, shape=shape, game=game, tag=tag)
-        
-        if self.image is None:
-            self.image = pygame.Surface((w, h))
-            self.image.fill((139, 69, 19))  # 棕色方塊，代表煉金鍋
-            self.rect = self.image.get_rect(center=(x, y))
-        
-        self.interaction_range: float = 80.0
-        self.alchemy_options: List[Dict] = []
-        self.is_interacting: bool = False
-        self.show_interact_prompt: bool = False  # 新增：是否顯示提示
-        self.font = pygame.font.SysFont(None, 24)  # 用於提示文字
+    npc_entity = world.create_entity()
 
-    def update(self, dt: float, current_time: float) -> None:
-        """Update NPC state, check player proximity for interaction prompt."""
-        if self.game and self.game.entity_manager.player:
-            distance = self.calculate_distance_to(self.game.entity_manager.player)
-            self.show_interact_prompt = distance <= self.interaction_range
-            # 檢查按鍵事件（由 event_manager 處理，僅設置提示）
-        
-        BuffableEntity.update(self, dt, current_time)
-        super().update(dt, current_time)
-
-    def calculate_distance_to(self, other_entity) -> float:
-        """Calculate the Euclidean distance to another entity."""
-        dx = self.x - other_entity.x
-        dy = self.y - other_entity.y
-        return math.sqrt(dx**2 + dy**2)
+    # 1. 核心位置與標籤
+    world.add_component(npc_entity, Tag(tag=tag))
+    world.add_component(npc_entity, Position(x=x, y=y))
     
-    def draw(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
-        """Draw NPC and interaction prompt if within range."""
-        super().draw(screen, camera_offset)
-        if self.show_interact_prompt:
-            screen_x = self.x - camera_offset[0] - self.w // 2
-            screen_y = self.y - camera_offset[1] - self.h // 2 - 20  # 顯示在 NPC 頭上
-            prompt_text = self.font.render("Press E to interact", True, (255, 255, 255))
-            screen.blit(prompt_text, (screen_x - prompt_text.get_width() // 2 + self.w // 2, screen_y))
+    # 2. 視覺屬性
+    # 注意：這裡應該載入圖片，但為了簡化，我們只設定屬性
+    world.add_component(npc_entity, Renderable(
+        image=None, 
+        shape="rect",
+        w=w,
+        h=h,
+        color=(139, 69, 19), # 棕色
+        layer=0 
+    ))
 
-    def start_interaction(self) -> None:
-        """Initiate alchemy menu via MenuManager."""
-        self.is_interacting = True
-        if self.game:
-            self.game.show_menu('alchemy_menu', self.alchemy_options)
-        print("Alchemy Pot NPC: Open alchemy synthesis menu.")
+    # 3. 碰撞器 (用於交互距離檢查)
+    world.add_component(npc_entity, Collider(
+        w=w, 
+        h=h, 
+        pass_wall=False, 
+        collision_group="npc"
+    ))
 
-    def end_interaction(self) -> None:
-        """End interaction."""
-        self.is_interacting = False
-        if self.game:
-            self.game.hide_menu('alchemy_menu')
+    # 4. 健康與防禦
+    world.add_component(npc_entity, Health(
+        max_hp=base_max_hp,
+        current_hp=base_max_hp,
+        max_shield=0,
+        current_shield=0
+    ))
+    world.add_component(npc_entity, Defense(
+        defense=defense,
+        dodge_rate=0.0,
+        element=element,
+        resistances=None,
+        invulnerable=invulnerable
+    ))
 
-    def synthesize_item(self, ingredients: List[str]) -> Optional[str]:
-        """Perform alchemy synthesis based on ingredients."""
-        for option in self.alchemy_options:
-            if sorted(option['ingredients']) == sorted(ingredients):
-                result = option['result']
-                if self.game and self.game.entity_manager.player:
-                    buff = ELEMENTAL_BUFFS.get(result)
-                    if buff:
-                        self.buff_synthesizer.synthesize_buffs([buff], self.game.entity_manager.player)
-                        print(f"Alchemy Pot NPC: Synthesized {result}")
-                        return result
-        print("Alchemy Pot NPC: Invalid ingredient combination")
-        return None
+    # 5. 增益效果 (Buffs)
+    world.add_component(npc_entity, Buffs())
 
-    def take_damage(self, factor: float = 1.0, element: str = "untyped", base_damage: int = 0, 
-                    max_hp_percentage_damage: int = 0, current_hp_percentage_damage: int = 0, 
-                    lose_hp_percentage_damage: int = 0, cause_death: bool = True) -> Tuple[bool, int]:
-        """NPC takes minimal damage and regenerates."""
-        if self.invulnerable:
-            return False, 0
-        killed, damage = super().take_damage(cause_death=False)
-        self.heal(damage)
-        return False, damage
+    # 6. 煉金鍋專屬狀態
+    world.add_component(npc_entity, NPCInteractComponent()) 
+
+    return npc_entity
