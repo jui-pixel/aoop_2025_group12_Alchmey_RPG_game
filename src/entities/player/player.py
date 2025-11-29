@@ -3,7 +3,7 @@ from typing import List, Tuple, Optional, Dict
 import pygame
 import esper # 新增 esper 依賴以讀寫 ECS World
 # 假設所有 ECS Component 和 Skill 類別已從正確路徑導入
-from ...ecs.components import PlayerComponent, Combat, Position, Velocity
+from ...ecs.components import PlayerComponent, Combat, Position, Velocity, Health, Defense
 from ...skills.skill import Skill
 
 # 為了簡化，假設其他組件的類別名稱如 Combat, Position, Velocity 
@@ -41,7 +41,17 @@ class Player:
     def _get_position_comp(self) -> 'Position':
         """獲取 Position 組件 (用於技能起點計算)"""
         return self.world.component_for_entity(self.ecs_entity, Position)
-        
+    
+    def _get_health_comp(self) -> 'Health':
+        """獲取 Health 組件 (用於生命值管理)"""
+        return self.world.component_for_entity(self.ecs_entity, Health)
+    def _get_defense_comp(self) -> 'Defense':
+        """獲取 Defense 組件 (用於防禦值管理)"""
+        return self.world.component_for_entity(self.ecs_entity, Defense)
+    def _get_velocity_comp(self) -> 'Velocity':
+        """獲取 Velocity 組件 (用於速度管理)"""
+        return self.world.component_for_entity(self.ecs_entity, Velocity)
+    
     # --- 邏輯方法重構 ---
 
     def update(self, dt: float, current_time: float) -> None:

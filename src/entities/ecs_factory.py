@@ -92,8 +92,6 @@ def create_player_entity(
         max_energy=100,
         energy_regen_rate=5.0,
         base_energy_regen_rate=5.0,  # 初始基底能量回覆
-        elements=set(),
-        amplifiers={},
         fog=True,
         vision_radius=5
     ))
