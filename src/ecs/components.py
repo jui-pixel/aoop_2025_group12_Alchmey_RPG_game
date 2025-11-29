@@ -208,3 +208,7 @@ class AI:
     current_action: str = "idle"
     action_list: List[str] = field(default_factory=list)
     actions: Dict[str, object] = field(default_factory=dict)
+
+@dataclass
+class Tag:
+    tag: str = "default"
