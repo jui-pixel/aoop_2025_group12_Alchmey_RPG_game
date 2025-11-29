@@ -11,7 +11,7 @@ from ..movement_entity import MovementEntity
 from ...config import TILE_SIZE, RED
 from ..bullet.bullet import Bullet
 from ..bullet.expand_circle_bullet import ExpandingCircleBullet
-from ..buff.element_buff import ELEMENTAL_BUFFS
+from ...buffs.element_buff import ELEMENTAL_BUFFS
 from ..basic_entity import BasicEntity
 from ...config import PASSABLE_TILES
 
