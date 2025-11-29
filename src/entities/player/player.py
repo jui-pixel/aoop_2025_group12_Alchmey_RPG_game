@@ -300,4 +300,33 @@ class Player:
     @max_shield.setter
     def max_shield(self, value: int) -> None: self._get_player_comp().max_shield = value
     
+    @property
+    def displacement(self) -> Tuple[int, int]:
+        """讀取 Velocity 組件，並反推回 EventManager 期望的 (-1, 0, 1) 標準化方向向量。"""
+        vel_comp = self._get_velocity_comp()
+        dx = 0
+        if vel_comp.x < 0: dx = -1
+        elif vel_comp.x > 0: dx = 1
+        dy = 0
+        if vel_comp.y < 0: dy = -1
+        elif vel_comp.y > 0: dy = 1
+        return (dx, dy)
     
+    @displacement.setter
+    def displacement(self, value: Tuple[int, int]) -> None:
+        """設定標準化移動方向，並計算出最終的速度向量 (speed * normalized_direction) 寫入 Velocity 組件。"""
+        dx, dy = value
+        vel_comp = self._get_velocity_comp()
+        speed = vel_comp.speed
+        
+        magnitude = math.sqrt(dx**2 + dy**2)
+        
+        if magnitude > 0:
+            # 計算單位方向向量並乘上速度，以避免對角線加速
+            normalized_dx = dx / magnitude
+            normalized_dy = dy / magnitude
+            vel_comp.x = normalized_dx * speed
+            vel_comp.y = normalized_dy * speed
+        else:
+            vel_comp.x = 0
+            vel_comp.y = 0
