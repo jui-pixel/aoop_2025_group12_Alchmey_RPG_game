@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from src.ecs.components import Position, Velocity, Combat, Renderable, Collider, ProjectileState, Tag
 
 def create_standard_bullet_entity(
-    world: esper.World,
+    world: esper,
     start_pos: Tuple[float, float],
     w: int,
     h: int,
