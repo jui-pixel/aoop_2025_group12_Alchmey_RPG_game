@@ -37,20 +37,6 @@ class Game:
         self.clock = pygame_clock  # 保存時鐘對象
         self.current_time = 0.0  # 當前遊戲時間，初始為 0
         self.time_scale = 1.0  # 時間縮放因子，控制遊戲速度
-        self.running = True  # 遊戲運行狀態
-        self.dungeon_manager = DungeonManager(self)  # 初始化地牢管理器
-        self.event_manager = EventManager(self)  # 初始化事件管理器
-        self.audio_manager = AudioManager(self)  # 初始化音效管理器
-        self.render_manager = RenderManager(self, screen)  # 初始化渲染管理器
-        self.entity_manager = EntityManager(self)  # 初始化實體管理器
-        self.menu_manager = MenuManager(self.screen, self)  # 初始化菜單管理器
-        self.storage_manager = StorageManager(self)  # 初始化儲存管理器
-        self.menu_stack = []  # 菜單堆疊，用於追蹤先前的菜單
-        # 註冊菜單
-        self.menu_manager.register_menu('main_menu', MainMenu(self, None))  # 主菜單
-        self.menu_manager.register_menu('settings_menu', SettingsMenu(self, None))  # 設置選單
-        self.menu_manager.register_menu('alchemy_menu', AlchemyMenu(self, None))
-        self.menu_manager.register_menu('dungeon_menu', None)  # 延遲初始化
         self.menu_manager.register_menu('crystal_menu', CrystalMenu(self, None))
         self.menu_manager.register_menu('stat_menu', StatMenu(self, None))
         self.menu_manager.register_menu('main_material_menu', MainMaterialMenu(self, None))
@@ -168,21 +154,6 @@ class Game:
         self.current_time += dt * self.time_scale  # 更新遊戲時間
 
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False  # 退出遊戲
-                return False
-            print(f"Game: 處理事件 {event.type}，狀態：{self.event_manager.state}，菜單：{self.menu_manager.current_menu.__class__.__name__ if self.menu_manager.current_menu else 'None'}")
-            self.event_manager.handle_event(event)  # 處理事件
-
-        if self.event_manager.state != "menu" or not self.menu_manager.current_menu:
-            self.entity_manager.update(dt, self.current_time)  # 更新實體
-            self.render_manager.update_camera(dt)  # 更新攝影機
-            print(f"Game: 在狀態 {self.event_manager.state} 中更新實體和攝影機")
-        else:
-            print(f"Game: 由於有活動菜單，跳過實體和攝影機更新，狀態：{self.event_manager.state}")
-
-        return True
-
     def draw(self) -> None:
         """根據當前遊戲狀態繪製畫面。
 
