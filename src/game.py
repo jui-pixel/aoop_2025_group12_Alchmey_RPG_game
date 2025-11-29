@@ -7,7 +7,7 @@ from src.event_manager import EventManager
 from src.audio_manager import AudioManager
 from src.render_manager import RenderManager
 from src.storage_manager import StorageManager
-from src.entity_manager import EntityManager
+from src.entities.entity_manager import EntityManager
 from src.menu_manager import MenuManager
 
 # 引入 ECS 系統（假設它們在 src.ecs.systems 中）

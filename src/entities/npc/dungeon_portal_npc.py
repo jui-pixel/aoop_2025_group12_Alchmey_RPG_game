@@ -7,60 +7,7 @@ from src.ecs.components import (
     NPCInteractComponent, DungeonPortalComponent
 )
 
-def create_dungeon_portal_npc(
-    world: esper,
-    x: float = 0.0, 
-    y: float = 0.0, 
-    w: int = 64, 
-    h: int = 64, 
-    available_dungeons: Optional[List[Dict]] = None
-) -> int:
-    """創建一個 ECS 地牢傳送門 NPC 實體。"""
-    
-    npc_entity = world.create_entity()
 
-    # 1. 核心位置與標籤
-    world.add_component(npc_entity, Tag(tag="dungeon_portal_npc"))
-    world.add_component(npc_entity, Position(x=x, y=y))
-    
-    # 2. 視覺屬性
-    world.add_component(npc_entity, Renderable(
-        image=None,
-        shape="rect",
-        w=w,
-        h=h,
-        color=(128, 0, 128), # 紫色
-        layer=0 
-    ))
-
-    # 3. 碰撞器
-    world.add_component(npc_entity, Collider(
-        w=w, 
-        h=h, 
-        pass_wall=False, 
-        collision_group="portal"
-    ))
-
-    # 4. 健康與防禦 (高防禦且無敵)
-    world.add_component(npc_entity, Health(max_hp=999999, current_hp=999999))
-    world.add_component(npc_entity, Defense(
-        defense=100,
-        element="untyped",
-        invulnerable=True
-    ))
-
-    # 5. 增益效果
-    world.add_component(npc_entity, Buffs())
-
-    # 6. NPC 交互狀態 (interaction_range=80.0)
-    world.add_component(npc_entity, NPCInteractComponent(interaction_range=80.0))
-    
-    # 7. 傳送門專屬狀態
-    world.add_component(npc_entity, DungeonPortalComponent(
-        available_dungeons=available_dungeons or [{'name': 'Test Dungeon', 'level': 1, 'dungeon_id': 1}]
-    ))
-
-    return npc_entity
 
 # src/entities/npc/dungeon_portal_npc.py (重構後)
 
