@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
-    from .src.skills.skill import Skill 
+    from ...skills.skill import Skill 
     SkillType = Skill 
 else:
     # 運行時可能不需要實際的 Skill 類別，用 Any 替代或忽略

@@ -1,4 +1,4 @@
-```python
+# src.entities.movement_entity.py
 from src.ecs.components import Velocity, Collider
 import math
 from .basic_entity import BasicEntity
@@ -55,7 +55,7 @@ class MovementEntity(BasicEntity):
             self.velocity = (dx * self.max_speed, dy * self.max_speed)
         else:
             # Friction logic handled in MovementSystem or here if we want to keep it hybrid
-```python
+
 from src.ecs.components import Velocity, Collider
 import math
 from .basic_entity import BasicEntity
@@ -122,4 +122,3 @@ class MovementEntity(BasicEntity):
         """Update movement entity position based on velocity."""
         # Logic moved to MovementSystem
         pass
-```
