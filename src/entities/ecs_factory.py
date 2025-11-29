@@ -106,6 +106,16 @@ def create_player_entity(
         speed=4*TILE_SIZE # 基底移動速度
     ))
     
+    # 10. 渲染組件
+    world.add_component(player_entity, Renderable(
+        image=None,
+        shape="rect",
+        w=TILE_SIZE,
+        h=TILE_SIZE,
+        color=(0, 0, 255), # 藍色方塊代表玩家
+        layer=1 
+    ))
+    
     return player_entity
 
 def create_enemy1_entity(

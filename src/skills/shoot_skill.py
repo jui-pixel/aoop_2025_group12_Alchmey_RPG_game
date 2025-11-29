@@ -100,7 +100,10 @@ class ShootingSkill(Skill):
             cause_death=self.cause_death,
 
             # Collider
-            pass_wall=self.pass_wall
+            pass_wall=self.pass_wall,
+            
+            # lifetime
+            lifetime=5.0
         )
         
         # 4. 移除舊的實體管理 (在 ECS 中，實體會被自動添加到 World)
