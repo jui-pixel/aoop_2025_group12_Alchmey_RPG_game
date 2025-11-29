@@ -212,3 +212,16 @@ class AI:
 @dataclass
 class Tag:
     tag: str = "default"
+
+@dataclass
+class NPCInteractComponent:
+    """
+    NPC 專屬的 ECS 組件。包含其交互範圍和狀態。
+    """
+    # 交互屬性
+    interaction_range: float = 80.0
+    alchemy_options: List[Dict] = field(default_factory=list) # 合成配方列表
+    
+    # 運行時狀態
+    is_interacting: bool = False
+    show_interact_prompt: bool = False # 用於 InteractionSystem 和 RenderSystem
