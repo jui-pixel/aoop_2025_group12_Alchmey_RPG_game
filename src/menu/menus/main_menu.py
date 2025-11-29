@@ -6,7 +6,7 @@ from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from typing import List, Dict
 
 class MainMenu(AbstractMenu):
-    def __init__(self, game: 'Game', options: List[Dict]):
+    def __init__(self, game: 'Game', options: List[Dict]=None):
         self.title = "Main Menu"
         self.buttons = [
             Button(
@@ -84,3 +84,6 @@ class MainMenu(AbstractMenu):
         else:
             self.buttons[self.selected_index].is_selected = False
             print("MainMenu: Deactivated")
+    
+    def update(self, dt: float) -> None:
+        pass  # MainMenu 不需要更新邏輯
