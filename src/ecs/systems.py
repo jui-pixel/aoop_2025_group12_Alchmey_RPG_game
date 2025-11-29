@@ -5,17 +5,18 @@ from .components import Position, Velocity, Renderable, Input, Health, Defense, 
 from src.config import TILE_SIZE, PASSABLE_TILES, SCREEN_WIDTH, SCREEN_HEIGHT
 
 class MovementSystem(esper.Processor):
-    def process(self, dt):
+    def process(self, *args, **kwargs):
+        dt = args[0] if args else 0.0
         # Get dungeon from game instance attached to world
-        game = getattr(self.world, 'game', None)
+        game = getattr( esper, 'game', None)
         dungeon = game.dungeon_manager.get_dungeon() if game else None
         
-        for ent, (pos, vel) in self.world.get_components(Position, Velocity):
+        for ent, (pos, vel) in  esper.get_components(Position, Velocity):
             if vel.x == 0 and vel.y == 0:
                 continue
             
             # Get Collider if exists, else default
-            collider = self.world.try_component(ent, Collider)
+            collider =  esper.try_component(ent, Collider)
             pass_wall = collider.pass_wall if collider else False
             w = collider.w if collider else 32
             h = collider.h if collider else 32
@@ -72,8 +73,8 @@ class MovementSystem(esper.Processor):
                 pos.y = new_y
 
 class RenderSystem(esper.Processor):
-    def process(self, dt):
-        game = getattr(self.world, 'game', None)
+    def process(self, *args, **kwargs):
+        game = getattr( esper, 'game', None)
         if not game:
             return
             
@@ -82,7 +83,7 @@ class RenderSystem(esper.Processor):
         
         # Collect and sort renderables
         render_list = []
-        for ent, (pos, rend) in self.world.get_components(Position, Renderable):
+        for ent, (pos, rend) in  esper.get_components(Position, Renderable):
             if not rend.visible:
                 continue
             render_list.append((pos, rend, ent))
@@ -105,8 +106,8 @@ class RenderSystem(esper.Processor):
                 pygame.draw.rect(screen, rend.color, (screen_x, screen_y, rend.w, rend.h))
                 
             # Draw Health Bar if entity has Health component
-            if self.world.has_component(ent, Health):
-                health = self.world.component_for_entity(ent, Health)
+            if  esper.has_component(ent, Health):
+                health =  esper.component_for_entity(ent, Health)
                 self.draw_health_bar(screen, pos, health, rend, camera_offset)
 
     def draw_health_bar(self, screen, pos, health, rend, camera_offset):
@@ -134,11 +135,11 @@ class RenderSystem(esper.Processor):
         pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
 
 class InputSystem(esper.Processor):
-    def process(self, dt):
+    def process(self, *args, **kwargs):
         keys = pygame.key.get_pressed()
         
-        for ent, (inp, vel) in self.world.get_components(Input, Velocity):
-            if self.world.has_component(ent, Player):
+        for ent, (inp, vel) in  esper.get_components(Input, Velocity):
+            if  esper.has_component(ent, Player):
                 # Reset velocity intent
                 vel.x = 0
                 vel.y = 0
@@ -161,11 +162,11 @@ class InputSystem(esper.Processor):
                 
 
 class HealthSystem(esper.Processor):
-    def process(self, dt):
-        game = getattr(self.world, 'game', None)
+    def process(self, *args, **kwargs):
+        game = getattr( esper, 'game', None)
         
         # Check for dead entities and handle death
-        for ent, health in self.world.get_component(Health):
+        for ent, health in  esper.get_component(Health):
             if health.current_hp <= 0:
                 self._handle_death(ent, game)
     
@@ -176,11 +177,11 @@ class HealthSystem(esper.Processor):
         Apply damage to an entity with Health and Defense components.
         Returns: (killed: bool, actual_damage: int)
         """
-        if not self.world.has_component(entity, Health):
+        if not  esper.has_component(entity, Health):
             return False, 0
         
-        health = self.world.component_for_entity(entity, Health)
-        defense = self.world.try_component(entity, Defense)
+        health =  esper.component_for_entity(entity, Health)
+        defense =  esper.try_component(entity, Defense)
         
         # Check invulnerability
         if defense and defense.invulnerable:
@@ -238,26 +239,26 @@ class HealthSystem(esper.Processor):
     
     def heal(self, entity, amount):
         """Heal an entity by the specified amount."""
-        if not self.world.has_component(entity, Health):
+        if not  esper.has_component(entity, Health):
             return
         
-        health = self.world.component_for_entity(entity, Health)
+        health =  esper.component_for_entity(entity, Health)
         health.current_hp = min(health.max_hp, health.current_hp + amount)
     
     def add_shield(self, entity, amount):
         """Add shield to an entity by the specified amount."""
-        if not self.world.has_component(entity, Health):
+        if not  esper.has_component(entity, Health):
             return
         
-        health = self.world.component_for_entity(entity, Health)
+        health =  esper.component_for_entity(entity, Health)
         health.current_shield = min(health.max_shield, health.current_shield + amount)
     
     def set_max_hp(self, entity, new_max_hp):
         """Set max HP and scale current HP proportionally."""
-        if not self.world.has_component(entity, Health):
+        if not  esper.has_component(entity, Health):
             return
         
-        health = self.world.component_for_entity(entity, Health)
+        health =  esper.component_for_entity(entity, Health)
         old_max = health.max_hp
         health.max_hp = max(0, new_max_hp)
         
@@ -268,10 +269,10 @@ class HealthSystem(esper.Processor):
     
     def set_max_shield(self, entity, new_max_shield):
         """Set max shield and clamp current shield."""
-        if not self.world.has_component(entity, Health):
+        if not  esper.has_component(entity, Health):
             return
         
-        health = self.world.component_for_entity(entity, Health)
+        health =  esper.component_for_entity(entity, Health)
         health.max_shield = max(0, new_max_shield)
         health.current_shield = min(health.max_shield, health.current_shield)
     
@@ -293,11 +294,11 @@ class HealthSystem(esper.Processor):
     
     def _create_damage_text(self, entity, text):
         """Create damage text at entity position."""
-        game = getattr(self.world, 'game', None)
-        if not game or not self.world.has_component(entity, Position):
+        game = getattr( esper, 'game', None)
+        if not game or not  esper.has_component(entity, Position):
             return
         
-        pos = self.world.component_for_entity(entity, Position)
+        pos =  esper.component_for_entity(entity, Position)
         
         from src.entities.damage_text import DamageText
         damage_text = DamageText((pos.x, pos.y), text)
@@ -307,7 +308,7 @@ class HealthSystem(esper.Processor):
         """Handle entity death."""
         print(f"Entity {entity} died!")
         # Option: Mark for deletion (to be handled by a cleanup system)
-        # self.world.delete_entity(entity)  # Careful: don't delete during iteration
+        #  esper.delete_entity(entity)  # Careful: don't delete during iteration
 
 class BuffSystem(esper.Processor):
     def __init__(self):
@@ -332,10 +333,12 @@ class BuffSystem(esper.Processor):
             ('Paralysis', 'Dist'): 'Enpty',
         }
     
-    def process(self, dt):
-        game = getattr(self.world, 'game', None)
+    def process(self, *args, **kwargs):
+        dt = args[0] if args else 0.0
         
-        for ent, buffs in self.world.get_component(Buffs):
+        game = getattr( esper, 'game', None)
+        
+        for ent, buffs in  esper.get_component(Buffs):
             if not buffs.active_buffs:
                 continue
             
@@ -361,20 +364,20 @@ class BuffSystem(esper.Processor):
             buff.effect_time += dt
             if buff.effect_time - buff.last_effect_time >= 1.0:
                 # Create entity wrapper for callback
-                wrapper = EntityWrapper(entity, self.world, game)
+                wrapper = EntityWrapper(entity,  esper, game)
                 buff.effect_per_second(wrapper)
                 buff.last_effect_time = buff.effect_time
         
         # Apply health regen
         health_regen = buff.multipliers.get('health_regen_per_second', 0.0)
-        if health_regen != 0 and self.world.has_component(entity, Health):
+        if health_regen != 0 and  esper.has_component(entity, Health):
             health_system = game.ecs_world.get_processor(HealthSystem) if game else None
             if health_system:
                 if health_regen > 0:
                     health_system.heal(entity, int(health_regen * dt))
                 else:
                     # Negative regen = damage over time
-                    defense = self.world.try_component(entity, Defense)
+                    defense =  esper.try_component(entity, Defense)
                     if not (defense and defense.invulnerable):
                         health_system.take_damage(entity, base_damage=int(abs(health_regen) * dt), cause_death=False)
     
@@ -383,7 +386,7 @@ class BuffSystem(esper.Processor):
         buffs_comp.active_buffs.remove(buff)
         
         if buff.on_remove:
-            wrapper = EntityWrapper(entity, self.world, game)
+            wrapper = EntityWrapper(entity,  esper, game)
             buff.on_remove(wrapper)
         
         print(f"Removed buff: {buff.name} from entity {entity}")
@@ -411,7 +414,7 @@ class BuffSystem(esper.Processor):
                         
                         # Trigger on_apply callback
                         if new_buff.on_apply:
-                            wrapper = EntityWrapper(entity, self.world, game)
+                            wrapper = EntityWrapper(entity,  esper, game)
                             new_buff.on_apply(wrapper)
                         
                         print(f"Synthesized {buff1_name} + {buff2_name} = {result_name} on entity {entity}")
@@ -448,56 +451,55 @@ class BuffSystem(esper.Processor):
 
 class EntityWrapper:
     """Wrapper class to provide entity-like interface for ECS entities."""
-    def __init__(self, ecs_entity, world, game):
+    def __init__(self, ecs_entity, game):
         self.ecs_entity = ecs_entity
-        self.world = world
         self.game = game
         self.id = ecs_entity
     
     @property
     def x(self):
-        if self.world.has_component(self.ecs_entity, Position):
-            return self.world.component_for_entity(self.ecs_entity, Position).x
+        if  esper.has_component(self.ecs_entity, Position):
+            return  esper.component_for_entity(self.ecs_entity, Position).x
         return 0
     
     @property
     def y(self):
-        if self.world.has_component(self.ecs_entity, Position):
-            return self.world.component_for_entity(self.ecs_entity, Position).y
+        if  esper.has_component(self.ecs_entity, Position):
+            return  esper.component_for_entity(self.ecs_entity, Position).y
         return 0
     
     @property
     def w(self):
-        if self.world.has_component(self.ecs_entity, Collider):
-            return self.world.component_for_entity(self.ecs_entity, Collider).w
-        elif self.world.has_component(self.ecs_entity, Renderable):
-            return self.world.component_for_entity(self.ecs_entity, Renderable).w
+        if  esper.has_component(self.ecs_entity, Collider):
+            return  esper.component_for_entity(self.ecs_entity, Collider).w
+        elif  esper.has_component(self.ecs_entity, Renderable):
+            return  esper.component_for_entity(self.ecs_entity, Renderable).w
         return 32
     
     @property
     def h(self):
-        if self.world.has_component(self.ecs_entity, Collider):
-            return self.world.component_for_entity(self.ecs_entity, Collider).h
-        elif self.world.has_component(self.ecs_entity, Renderable):
-            return self.world.component_for_entity(self.ecs_entity, Renderable).h
+        if  esper.has_component(self.ecs_entity, Collider):
+            return  esper.component_for_entity(self.ecs_entity, Collider).h
+        elif  esper.has_component(self.ecs_entity, Renderable):
+            return  esper.component_for_entity(self.ecs_entity, Renderable).h
         return 32
     
     @property
     def buffs(self):
-        if self.world.has_component(self.ecs_entity, Buffs):
-            return self.world.component_for_entity(self.ecs_entity, Buffs).active_buffs
+        if  esper.has_component(self.ecs_entity, Buffs):
+            return  esper.component_for_entity(self.ecs_entity, Buffs).active_buffs
         return []
     
     @property
     def current_hp(self):
-        if self.world.has_component(self.ecs_entity, Health):
-            return self.world.component_for_entity(self.ecs_entity, Health).current_hp
+        if  esper.has_component(self.ecs_entity, Health):
+            return  esper.component_for_entity(self.ecs_entity, Health).current_hp
         return 0
     
     @property
     def max_hp(self):
-        if self.world.has_component(self.ecs_entity, Health):
-            return self.world.component_for_entity(self.ecs_entity, Health).max_hp
+        if  esper.has_component(self.ecs_entity, Health):
+            return  esper.component_for_entity(self.ecs_entity, Health).max_hp
         return 0
     
     def take_damage(self, **kwargs):
@@ -517,8 +519,8 @@ class EntityWrapper:
     
     def add_buff(self, buff):
         """Add a buff to this entity."""
-        if self.world.has_component(self.ecs_entity, Buffs):
-            buffs_comp = self.world.component_for_entity(self.ecs_entity, Buffs)
+        if  esper.has_component(self.ecs_entity, Buffs):
+            buffs_comp =  esper.component_for_entity(self.ecs_entity, Buffs)
             
             # Check if buff with same name exists, replace if new one has longer duration
             for existing_buff in buffs_comp.active_buffs[:]:
@@ -537,13 +539,14 @@ class EntityWrapper:
             print(f"Added buff: {buff.name} to entity {self.ecs_entity}")
 
 class CombatSystem(esper.Processor):
-    def process(self, dt):
-        game = getattr(self.world, 'game', None)
+    def process(self, *args, **kwargs):
+        dt = args[0] if args else 0.0
+        game = getattr( esper, 'game', None)
         if not game:
             return
             
         # 1. Update Cooldowns
-        for ent, combat in self.world.get_component(Combat):
+        for ent, combat in  esper.get_component(Combat):
             if combat.collision_list:
                 to_remove = []
                 for key in combat.collision_list.keys():
@@ -555,16 +558,16 @@ class CombatSystem(esper.Processor):
 
         # 2. Check Collisions
         entities = []
-        for ent, (pos, combat) in self.world.get_components(Position, Combat):
+        for ent, (pos, combat) in  esper.get_components(Position, Combat):
             if not combat.can_attack:
                 continue
                 
             w, h = 32, 32
-            if self.world.has_component(ent, Collider):
-                col = self.world.component_for_entity(ent, Collider)
+            if  esper.has_component(ent, Collider):
+                col =  esper.component_for_entity(ent, Collider)
                 w, h = col.w, col.h
-            elif self.world.has_component(ent, Renderable):
-                rend = self.world.component_for_entity(ent, Renderable)
+            elif  esper.has_component(ent, Renderable):
+                rend =  esper.component_for_entity(ent, Renderable)
                 w, h = rend.w, rend.h
             
             rect = pygame.Rect(pos.x - w//2, pos.y - h//2, w, h)
@@ -577,8 +580,8 @@ class CombatSystem(esper.Processor):
                     continue
                 
                 # Check if ent1 can damage ent2 (Player vs Enemy)
-                is_player_1 = self.world.has_component(ent1, Input)
-                is_player_2 = self.world.has_component(ent2, Input)
+                is_player_1 =  esper.has_component(ent1, Input)
+                is_player_2 =  esper.has_component(ent2, Input)
                 
                 # Don't hit same team
                 if is_player_1 == is_player_2:
@@ -594,15 +597,15 @@ class CombatSystem(esper.Processor):
                         continue
                         
                     # Apply Damage
-                    if self.world.has_component(ent2, Health):
+                    if  esper.has_component(ent2, Health):
                         self._apply_collision_damage(ent1, ent2, combat1, game, entities)
     
     def _apply_collision_damage(self, attacker, target, combat, game, all_entities):
         """Apply damage from attacker to target."""
         # Get damage multiplier from buffs if attacker has buffs
         damage_mult = 1.0
-        if self.world.has_component(attacker, Buffs):
-            buffs_comp = self.world.component_for_entity(attacker, Buffs)
+        if  esper.has_component(attacker, Buffs):
+            buffs_comp =  esper.component_for_entity(attacker, Buffs)
             damage_mult = buffs_comp.modifiers.get('damage_multiplier', 1.0)
         
         # Calculate element multiplier
@@ -636,8 +639,8 @@ class CombatSystem(esper.Processor):
             print(f"ECS Combat: Entity {attacker} hit {target} for {actual_damage} damage!")
             
             # Apply buffs to target
-            if combat.buffs and self.world.has_component(target, Buffs):
-                target_buffs = self.world.component_for_entity(target, Buffs)
+            if combat.buffs and  esper.has_component(target, Buffs):
+                target_buffs =  esper.component_for_entity(target, Buffs)
                 for buff in combat.buffs:
                     # Deep copy buff before applying
                     import copy
@@ -655,18 +658,18 @@ class CombatSystem(esper.Processor):
             return
         
         # Get source position
-        if not self.world.has_component(source, Position):
+        if not  esper.has_component(source, Position):
             return
         
-        source_pos = self.world.component_for_entity(source, Position)
+        source_pos =  esper.component_for_entity(source, Position)
         
         # Get source size for center calculation
         w, h = 32, 32
-        if self.world.has_component(source, Collider):
-            col = self.world.component_for_entity(source, Collider)
+        if  esper.has_component(source, Collider):
+            col =  esper.component_for_entity(source, Collider)
             w, h = col.w, col.h
-        elif self.world.has_component(source, Renderable):
-            rend = self.world.component_for_entity(source, Renderable)
+        elif  esper.has_component(source, Renderable):
+            rend =  esper.component_for_entity(source, Renderable)
             w, h = rend.w, rend.h
         
         explosion_center = (source_pos.x + w / 2, source_pos.y + h / 2)
@@ -677,18 +680,18 @@ class CombatSystem(esper.Processor):
                 continue
             
             # Check team (don't damage same team)
-            is_player_source = self.world.has_component(source, Input)
-            is_player_target = self.world.has_component(ent, Input)
+            is_player_source =  esper.has_component(source, Input)
+            is_player_target =  esper.has_component(ent, Input)
             if is_player_source == is_player_target:
                 continue
             
             # Calculate distance
             ent_w, ent_h = 32, 32
-            if self.world.has_component(ent, Collider):
-                col = self.world.component_for_entity(ent, Collider)
+            if  esper.has_component(ent, Collider):
+                col =  esper.component_for_entity(ent, Collider)
                 ent_w, ent_h = col.w, col.h
-            elif self.world.has_component(ent, Renderable):
-                rend = self.world.component_for_entity(ent, Renderable)
+            elif  esper.has_component(ent, Renderable):
+                rend =  esper.component_for_entity(ent, Renderable)
                 ent_w, ent_h = rend.w, rend.h
             
             entity_center = (ent_pos.x + ent_w / 2, ent_pos.y + ent_h / 2)
@@ -699,7 +702,7 @@ class CombatSystem(esper.Processor):
             
             if distance <= combat.explosion_range:
                 # Apply explosion damage
-                if self.world.has_component(ent, Health):
+                if  esper.has_component(ent, Health):
                     # Calculate explosion element multiplier
                     explosion_mult = 1.0
                     if combat.damage_to_element:
@@ -723,27 +726,28 @@ class CombatSystem(esper.Processor):
                         print(f"Explosion damage: {actual_damage} to entity {ent}")
                         
                         # Apply explosion buffs
-                        if combat.explosion_buffs and self.world.has_component(ent, Buffs):
-                            target_buffs = self.world.component_for_entity(ent, Buffs)
+                        if combat.explosion_buffs and  esper.has_component(ent, Buffs):
+                            target_buffs =  esper.component_for_entity(ent, Buffs)
                             for buff in combat.explosion_buffs:
                                 import copy
                                 buff_copy = copy.deepcopy(buff)
                                 target_buffs.active_buffs.append(buff_copy)
 
 class AISystem(esper.Processor):
-    def process(self, dt):
-        game = getattr(self.world, 'game', None)
+    def process(self, *args, **kwargs):
+        
+        game = getattr( esper, 'game', None)
         if not game:
             return
         
         current_time = game.current_time if hasattr(game, 'current_time') else 0
         
-        for ent, (ai, pos, vel) in self.world.get_components(AI, Position, Velocity):
+        for ent, (ai, pos, vel) in  esper.get_components(AI, Position, Velocity):
             if not ai.behavior_tree:
                 continue
             
             # Create entity wrapper for behavior tree
-            wrapper = AIEntityWrapper(ent, self.world, game, ai)
+            wrapper = AIEntityWrapper(ent,  esper, game, ai)
             
             # Execute behavior tree with wrapper
             try:
@@ -792,15 +796,15 @@ class AIEntityWrapper(EntityWrapper):
     @property
     def speed(self):
         """Get speed from Velocity component."""
-        if self.world.has_component(self.ecs_entity, Velocity):
-            return self.world.component_for_entity(self.ecs_entity, Velocity).speed
+        if  esper.has_component(self.ecs_entity, Velocity):
+            return  esper.component_for_entity(self.ecs_entity, Velocity).speed
         return 100.0
     
     @speed.setter
     def speed(self, value):
         """Set speed in Velocity component."""
-        if self.world.has_component(self.ecs_entity, Velocity):
-            self.world.component_for_entity(self.ecs_entity, Velocity).speed = value
+        if  esper.has_component(self.ecs_entity, Velocity):
+             esper.component_for_entity(self.ecs_entity, Velocity).speed = value
     
     @property
     def max_speed(self):
@@ -811,15 +815,15 @@ class AIEntityWrapper(EntityWrapper):
     @property
     def can_attack(self):
         """Get can_attack from Combat component."""
-        if self.world.has_component(self.ecs_entity, Combat):
-            return self.world.component_for_entity(self.ecs_entity, Combat).can_attack
+        if  esper.has_component(self.ecs_entity, Combat):
+            return  esper.component_for_entity(self.ecs_entity, Combat).can_attack
         return False
     
     @can_attack.setter
     def can_attack(self, value):
         """Set can_attack in Combat component."""
-        if self.world.has_component(self.ecs_entity, Combat):
-            self.world.component_for_entity(self.ecs_entity, Combat).can_attack = value
+        if  esper.has_component(self.ecs_entity, Combat):
+             esper.component_for_entity(self.ecs_entity, Combat).can_attack = value
     
     @property
     def vision_radius(self):
@@ -832,23 +836,23 @@ class AIEntityWrapper(EntityWrapper):
     @property
     def is_alive(self):
         """Check if entity is alive."""
-        if self.world.has_component(self.ecs_entity, Health):
-            health = self.world.component_for_entity(self.ecs_entity, Health)
+        if  esper.has_component(self.ecs_entity, Health):
+            health =  esper.component_for_entity(self.ecs_entity, Health)
             return health.current_hp > 0
         return True
     
     def is_alive(self):
         """Method version of is_alive for compatibility."""
-        if self.world.has_component(self.ecs_entity, Health):
-            health = self.world.component_for_entity(self.ecs_entity, Health)
+        if  esper.has_component(self.ecs_entity, Health):
+            health =  esper.component_for_entity(self.ecs_entity, Health)
             return health.current_hp > 0
         return True
     
     # Movement method
     def move(self, dx, dy, dt):
         """Move the entity by setting velocity."""
-        if self.world.has_component(self.ecs_entity, Velocity):
-            vel = self.world.component_for_entity(self.ecs_entity, Velocity)
+        if  esper.has_component(self.ecs_entity, Velocity):
+            vel =  esper.component_for_entity(self.ecs_entity, Velocity)
             # Normalize if needed
             magnitude = math.sqrt(dx*dx + dy*dy)
             if magnitude > 0:
@@ -863,6 +867,6 @@ class AIEntityWrapper(EntityWrapper):
     def tag(self):
         """Get tag (enemy/player). For AI entities, assume 'enemy'."""
         # Could be stored in a Tag component if we add one
-        if self.world.has_component(self.ecs_entity, Input):
+        if  esper.has_component(self.ecs_entity, Input):
             return "player"
         return "enemy"
