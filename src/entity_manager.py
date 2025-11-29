@@ -4,7 +4,6 @@ from src.entities.player.player import Player
 from src.entities.npc.alchemy_pot_npc import AlchemyPotNPC
 from src.entities.npc.magic_crystal_npc import MagicCrystalNPC
 from src.entities.npc.dungeon_portal_npc import DungeonPortalNPC
-from src.entities.enemy.dummy import Dummy
 from src.entities.bullet.bullet import Bullet
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE
 from src.entities.enemy.enemy1 import Enemy1
