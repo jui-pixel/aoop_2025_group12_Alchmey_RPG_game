@@ -5,6 +5,13 @@ from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT
 from src.skills.abstract_skill import Skill
 import math
 
+# --- 為了 ECS 查詢兼容性，假設需要導入 ECS 組件 (例如 Position, Interactable) ---
+# 實際部署時，請確保這些組件已正確導入
+# from src.ecs.components import Position
+# from src.ecs.components import Interactable
+# ----------------------------------------------------------------------------------------
+
+
 class EventManager:
     def __init__(self, game: 'Game'):
         """Initialize event manager to handle game input events.
@@ -17,7 +24,7 @@ class EventManager:
         self.selected_menu_option = 0  # Current selected menu option index
         self.menu_options = ["Enter Lobby", "Exit"]  # Main menu options
         self.npc_menu_options = ["Select Skills", "Start Game"]  # NPC interaction menu options
-        self.selected_npc_menu_option = 0  # Current selected NPC menu option index
+        self.selected_npc_menu_option = 0  # Current selected NPC menu index
         self.selected_skill = 0  # Current selected skill index
         self.selected_skills = []  # List of selected skills
         self.selected_skill_chain_idx = 0  # Current skill chain index
@@ -186,8 +193,8 @@ class EventManager:
         Handle player movement, skill switching (1-9 keys and mouse wheel), skill activation, and skill chain menu (E key if no NPC).
         """
         # if self.game.menu_manager.current_menu:
-        #     print(f"EventManager: Skipping event {event.type} due to active menu {self.game.menu_manager.current_menu.__class__.__name__}")
-        #     return
+        #    print(f"EventManager: Skipping event {event.type} due to active menu {self.game.menu_manager.current_menu.__class__.__name__}")
+        #    return
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_e:
                 interacted = self._handle_interaction()  # Handle NPC interaction
@@ -196,7 +203,7 @@ class EventManager:
             elif event.key in range(pygame.K_1, pygame.K_9 + 1):
                 chain_idx = event.key - pygame.K_1  # 1-9 keys map to chain_idx 0-8
                 self.game.entity_manager.player.switch_skill_chain(chain_idx)
-                print(f"EventManager: Playing - Switched skill chain to {chain_idx}")          
+                print(f"EventManager: Playing - Switched skill chain to {chain_idx}")           
             elif event.key == pygame.K_w:
                 current_disp = self.game.entity_manager.player.displacement
                 self.game.entity_manager.player.displacement = (current_disp[0], -1)  # Move up
@@ -251,24 +258,64 @@ class EventManager:
     def _handle_interaction(self) -> bool:
         """Handle interaction with the nearest NPC.
 
-        Find the nearest NPC within interaction range and trigger interaction.
+        Find the nearest NPC within interaction range (ECS Query) and trigger interaction.
 
         Returns:
             bool: True if interacted with an NPC, False otherwise.
         """
         if not self.game.entity_manager.player:
             return False
+        
         player = self.game.entity_manager.player
-        nearest_npc = None
+        world = self.game.entity_manager.world
+        
+        # 假設 Player Facade (player) 提供 x, y, w, h 屬性來獲取實體中心點
+        player_center_x = player.x + player.w / 2
+        player_center_y = player.y + player.h / 2
+
+        nearest_npc_id = None
         min_distance = float('inf')
-        for npc in self.game.entity_manager.entity_group:
-            if hasattr(npc, 'interaction_range'):
-                distance = npc.calculate_distance_to(player)  # Calculate distance to player
-                if distance <= npc.interaction_range and distance < min_distance:
+        nearest_npc_tag = None
+        nearest_npc_comp = None # Used to store the Interactable component
+
+        # --- ECS 兼容性修正: 使用 world.get_components 查詢 NPC ---
+        # 假設 EntityManager 有一個方法來獲取所有可互動實體及其組件
+        
+        # 由於無法得知實際組件名稱，我們將依賴於 EntityManager 提供一個方法來執行查詢 (最優化耦合)
+        # 假設 EntityManager.get_interactable_entities() 存在
+        if hasattr(self.game.entity_manager, 'get_interactable_entities'):
+            # 假設此方法返回 (entity_id, position_comp, interactable_comp) 的迭代器
+            # 且 position_comp 有 .x/.y，interactable_comp 有 .interaction_range/.tag/.w/.h/.start_interaction
+            # 這樣可以避免在 EventManager 中導入大量 ECS 組件
+            for entity_id, pos_comp, interactable_comp in self.game.entity_manager.get_interactable_entities():
+                # 排除玩家自己 (假設 Facade/EntityFactory 會確保 NPC 不會是玩家ID)
+                if entity_id == player.ecs_entity:
+                    continue
+                    
+                # 獲取 NPC 中心點座標
+                # 假設 Interactable 組件/實體有 w/h 屬性，如果沒有則使用 Position 的 x/y
+                npc_center_x = pos_comp.x + interactable_comp.w / 2 if hasattr(interactable_comp, 'w') else pos_comp.x
+                npc_center_y = pos_comp.y + interactable_comp.h / 2 if hasattr(interactable_comp, 'h') else pos_comp.y
+                
+                dx = player_center_x - npc_center_x
+                dy = player_center_y - npc_center_y
+                distance = math.sqrt(dx**2 + dy**2)
+                
+                if distance <= interactable_comp.interaction_range and distance < min_distance:
                     min_distance = distance
-                    nearest_npc = npc
-        if nearest_npc:
-            nearest_npc.start_interaction()  # Trigger NPC interaction
-            print(f"EventManager: Interacting with {nearest_npc.tag}")
-            return True
+                    nearest_npc_id = entity_id
+                    nearest_npc_tag = interactable_comp.tag
+                    nearest_npc_comp = interactable_comp
+
+            if nearest_npc_id:
+                # 觸發互動，假設 Interactable 組件包含 start_interaction() 方法
+                nearest_npc_comp.start_interaction() 
+                print(f"EventManager: Interacting with {nearest_npc_tag}")
+                return True
+        else:
+            # 如果沒有抽象化的方法，我們無法安全地進行 ECS 查詢，
+            # 因此我們將輸出錯誤訊息，並保持不互動
+            print("EventManager: ECS query helper not found. Cannot perform interaction check.")
+            return False
+        
         return False

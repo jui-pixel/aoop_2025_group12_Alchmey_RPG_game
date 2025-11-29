@@ -5,7 +5,7 @@ import esper # 新增 esper 依賴以讀寫 ECS World
 # 假設所有 ECS Component 和 Skill 類別已從正確路徑導入
 from ...ecs.components import PlayerComponent, Combat, Position, Velocity, Health, Defense
 from ...skills.skill import Skill
-
+import math
 # 為了簡化，假設其他組件的類別名稱如 Combat, Position, Velocity 
 # 可以直接被 esper 的 component_for_entity 找到
 
