@@ -731,13 +731,136 @@ class CombatSystem(esper.Processor):
 class AISystem(esper.Processor):
     def process(self, dt):
         game = getattr(self.world, 'game', None)
-        current_time = game.current_time if game else 0
+        if not game:
+            return
+        
+        current_time = game.current_time if hasattr(game, 'current_time') else 0
         
         for ent, (ai, pos, vel) in self.world.get_components(AI, Position, Velocity):
-            if ai.behavior_tree:
-                # We need to pass an 'entity' object to the behavior tree
-                # because existing nodes expect it.
-                # This is a hybrid approach issue.
-                # Ideally, BehaviorTree should operate on Components, not Entity objects.
-                # For now, we might skip this or assume the Entity object calls the tree in its update (which it does).
-                pass
+            if not ai.behavior_tree:
+                continue
+            
+            # Create entity wrapper for behavior tree
+            wrapper = AIEntityWrapper(ent, self.world, game, ai)
+            
+            # Execute behavior tree with wrapper
+            try:
+                ai.behavior_tree.execute(wrapper, dt, current_time)
+            except Exception as e:
+                print(f"Error executing behavior tree for entity {ent}: {e}")
+
+class AIEntityWrapper(EntityWrapper):
+    """Extended EntityWrapper specifically for AI behavior trees."""
+    def __init__(self, ecs_entity, world, game, ai_component):
+        super().__init__(ecs_entity, world, game)
+        self.ai_component = ai_component
+    
+    # AI-specific properties
+    @property
+    def action_list(self):
+        """Get current action list from AI component."""
+        return self.ai_component.action_list if self.ai_component.action_list else []
+    
+    @action_list.setter
+    def action_list(self, value):
+        """Set action list in AI component."""
+        self.ai_component.action_list = value
+    
+    @property
+    def current_action(self):
+        """Get current action from AI component."""
+        return self.ai_component.current_action
+    
+    @current_action.setter
+    def current_action(self, value):
+        """Set current action in AI component."""
+        self.ai_component.current_action = value
+    
+    @property
+    def actions(self):
+        """Get actions dictionary from AI component."""
+        return self.ai_component.actions if self.ai_component.actions else {}
+    
+    @property
+    def behavior_tree(self):
+        """Get behavior tree from AI component."""
+        return self.ai_component.behavior_tree
+    
+    # Movement properties
+    @property
+    def speed(self):
+        """Get speed from Velocity component."""
+        if self.world.has_component(self.ecs_entity, Velocity):
+            return self.world.component_for_entity(self.ecs_entity, Velocity).speed
+        return 100.0
+    
+    @speed.setter
+    def speed(self, value):
+        """Set speed in Velocity component."""
+        if self.world.has_component(self.ecs_entity, Velocity):
+            self.world.component_for_entity(self.ecs_entity, Velocity).speed = value
+    
+    @property
+    def max_speed(self):
+        """Get max speed (same as speed for now)."""
+        return self.speed
+    
+    # Combat properties
+    @property
+    def can_attack(self):
+        """Get can_attack from Combat component."""
+        if self.world.has_component(self.ecs_entity, Combat):
+            return self.world.component_for_entity(self.ecs_entity, Combat).can_attack
+        return False
+    
+    @can_attack.setter
+    def can_attack(self, value):
+        """Set can_attack in Combat component."""
+        if self.world.has_component(self.ecs_entity, Combat):
+            self.world.component_for_entity(self.ecs_entity, Combat).can_attack = value
+    
+    @property
+    def vision_radius(self):
+        """Get vision radius (stored in AI component or default)."""
+        # Vision radius could be stored in AI component or a separate component
+        # For now, return a default value
+        return 10  # tiles
+    
+    # Health properties
+    @property
+    def is_alive(self):
+        """Check if entity is alive."""
+        if self.world.has_component(self.ecs_entity, Health):
+            health = self.world.component_for_entity(self.ecs_entity, Health)
+            return health.current_hp > 0
+        return True
+    
+    def is_alive(self):
+        """Method version of is_alive for compatibility."""
+        if self.world.has_component(self.ecs_entity, Health):
+            health = self.world.component_for_entity(self.ecs_entity, Health)
+            return health.current_hp > 0
+        return True
+    
+    # Movement method
+    def move(self, dx, dy, dt):
+        """Move the entity by setting velocity."""
+        if self.world.has_component(self.ecs_entity, Velocity):
+            vel = self.world.component_for_entity(self.ecs_entity, Velocity)
+            # Normalize if needed
+            magnitude = math.sqrt(dx*dx + dy*dy)
+            if magnitude > 0:
+                vel.x = (dx / magnitude) * vel.speed
+                vel.y = (dy / magnitude) * vel.speed
+            else:
+                vel.x = 0
+                vel.y = 0
+    
+    # Tag property for team identification
+    @property
+    def tag(self):
+        """Get tag (enemy/player). For AI entities, assume 'enemy'."""
+        # Could be stored in a Tag component if we add one
+        if self.world.has_component(self.ecs_entity, Input):
+            return "player"
+        return "enemy"
