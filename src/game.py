@@ -41,9 +41,8 @@ class Game:
         self.event_manager = EventManager(self)
         self.audio_manager = AudioManager(self)
         self.dungeon_manager = DungeonManager(self)
-        self.storage_manager = StorageManager(self)
-        # 由於 EntityManager 可能依賴於 DungeonManager 和 ECS，我們傳遞 Game 實例
         self.entity_manager = EntityManager(self)
+        self.storage_manager = StorageManager(self)
         self.render_manager = RenderManager(self)
         self.menu_manager = MenuManager(self)
         self.menu_stack = []

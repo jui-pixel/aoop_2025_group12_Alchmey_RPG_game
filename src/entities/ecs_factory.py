@@ -16,7 +16,7 @@ from src.config import TILE_SIZE
 # 假設這些是您自定義的組件 (Components)
 from ..ecs.components import (
     Position, Velocity, Renderable, Collider, Health, Defense, Combat, Buffs, AI, Tag, 
-    NPCInteractComponent, DungeonPortalComponent
+    NPCInteractComponent, DungeonPortalComponent, PlayerComponent,
 )
 
 # 假設這些是您自定義的 AI 行為和行為樹節點
@@ -24,11 +24,75 @@ from ..ecs.ai import (
     EnemyContext,
     ChaseAction, AttackAction, WaitAction, PatrolAction, DodgeAction, 
     SpecialAttackAction, MeleeAttackAction, RandomMoveAction, # 動作類
-    RefillActionList, PerformNextAction, Sequence, Selector, ConditionNode, PlaceholderAction # 行為樹節點
+    RefillActionList, PerformNextAction, Sequence, Selector, ConditionNode # 行為樹節點
 )
 
+def create_player_entity(
+    world: esper, x: float = 0.0, y: float = 0.0, tag: str = "player"
+) -> int:
+    """
+    創建一個 Player ECS 實體並附上所有必要的組件。
+    """
+    player_entity = world.create_entity()
+
+    # 1. 核心位置與標籤
+    world.add_component(player_entity, Tag(tag=tag))
+    world.add_component(player_entity, Position(x=x, y=y))
+    
+    # 2. 視覺屬性
+    # 注意：這裡應該載入圖片，但為了簡化，我們只設定屬性
+    world.add_component(player_entity, Renderable(
+        image=None, 
+        shape="rect",
+        w=TILE_SIZE,
+        h=TILE_SIZE,
+        color=(0, 0, 255), # 藍色方塊代表玩家
+        layer=1 
+    ))
+
+    # 3. 碰撞器
+    world.add_component(player_entity, Collider(
+        w=TILE_SIZE, 
+        h=TILE_SIZE, 
+        pass_wall=False, 
+        collision_group="player"
+    ))
+
+    # 4. 健康與防禦
+    world.add_component(player_entity, Health(
+        max_hp=100,
+        current_hp=100,
+        regen_rate=1.0
+    ))
+    world.add_component(player_entity, Defense(
+        defense=5,
+        element="untyped",
+        invulnerable=False
+    ))
+
+    # 5. 戰鬥能力
+    world.add_component(player_entity, Combat(
+        damage=10,
+        atk_element="physical",
+        tag="player",
+        collision_cooldown=0.5
+    ))
+
+    # 6. 能力增益效果 (Buffs)
+    world.add_component(player_entity, Buffs())
+
+    # 7. 玩家專屬組件 (如技能鏈、能量等)
+    world.add_component(player_entity, PlayerComponent(
+        skill_chain=[],
+        energy=100,
+        max_energy=100,
+        energy_regen_rate=5.0
+    ))
+
+    return player_entity
+
 def create_enemy1_entity(
-    world: esper.World, x: float = 0.0, y: float = 0.0, game: 'Game' = None, tag: str = "enemy",
+    world: esper, x: float = 0.0, y: float = 0.0, game: 'Game' = None, tag: str = "enemy",
     base_max_hp: int = 100, max_speed: float = 2 * TILE_SIZE, element: str = "fire", 
     defense: int = 10, damage: int = 5, w: int = TILE_SIZE // 2, h: int = TILE_SIZE // 2
 ) -> int:

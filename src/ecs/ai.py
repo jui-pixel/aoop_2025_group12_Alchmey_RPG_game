@@ -9,8 +9,8 @@ import random
 import esper
 from src.ecs.components import Position, Velocity, Health, Combat, AI, Collider, Renderable
 from src.config import TILE_SIZE, RED, PASSABLE_TILES
-from src.entities.bullet.bullet import Bullet
-from src.entities.bullet.expand_circle_bullet import ExpandingCircleBullet
+from src.entities.bullet.expand_circle_bullet import create_expanding_circle_bullet
+from src.entities.bullet.bullet import create_standard_bullet_entity
 from src.buffs.element_buff import ELEMENTAL_BUFFS
 
 # --- 實體操作 Facade（用於行為樹內部） ---
@@ -260,22 +260,38 @@ class AttackAction(Action):
         dy = context.player.y - context.y
         distance = math.sqrt(dx**2 + dy**2)
         
-        if distance > 500 or distance == 0:
+        # 檢查距離，避免過遠或重疊時發射
+        if distance > context.vision_radius * TILE_SIZE or distance == 0:
             return False
             
         direction = (dx / distance, dy / distance)
         
-        # ⚠️ 注意: 這裡仍依賴舊的 Bullet 類和 EntityManager.bullet_group，
-        # 理想情況下，應該使用 ECS Factory 創建 Bullet 實體。
-        bullet = Bullet(
-            x=context.x, y=context.y, w=self.bullet_size, h=self.bullet_size, 
-            game=context.game, tag=self.tag, max_speed=self.bullet_speed, 
-            direction=direction, damage=self.damage, buffs=self.effects,
+        # ⚠️ 重構點：使用 ECS 創建子彈實體
+        bullet_entity = create_standard_bullet_entity(
+            world=context.world, # 傳入 esper.World 實例
+            start_pos=(context.x, context.y),
+            w=self.bullet_size,
+            h=self.bullet_size,
+            tag=self.tag,
+            direction=direction,
+            max_speed=self.bullet_speed,
+            lifetime=self.lifetime,
+            damage=self.damage,
+            atk_element=self.atk_element,
+            damage_to_element=self.damage_to_element,
+            max_penetration_count=self.max_penetration_count,
+            collision_cooldown=0.1, # 假設默認冷卻時間
+            buffs=self.buffs,
+            explosion_range=self.explosion_range,
+            explosion_damage=self.explosion_damage,
+            explosion_element=self.explosion_element,
+            explosion_buffs=self.explosion_buffs,
+            percentage_damage=self.percentage_damage,
+            pass_wall=self.pass_wall
         )
-        bullet.image = pygame.Surface((self.bullet_size, self.bullet_size))
-        bullet.image.fill(RED)
-        bullet.rect = bullet.image.get_rect(center=(context.x, context.y))
-        context.game.entity_manager.bullet_group.add(bullet) # 假設仍使用舊的 group 進行渲染
+        
+        # 由於子彈現在是 ECS 實體，它會自動被 MovementSystem 和 CollisionSystem 處理，
+        # 無需再添加到舊的 entity_manager.bullet_group。
         
         return False
 
@@ -424,9 +440,49 @@ class DodgeAction(Action):
         self.timer -= dt
         return True
 
-class SpecialAttackAction(AttackAction):
-    # ... (邏輯使用 context.game.entity_manager.bullet_group 進行子彈生成) ...
-    pass # 繼承 AttackAction 的邏輯，使用 context 訪問屬性
+class SpecialAttackAction(Action):
+    # 重構：不再繼承 AttackAction
+    def __init__(self, action_id: str, damage: int = 5, tag: str = "", outer_radius: float = 2.5 * TILE_SIZE):
+        # 0.0 duration: action executes instantly (spawns the projectile)
+        super().__init__(action_id, duration=0.0)
+        self.damage = damage
+        self.tag = tag
+        self.outer_radius = outer_radius
+        self.expansion_duration = 0.5  # 擴張所需時間
+        self.hide_time = 0.5           # 延遲出現/爆炸的時間 (給玩家反應時間)
+        self.atk_element = "dark"      # 特殊攻擊的元素
+
+    def start(self, context: 'EnemyContext', current_time: float) -> None:
+        # 敵人停止移動並顯示正在施法/準備
+        context.move(0, 0, 0)
+        context.set_current_action(self.action_id)
+    
+    def update(self, context: 'EnemyContext', dt: float, current_time: float) -> bool:
+        if not context.player:
+            return False
+            
+        player_x = context.player.x
+        player_y = context.player.y
+
+        # 在目標 (玩家) 腳下創建一個靜止的、延遲擴張的子彈
+        create_expanding_circle_bullet(
+            world=context.world,
+            x=player_x,
+            y=player_y,
+            direction=(0.0, 0.0),      # 靜止不動
+            tag=self.tag,              # 敵人投射物標籤
+            damage=self.damage * 3,    # 特殊攻擊的高傷害
+            max_speed=0.0,             # 速度為 0，確保它不移動
+            outer_radius=self.outer_radius,
+            expansion_duration=self.expansion_duration,
+            lifetime=self.hide_time + self.expansion_duration + 0.5, # 總壽命 = 隱藏時間 + 擴張時間 + 緩衝
+            hide_time=self.hide_time,  # 延遲出現/擴張
+            atk_element=self.atk_element,
+            explosion_damage_multiplier=1.0 # 由於已經是高傷害，爆炸倍率可設定為 1.0
+        )
+        
+        # 動作在子彈被創造後即完成
+        return False
 
 class MeleeAttackAction(Action):
     def __init__(self, action_id: str, damage: int = 5):

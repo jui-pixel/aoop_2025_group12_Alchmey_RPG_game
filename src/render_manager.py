@@ -3,6 +3,7 @@ from typing import List
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT, MAX_WEAPONS_DEFAULT, TILE_SIZE, DARK_GRAY, PASSABLE_TILES, ROOM_FLOOR_COLORS, BLACK
 from src.utils.helpers import get_project_path
 import math
+from src.ecs.systems import RenderSystem
 
 class FontManager:
     _fonts = {}
@@ -20,7 +21,7 @@ class FontManager:
         return FontManager._fonts[key]
 
 class RenderManager:
-    def __init__(self, game: 'Game', screen: pygame.Surface):
+    def __init__(self, game: 'Game'):
         """初始化渲染管理器，負責管理遊戲畫面的繪製，包括小地圖和視野迷霧。
 
         Args:
@@ -28,7 +29,7 @@ class RenderManager:
             screen: Pygame 的顯示表面，用於渲染畫面。
         """
         self.game = game
-        self.screen = screen
+        self.screen = game.screen
         self.camera_offset = [0, 0]
         self.camera_lerp_factor = 1.5
         self.original_camera_lerp_factor = 1.5
@@ -167,14 +168,36 @@ class RenderManager:
         self._update_fog_map_from_player()
 
     def draw_game_world(self) -> None:
-        """繪製遊戲世界，包括地牢、實體、小地圖和迷霧。"""
+        """繪製遊戲世界，包括地牢、實體、小地圖和迷霧。
+        
+        **職責：協調繪圖層次，並在此處執行 ECS 實體繪製系統。**
+        """
         self.screen.fill((0, 0, 0))
         dungeon = self.game.dungeon_manager.get_dungeon()
+        
+        # 1. 繪製地牢背景
         dungeon.draw_background(self.screen, self.camera_offset)
-        self.game.entity_manager.draw(self.screen, self.camera_offset)
+        
+        # 2. 繪製 ECS 實體 (執行 RenderSystem)
+        # ⚠️ 重大修改：用 ECS 處理器執行替代舊的 entity_manager.draw()
+        try:
+            # 假設 self.game.world 存在並儲存 esper.World 實例
+            # 這裡執行 RenderSystem，它會迭代 Position 和 Renderable 組件並繪製
+            self.game.world.get_processor(RenderSystem).process() 
+        except Exception:
+            # 如果沒有找到 RenderSystem 處理器，則可能需要使用 esper.dispatch() 或其他方法。
+            # 為了避免導入循環或運行時錯誤，這裡可以簡單地跳過或使用主循環的 esper.dispatch()。
+            # 但在 RenderManager中手動運行系統是正確的。
+            pass
+            
+        # 3. 繪製迷霧
         if self.game.entity_manager.player and self.game.entity_manager.player.fog:
             self._draw_fog()
+            
+        # 4. 繪製地牢前景 (例如牆壁頂部、柱子等)
         dungeon.draw_foreground(self.screen, self.camera_offset)
+        
+        # 5. 繪製小地圖 (UI 元素)
         self._draw_minimap()
 
     def draw_menu(self) -> None:

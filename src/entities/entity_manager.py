@@ -11,7 +11,7 @@ from src.entities.ecs_factory import (
     create_dungeon_portal_npc, create_dummy_entity, create_enemy1_entity
 )
 # 引入 Player Facade (假設這是玩家實體的外部接口)
-from src.entities.player.player_facade import PlayerFacade 
+from src.entities.player.player import Player 
 # 引入 ECS 組件 (用於清理和位置操作)
 from src.ecs.components import Position 
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE
@@ -25,9 +25,9 @@ class EntityManager:
         """初始化實體管理器。"""
         self.game = game 
         # 實體管理的核心：esper.World 實例
-        self.world: esper.World = game.world 
+        self.world: esper = game 
         # 玩家 Facade，用於外部系統調用 (如 storage_manager.apply_all_to_player())
-        self.player: Optional['PlayerFacade'] = None 
+        self.player: Optional['Player'] = None 
         
         # 移除 Pygame sprite groups，ECS 通過實體 ID 管理
         # self.entity_group = pygame.sprite.Group() 
@@ -83,7 +83,7 @@ class EntityManager:
             
         # 使用 ECS Factory 創建玩家實體，並儲存 Facade
         player_ecs_id = create_player_entity(self.world, x=player_x, y=player_y) 
-        self.player = PlayerFacade(self.game, player_ecs_id)
+        self.player = Player(self.game, player_ecs_id)
         
         self.game.storage_manager.apply_all_to_player() 
         print(f"EntityManager: 初始化玩家實體 ID: {player_ecs_id}，像素座標 ({player_x}, {player_y})")
@@ -157,7 +157,7 @@ class EntityManager:
                     else:
                         # 創建新玩家 (防禦性編程)
                         player_ecs_id = create_player_entity(self.world, x=entity_x, y=entity_y) 
-                        self.player = PlayerFacade(self.game, player_ecs_id)
+                        self.player = Player(self.game, player_ecs_id)
                         
                     self.game.storage_manager.apply_all_to_player() 
                     self.game.render_manager.camera_offset = [entity_x - SCREEN_WIDTH // 2, entity_y - SCREEN_HEIGHT // 2] 

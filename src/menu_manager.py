@@ -4,14 +4,14 @@ import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class MenuManager:
-    def __init__(self, screen, game):
+    def __init__(self, game):
         """初始化菜單管理器，負責管理遊戲中的各個菜單。
 
         Args:
             screen: Pygame 的顯示表面，用於渲染菜單。
             game: 遊戲主類的實例，用於與其他模組交互。
         """
-        self.screen = screen  # 保存 Pygame 顯示表面
+        self.screen = game.screen  # 保存 Pygame 顯示表面
         self.game = game  # 保存遊戲實例引用
         self.menus = {}  # 用於儲存所有菜單的字典，鍵為菜單名稱，值為菜單實例
         self.current_menu = None  # 當前顯示的菜單，初始為空

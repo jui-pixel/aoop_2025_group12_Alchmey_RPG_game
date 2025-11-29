@@ -3,7 +3,7 @@ from typing import List, Tuple, Optional, Dict
 import pygame
 import esper # 新增 esper 依賴以讀寫 ECS World
 # 假設所有 ECS Component 和 Skill 類別已從正確路徑導入
-# from ...ecs.components import PlayerComponent, Position, Combat # 假設導入
+from ...ecs.components import PlayerComponent, Combat, Position, Velocity
 from ...skills.skill import Skill
 
 # 為了簡化，假設其他組件的類別名稱如 Combat, Position, Velocity 

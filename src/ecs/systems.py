@@ -1,7 +1,7 @@
 import esper
 import pygame
 import math
-from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider, Player, PlayerComponent
+from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider, PlayerComponent
 from src.config import TILE_SIZE, PASSABLE_TILES, SCREEN_WIDTH, SCREEN_HEIGHT
 
 class MovementSystem(esper.Processor):
@@ -77,7 +77,7 @@ class RenderSystem(esper.Processor):
         game = getattr( esper, 'game', None)
         if not game:
             return
-            
+        
         screen = game.screen
         camera_offset = game.render_manager.camera_offset
         

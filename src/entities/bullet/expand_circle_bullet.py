@@ -45,7 +45,7 @@ def load_expansion_frames(outer_radius: float) -> List[pygame.Surface]:
 # ----------------- 實體工廠函數 -----------------
 
 def create_expanding_circle_bullet(
-    world: esper.World,
+    world: esper,
     x: float,
     y: float,
     direction: Tuple[float, float],
