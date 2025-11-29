@@ -28,7 +28,7 @@ class Player(MovementEntity, HealthEntity, AttackEntity, BuffableEntity):
         BuffableEntity.__init__(self, game, ecs_entity)
         
         # 技能相關屬性
-        self.skill_chain: List[List[Skill]] = [[] for _ in range(4)] # 假設默認 4 條鏈
+        self.skill_chain: List[List[Skill]] = [[] for _ in range(9)] # 假設默認 9 條鏈
         self.current_skill_chain_idx = 0
         self.current_skill_idx = 0
         self.max_skill_chains = 4 

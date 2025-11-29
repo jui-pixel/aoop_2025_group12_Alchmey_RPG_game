@@ -1,9 +1,50 @@
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, TYPE_CHECKING
+if TYPE_CHECKING:
+    from .src.skills.skill import Skill 
+    SkillType = Skill 
+else:
+    # 運行時可能不需要實際的 Skill 類別，用 Any 替代或忽略
+    SkillType = object
+
 
 @dataclass
-class Player:
-    pass
+class PlayerComponent:
+    """
+    玩家專屬的資料組件 (ECS Component)。
+    包含了玩家的能量、技能鏈、視野等狀態數據。
+    """
+    # --- 技能鏈 (Skill Chain) 屬性 ---
+    
+    # max_skill_chains (Player 類別中推斷為 4)
+    max_skill_chains: int = 4
+    
+    # max_skill_chain_length (程式碼中為 8)
+    max_skill_chain_length: int = 8
+    
+    # skill_chain: 技能鏈列表。由於是可變類型 (List)，使用 field(default_factory) 確保每個實例獨立。
+    skill_chain: List[List[SkillType]] = field(default_factory=lambda: [[] for _ in range(4)])
+    
+    # 當前活動技能鏈索引
+    current_skill_chain_idx: int = 0
+    
+    # 當前活動技能在鏈中的索引
+    current_skill_idx: int = 0
+    
+    # --- 能量 (Energy) 屬性 ---
+    base_max_energy: float = 100.0
+    
+    # max_energy、energy 默認與 base_max_energy 相同
+    max_energy: float = field(default=100.0) 
+    energy: float = field(default=100.0)
+    
+    energy_regen_rate: float = 20.0
+    original_energy_regen_rate: float = 20.0
+    
+    # --- 視野與貨幣屬性 ---
+    fog: bool = True           # 是否啟用戰爭迷霧
+    vision_radius: int = 10    # 視野半徑 (以地圖格計算)
+    mana: int = 0              # 貨幣單位 (在您的程式碼片段中為 0)
 
 @dataclass
 class Position:
