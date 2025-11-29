@@ -114,10 +114,15 @@ class PlayerComponent:
     energy_regen_rate: float = 20.0
     original_energy_regen_rate: float = 20.0
     
+    # current_shield 屬性 (PlayerComponent 中新增)
+    current_shield: int = 0
+    max_shield: int = 0
+    
     # --- 視野與貨幣屬性 ---
     fog: bool = True           # 是否啟用戰爭迷霧
     vision_radius: int = 10    # 視野半徑 (以地圖格計算)
     mana: int = 0              # 貨幣單位 (在您的程式碼片段中為 0)
+
 
 @dataclass
 class Position:
