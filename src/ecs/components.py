@@ -135,6 +135,8 @@ class Health:
     current_hp: int = 100
     max_shield: int = 0
     current_shield: int = 0
+    regen_rate: float = 0.0
+    
 
 @dataclass
 class Defense:
@@ -236,3 +238,4 @@ class DungeonPortalComponent:
         default_factory=lambda: [{'name': 'Test Dungeon', 'level': 1, 'dungeon_id': 1}]
     )
     portal_effect_active: bool = False
+
