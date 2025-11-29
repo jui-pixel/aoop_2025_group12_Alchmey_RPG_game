@@ -25,7 +25,7 @@ class BuffSkill(Skill):
 
         def on_apply(entity):
             if shield_level > 0:
-                entity._current_shield += shield_level * 10
+                entity.current_shield += shield_level * 10
                 entity.current_shield = min(entity.current_shield, entity.max_shield)
             if remove_element_debuff and hasattr(entity, 'remove_buff'):
                 for buff in entity.buffs[:]:

@@ -3,7 +3,7 @@ from typing import List, Tuple, Optional, Dict
 import pygame
 import esper # 新增 esper 依賴以讀寫 ECS World
 # 假設所有 ECS Component 和 Skill 類別已從正確路徑導入
-from ...ecs.components import PlayerComponent, Combat, Position, Velocity, Health, Defense, Renderable
+from ...ecs.components import PlayerComponent, Combat, Position, Velocity, Health, Defense, Renderable, Buffs
 from ...skills.skill import Skill
 import math
 # 為了簡化，假設其他組件的類別名稱如 Combat, Position, Velocity 
@@ -54,6 +54,12 @@ class Player:
     def _get_renderable_comp(self):
         """獲取 Renderable 組件 (用於寬高管理)"""
         return self.world.component_for_entity(self.ecs_entity, Renderable)
+    def _get_combat_comp(self) -> 'Combat':
+        """獲取 Combat 組件 (用於攻擊管理)"""
+        return self.world.component_for_entity(self.ecs_entity, Combat)
+    def _get_buffs_comp(self):
+        """獲取 Buffs 組件 (用於 Buff 管理)"""
+        return self.world.component_for_entity(self.ecs_entity, Buffs)
     # --- 邏輯方法重構 ---
 
     def update(self, dt: float, current_time: float) -> None:
@@ -151,6 +157,12 @@ class Player:
         except esper.NoSuchComponent:
             # 如果 Combat 組件不存在，則默認允許攻擊
             return True 
+    
+    def add_buff(self, buff) -> None:
+        """Add a buff to the player. 假設有一個 Buffs 組件來管理 Buff 列表。"""
+        buffs_comp = self._get_buffs_comp()
+        buffs_comp.active_buffs.append(buff)
+        buff.on_apply(self)
 
     # --- Property 訪問器 (用於取代直接屬性訪問) ---
     @property
