@@ -67,6 +67,13 @@ def create_player_entity(
         max_shield=5,    # 初始基底 Shield
         current_shield=0 # 初始 Shield 值
     ))
+    world.add_component(player_entity, Defense(
+        defense=5,
+        dodge_rate=0.05,
+        element="untyped",
+        resistances={},
+        invulnerable=False
+    ))
 
     # 5. 戰鬥能力
     world.add_component(player_entity, Combat(
@@ -84,7 +91,6 @@ def create_player_entity(
         energy=100,
         max_energy=100,
         energy_regen_rate=5.0,
-        base_max_speed=TILE_SIZE * 5, # 初始基底速度
         base_energy_regen_rate=5.0,  # 初始基底能量回覆
         elements=set(),
         amplifiers={},
@@ -94,6 +100,13 @@ def create_player_entity(
 
     # 8. tag組件
     world.add_component(player_entity, Tag(tag="player"))
+    
+    # 9. 速度組件
+    world.add_component(player_entity, Velocity(
+        x=0.0,
+        y=0.0,
+        speed=4*TILE_SIZE # 基底移動速度
+    ))
     
     return player_entity
 
