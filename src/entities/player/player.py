@@ -284,3 +284,18 @@ class Player:
     def fog(self) -> bool: return self._get_player_comp().fog 
     @property
     def vision_radius(self) -> int: return self._get_player_comp().vision_radius
+
+    @property
+    def mana(self) -> int: return self._get_player_comp().mana
+    @mana.setter
+    def mana(self, value: int) -> None: self._get_player_comp().mana = value
+    
+    @property
+    def current_shield(self) -> int: return self._get_player_comp().current_shield
+    @current_shield.setter
+    def current_shield(self, value: int) -> None: self._get_player_comp().current_shield = value
+    
+    @property
+    def max_shield(self) -> int: return self._get_player_comp().max_shield
+    @max_shield.setter
+    def max_shield(self, value: int) -> None: self._get_player_comp().max_shield = value
