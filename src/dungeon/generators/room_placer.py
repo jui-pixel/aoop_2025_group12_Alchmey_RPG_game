@@ -95,11 +95,11 @@ class RoomPlacer:
         
         # 創建房間
         room = Room(
+            id=self.next_room_id,
             x=room_x,
             y=room_y,
             width=room_width,
             height=room_height,
-            room_id=self.next_room_id
         )
         
         self.next_room_id += 1

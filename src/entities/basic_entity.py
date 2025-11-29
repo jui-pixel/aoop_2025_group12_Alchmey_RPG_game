@@ -53,4 +53,3 @@
         if self.ecs_entity is not None and self.game and hasattr(self.game, 'ecs_world'):
              self.game.ecs_world.delete_entity(self.ecs_entity)
              self.ecs_entity = None
-```

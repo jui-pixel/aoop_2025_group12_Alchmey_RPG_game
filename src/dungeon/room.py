@@ -18,12 +18,12 @@ class RoomType(Enum):
 @dataclass
 class Room:
     # 房間類，用來表示地牢中的單個房間，包含位置、尺寸、瓦片和類型等資訊
-    id: int  # 房間的唯一標識符，每個房間有獨一無二的 ID
+    id: int   # 房間的唯一標識符，每個房間有獨一無二的 ID
     x: float  # 房間左上角的 x 座標（瓦片單位）
     y: float  # 房間左上角的 y 座標（瓦片單位）
     width: float  # 房間的寬度（以瓦片數為單位）
     height: float  # 房間的高度（以瓦片數為單位）
-    tiles: List[List[str]]  # 房間的瓦片陣列，儲存每個瓦片的類型（例如 'Room_floor'、'End_room_portal'）
+    tiles: List[List[str]] = None # 房間的瓦片陣列，儲存每個瓦片的類型（例如 'Room_floor'、'End_room_portal'）
     room_type: RoomType = RoomType.EMPTY  # 房間的類型，預設為空房間
     connections: List[Tuple[int, str]] = None  # 房間連接到其他房間的列表，包含目標房間 ID 和方向（預設為 None）
 
@@ -32,10 +32,15 @@ class Room:
         if self.connections is None:
             self.connections = []
         # 根據房間類型設置瓦片
-        self._configure_tiles()
+        self.generate_tiles()
 
-    def _configure_tiles(self) -> None:
+    def generate_tiles(self) -> None:
         """Configure tiles based on room type with optimized item placement"""
+        if self.tiles is None:
+            # 初始化瓦片為空地板
+            self.tiles = [['Room_floor' for _ in range(int(self.width))] 
+                          for _ in range(int(self.height))]
+        
         # Calculate usable floor area (excluding walls)
         floor_width = int(self.width) - 2
         floor_height = int(self.height) - 2
@@ -137,6 +142,10 @@ class Room:
             self.tiles[center_y][center_x] = 'NPC_spawn'
         # 未來可為其他房間類型（如 MONSTER、TRAP、REWARD）添加特殊瓦片邏輯
 
+    def get_tiles(self) -> List[List[str]]:
+        """返回房間的瓦片陣列"""
+        return self.tiles
+    
     @property
     def is_end_room(self) -> bool:
         """檢查房間是否為終點房間，向後相容"""
