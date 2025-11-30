@@ -1,40 +1,45 @@
 # dungeon/dungeon.py
 from typing import List, Tuple, Optional, Dict
 from dataclasses import dataclass
+import pygame 
+import os # 用於路徑操作 (雖然主要在 ResourceLoader 中使用)
 
 # --- 1. 導入數據結構 ---
-# 假設這些類別已從原始的 `dungeon.py` 拆分出來
 from .room import Room 
 from .bridge import Bridge 
 from .bsp_node import BSPNode
 
-# --- 2. 導入 Builder 和 Config (已修正) ---
+# --- 2. 導入 Builder 和 Config ---
 from .builder.dungeon_builder import DungeonBuilder 
 from .config.dungeon_config import ( 
-    DungeonConfig, RoomType, # 導入 DungeonConfig 類和 RoomType Enum
-    TILE_OUTSIDE, TILE_FLOOR, TILE_DOOR # 導入核心瓦片字串常量 (用於方法簽名或回傳值)
+    DungeonConfig, RoomType, 
+    TILE_OUTSIDE, TILE_FLOOR, TILE_DOOR, TILE_WALL 
 ) 
-# 注意：舊的 GRID_WIDTH, GRID_HEIGHT 等現在是透過 DungeonConfig 實例訪問
+
+# --- 3. 導入 Pygame 相關常數 (假設來自頂層 src/config.py) ---
+try:
+    # 這些常數用於繪圖方法中的屏幕尺寸和回退顏色
+    from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, GRAY, BLACK, DARK_GRAY 
+except ImportError:
+    print("警告：無法導入 src.config 中的屏幕/顏色常量。使用默認值。")
+    SCREEN_WIDTH, SCREEN_HEIGHT = 1400, 750
+    GRAY, BLACK, DARK_GRAY = (100, 100, 100), (0, 0, 0), (40, 40, 40)
+
 
 # ======================================================================
-#  重構後的 Dungeon 類：僅負責狀態管理與對外接口 (門面)
+#  Dungeon 類：狀態管理、門面與繪圖接口
 # ======================================================================
 
 class Dungeon:
     """
     地牢狀態管理與門面類 (Facade)。
-    
-    此類負責儲存已生成地牢的所有狀態數據，並提供簡單的接口供遊戲系統存取。
-    所有的複雜生成邏輯都委派給 DungeonBuilder 處理。
     """
     
     def __init__(self, config: Optional[DungeonConfig] = None):
         """
         初始化地牢的資料結構。
-        可選擇性傳入 DungeonConfig 實例，否則使用默認配置。
         """
-        # --- 配置管理 (新整合點) ---
-        # 優先使用傳入的配置，否則創建一個默認配置
+        # --- 配置管理 ---
         self.config: DungeonConfig = config if config is not None else DungeonConfig()
         
         # --- 數據狀態 ---
@@ -42,66 +47,168 @@ class Dungeon:
         self.bridges: List[Bridge] = []  
         self.bsp_tree: Optional[BSPNode] = None  
         
-        # 從配置中讀取網格尺寸
         self.grid_width = self.config.grid_width  
         self.grid_height = self.config.grid_height  
         self.dungeon_tiles: List[List[str]] = [] 
         
-        # 雜項狀態
         self.next_room_id = 1  
         self.total_appeared_rooms = 0  
 
+        # --- 貼圖集資源 (由 ResourceLoader 注入) ---
+        self.background_tileset: Optional[Dict[str, pygame.Surface]] = None
+        self.foreground_tileset: Optional[Dict[str, pygame.Surface]] = None
+
         # --- 核心整合點：Builder ---
-        # 創建 DungeonBuilder 實例，並將自身的引用傳遞給它
         self.builder: DungeonBuilder = DungeonBuilder(self) 
 
     def initialize_dungeon(self) -> None:
-        """
-        地牢生成入口。委派給 DungeonBuilder 執行整個生成流程。
-        """
+        """地牢生成入口。委派給 DungeonBuilder 執行整個生成流程。"""
         print("Dungeon: 啟動 DungeonBuilder 進行地牢生成...")
-        # 注意：DungeonBuilder 必須已被修改以接收 Dungeon 實例，並從 self.dungeon.config 中讀取參數
         self.builder.initialize_dungeon()
         print("Dungeon: 生成完成，地牢數據已準備就緒。")
 
+    def initialize_lobby(self) -> None:
+        """
+        僅初始化一個大廳房間的地牢 (常用於遊戲起始點)。
+        注意：此方法調用 DungeonBuilder 的內部方法，體現 Dungeon 作為門面。
+        """
+        # 1. 重設狀態，並使用 Builder 的網格初始化方法
+        self.builder._initialize_grid()
+        self.rooms = []
+        self.bridges = []
+        self.next_room_id = 0
+        
+        # 2. 從 Config 中獲取大廳尺寸
+        lobby_width = self.config.lobby_width
+        lobby_height = self.config.lobby_height
+        
+        # 3. 計算大廳中心位置
+        lobby_x = (self.grid_width - lobby_width) // 2
+        lobby_y = (self.grid_height - lobby_height) // 2
+        
+        # 4. 生成並放置房間 (委派給 Builder)
+        lobby_room = self.builder.generate_room(
+            lobby_x, lobby_y, lobby_width, lobby_height, self.next_room_id, RoomType.LOBBY
+        )
+        
+        self.next_room_id += 1
+        self.rooms.append(lobby_room)
+        self.total_appeared_rooms = len(self.rooms)
+        
+        self.builder._place_room(lobby_room) 
+        self.builder._add_walls() 
+        self.builder.adjust_wall() 
+        
+        print(f"初始化大廳：房間 {lobby_room.id} 在 ({lobby_x}, {lobby_y})，尺寸 {lobby_width}x{lobby_height}")
 
+
+    def set_tilesets(self, background_ts: Dict[str, pygame.Surface], foreground_ts: Dict[str, pygame.Surface]) -> None:
+        """設置地牢所需的貼圖集。"""
+        self.background_tileset = background_ts
+        self.foreground_tileset = foreground_ts
+    
     # ==================================================================
-    #  門面存取方法 (Facade Accessors)：供遊戲系統/ECS System 使用
+    #  繪圖接口 (Drawing Accessors)
     # ==================================================================
+
+    def draw_background(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
+        """
+        Draw the dungeon background tiles, optimized by camera clipping.
+        """
+        offset_x, offset_y = camera_offset
+        tile_size = self.config.tile_size # 使用配置
+        
+        if not self.background_tileset: return
+
+        # 計算瓦片範圍: 攝影機視圖 + 2 瓦片緩衝區
+        start_tile_x = max(0, int((offset_x - 2 * tile_size) / tile_size))
+        end_tile_x = min(self.grid_width, int((offset_x + SCREEN_WIDTH + 2 * tile_size) / tile_size))
+        start_tile_y = max(0, int((offset_y - 2 * tile_size) / tile_size))
+        end_tile_y = min(self.grid_height, int((offset_y + SCREEN_HEIGHT + 2 * tile_size) / tile_size))
+
+        # 繪製背景瓦片
+        for tile_y in range(start_tile_y, end_tile_y):
+            for tile_x in range(start_tile_x, end_tile_x):
+                # 安全邊界檢查
+                if not (0 <= tile_y < self.grid_height and 0 <= tile_x < self.grid_width): continue
+                     
+                tile_type = self.dungeon_tiles[tile_y][tile_x]
+                tile_image = self.background_tileset.get(tile_type, None)
+                screen_x = tile_x * tile_size - offset_x
+                screen_y = tile_y * tile_size - offset_y
+
+                if tile_image:
+                    screen.blit(tile_image, (screen_x, screen_y))
+                else:
+                    # 回退到彩色矩形，使用配置中的通行性判斷
+                    is_passable = self.config.is_tile_passable(tile_type)
+                    color = GRAY if is_passable else BLACK
+                    pygame.draw.rect(screen, color, (screen_x, screen_y, tile_size, tile_size))
+
+    def draw_foreground(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
+        """
+        Draw the dungeon foreground walls (2.5D effect).
+        """
+        offset_x, offset_y = camera_offset
+        tile_size = self.config.tile_size # 使用配置
+        half_tile = tile_size * 0.5
+        
+        if not self.foreground_tileset: return
+
+        # 瓦片範圍計算與背景相同 (使用 SCREEN_WIDTH, SCREEN_HEIGHT)
+        start_tile_x = max(0, int((offset_x - 2 * tile_size) / tile_size))
+        end_tile_x = min(self.grid_width, int((offset_x + SCREEN_WIDTH + 2 * tile_size) / tile_size))
+        start_tile_y = max(0, int((offset_y - 2 * tile_size) / tile_size))
+        end_tile_y = min(self.grid_height, int((offset_y + SCREEN_HEIGHT + 2 * tile_size) / tile_size))
+
+        # 繪製牆壁作為前景 (不可通行瓦片)
+        for tile_y in range(start_tile_y, end_tile_y):
+            for tile_x in range(start_tile_x, end_tile_x):
+                if not (0 <= tile_y < self.grid_height and 0 <= tile_x < self.grid_width): continue
+                     
+                tile_type = self.dungeon_tiles[tile_y][tile_x]
+                
+                # 繪製所有不可通行的瓦片
+                if not self.config.is_tile_passable(tile_type):
+                    tile_image = self.foreground_tileset.get(tile_type, None)
+                    screen_x = tile_x * tile_size - offset_x
+                    
+                    # 2.5D 效果：將牆壁向上偏移半個瓦片高度
+                    screen_y = (tile_y * tile_size - offset_y) - half_tile 
+                    
+                    if tile_image:
+                        wall_image = tile_image
+                        screen.blit(wall_image, (screen_x, screen_y))
+                    else:
+                        # 回退到彩色矩形
+                        wall_color = DARK_GRAY # 牆壁使用 DARK_GRAY
+                        # 注意這裡的矩形繪製是完整的瓦片大小，但位置上移了 half_tile
+                        pygame.draw.rect(screen, wall_color, (screen_x, screen_y, tile_size, tile_size))
+
+
+    # --- 門面存取方法 (保持不變) ---
 
     def get_tile(self, x: int, y: int) -> str:
-        """
-        獲取指定座標的瓦片類型。
-        """
-        # 使用 self.grid_width/height 進行邊界檢查
+        # ... (邏輯不變)
         if 0 <= y < self.grid_height and 0 <= x < self.grid_width:
             return self.dungeon_tiles[y][x]
-        # 使用配置中定義的外部瓦片常量
         return TILE_OUTSIDE 
 
     def is_passable(self, x: int, y: int) -> bool:
-        """
-        檢查指定座標是否可行走 (用於移動系統)。
-        (調用 Config 類提供的強化方法來判斷通行性)
-        """
+        # ... (邏輯不變)
         tile = self.get_tile(x, y)
         return self.config.is_tile_passable(tile)
 
 
     def get_start_position(self) -> Tuple[int, int]:
-        """
-        回傳玩家的起始房間中心座標 (像素座標)。
-        """
+        # ... (邏輯不變)
         try:
-            # 使用 RoomType Enum 來查找起始房間
             start_room = next(
                 r for r in self.rooms if r.room_type == RoomType.START
             )
             
-            # 使用 config.tile_size 進行座標轉換
             tile_size = self.config.tile_size
             
-            # 回傳以 TILE_SIZE 為單位的像素座標
             center_x = int(start_room.x + start_room.width // 2) * tile_size
             center_y = int(start_room.y + start_room.height // 2) * tile_size
             return center_x, center_y

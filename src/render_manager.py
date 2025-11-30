@@ -120,7 +120,8 @@ class RenderManager:
         dungeon = self.game.dungeon_manager.get_dungeon()
         minimap_surface = pygame.Surface((self.minimap_width, self.minimap_height))
         minimap_surface.fill((0, 0, 0))
-
+        if not self.fog_map:
+            self._initialize_fog_map()
         for y in range(dungeon.grid_height):
             for x in range(dungeon.grid_width):
                 if self.fog_map[y][x]:
