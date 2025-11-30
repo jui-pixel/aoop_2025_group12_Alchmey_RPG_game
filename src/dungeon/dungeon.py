@@ -83,8 +83,8 @@ class Dungeon:
         lobby_height = self.config.lobby_height
         
         # 3. 計算大廳左上位置
-        lobby_x = 0
-        lobby_y = 0
+        lobby_x = 2
+        lobby_y = 2
         
         # 4. 生成並放置房間 (委派給 Builder)
         lobby_room = self.builder.generate_room(
@@ -144,7 +144,8 @@ class Dungeon:
                 else:
                     # 回退到彩色矩形，使用配置中的通行性判斷
                     is_passable = self.config.is_tile_passable(tile_type)
-                    color = GRAY if is_passable else BLACK
+                    import random
+                    color = GRAY if is_passable else random.choice([BLACK, DARK_GRAY])
                     pygame.draw.rect(screen, color, (screen_x, screen_y, tile_size, tile_size))
 
     def draw_foreground(self, screen: pygame.Surface, camera_offset: List[float]) -> None:
