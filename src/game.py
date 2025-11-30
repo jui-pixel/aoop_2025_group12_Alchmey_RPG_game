@@ -131,7 +131,16 @@ class Game:
                 elif menu_name == 'crystal_menu':
                     new_menu_instance = CrystalMenu(self, data)
                 elif menu_name == 'dungeon_menu':
-                    new_menu_instance = DungeonMenu(self, data)
+                    # 【修正點】解包 data 並將其傳遞給 DungeonMenu
+                    dungeons = data.get('dungeons', []) if isinstance(data, dict) else data 
+                    npc_facade = data.get('npc_facade') if isinstance(data, dict) else None
+                    
+                    if not isinstance(dungeons, list):
+                        # 處理舊的調用方式，如果 data 仍是 List[Dict]
+                        dungeons = data 
+                        npc_facade = None # 此時無法獲取 Facade
+
+                    new_menu_instance = DungeonMenu(self, dungeons, npc_facade)
                 elif menu_name == 'element_menu':
                     new_menu_instance = ElementMenu(self, data)
                 elif menu_name == 'main_material_menu':
