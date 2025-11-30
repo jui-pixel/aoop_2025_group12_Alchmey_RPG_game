@@ -42,13 +42,15 @@ class DungeonPortalNPC(AbstractNPCFacade): # <--- 繼承抽象基類
         return self._get_portal_comp().portal_effect_active
 
     def start_interaction(self) -> None:
-        """Show dungeon selection menu via MenuManager. (實作 AbstractNPCFacade 抽象方法)"""
-        interact_comp = self._get_interact_comp() # 繼承自父類
+        """Show dungeon selection menu via MenuManager."""
+        interact_comp = self._get_interact_comp()
         interact_comp.is_interacting = True
         
-        if self.game and self.game.menu_manager:
+        if self.game:
             dungeons = self._get_portal_comp().available_dungeons
-            self.game.show_menu('dungeon_menu', dungeons)
+            # 【修正點】將數據打包成字典，包含 dungeons 列表和 npc_facade 實例
+            menu_data = {'dungeons': dungeons, 'npc_facade': self}
+            self.game.show_menu('dungeon_menu', menu_data)
         print(f"DungeonPortalNPC: Opening dungeon menu with {len(dungeons)} dungeons")
 
     def end_interaction(self) -> None:
