@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, TYPE_CHECKING, Tuple
+from typing import Optional, List, Dict, TYPE_CHECKING, Tuple, Callable
 from ..config import TILE_SIZE
 
 if TYPE_CHECKING:
@@ -238,6 +238,11 @@ class NPCInteractComponent:
     # 運行時狀態
     is_interacting: bool = False
     show_interact_prompt: bool = False # 用於 InteractionSystem 和 RenderSystem
+    
+    # ✨ 函數佔位符：使用 Callable 類型提示
+    # Callable[[], None] 表示一個不接受任何參數且不返回任何值 (None) 的函數。
+    # field(default=None) 表示初始值為 None，將在實體創建後被設置為 NPC Facade 的方法。
+    start_interaction: Callable[[], None] = field(default=None)
 
 @dataclass
 class DungeonPortalComponent:

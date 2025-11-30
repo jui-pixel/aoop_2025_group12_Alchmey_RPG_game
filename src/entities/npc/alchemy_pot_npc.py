@@ -1,4 +1,4 @@
-# src/entities/npc/alchemy_pot_npc.py (重構後)
+# src/entities/npc/alchemy_pot_npc.py (修正版本)
 
 import esper
 import pygame
@@ -14,8 +14,6 @@ from src.config import *
 
 # 假設導入您在上一輪創建的抽象基類
 from .base_npc_facade import AbstractNPCFacade 
-# 假設導入煉金鍋專屬組件
-# from src.ecs.components import AlchemyPotComponent # 實際專案中請確保導入路徑正確
 
 class AlchemyPotNPC(AbstractNPCFacade): # <--- 繼承抽象基類
     """
@@ -23,44 +21,51 @@ class AlchemyPotNPC(AbstractNPCFacade): # <--- 繼承抽象基類
     繼承自 AbstractNPCFacade，僅保留特有的煉金邏輯。
     """
     
-    # 構造函數 __init__ 已被 AbstractNPCFacade 繼承，無需重複定義。
+    def __init__(self, game, ecs_entity: int):
+        super().__init__(game, ecs_entity)
+        
+        # 確保在初始化時將 Facade 方法指派給 Component 屬性，供 ECS 系統使用。
+        interact_comp = self._get_interact_comp()
+        interact_comp.tag = "alchemy_pot_npc" 
+        interact_comp.start_interaction = self.start_interaction # <--- 關鍵：將 Facade 方法連結到 Component
+        # 注意: end_interaction 通常不需要被系統直接調用，但如果需要，也可以在此處設置
 
     # --- 輔助方法：獲取核心組件 ---
-    
-    # 以下通用組件獲取方法已移除，因為它們在 AbstractNPCFacade 中：
-    # _get_NPCinteract_comp
-    # _get_health_comp
-    # _get_defense_comp
-    # _get_position_comp
+    # 所有通用 getter (如 _get_health_comp, _get_defense_comp) 皆已移除，由 AbstractNPCFacade 提供。
 
-    # --- 核心交互方法 (邏輯保持不變，但操作 Component) ---
+    # --- 核心交互方法 (已修復組件獲取器名稱) ---
         
-    def calculate_distance_to(self, other_entity: 'Player') -> float:
-        """計算到另一個實體（例如玩家）的距離。
-        *** (此方法已在 AbstractNPCFacade 中實作，但因您要求 "僅去除重複的參數" 
-        並未修改邏輯，此處已將其移除，改為繼承父類。) ***
-        """
-        return super().calculate_distance_to(other_entity) # 實際程式碼中不需要這行，只需刪除原始方法即可自動繼承
+    # calculate_distance_to 方法已在 AbstractNPCFacade 中實作，故移除此處的冗餘定義。
     
+    @property
+    def interaction_range(self) -> float:
+        """從父類繼承，確保使用正確組件的範圍。"""
+        # 由於 AbstractNPCFacade.interaction_range 已經使用 self._get_interact_comp()
+        # 且 NPCInteractComponent 包含 interaction_range，此處可直接依賴父類實現。
+        return super().interaction_range 
+
     def start_interaction(self) -> None:
         """Initiate alchemy menu. (實作 AbstractNPCFacade 抽象方法)"""
-        comp = self._get_NPCinteract_comp()
+        # ✨ 修正點: 改用繼承的 self._get_interact_comp()
+        comp = self._get_interact_comp()
         comp.is_interacting = True
         if self.game and self.game.menu_manager:
-            # 假設 menu_manager 存在，且已載入 alchemy_options 到 Component 中
             self.game.menu_manager.show_menu('alchemy_menu', comp.alchemy_options)
         print("Alchemy Pot NPC: Open alchemy synthesis menu.")
 
     def end_interaction(self) -> None:
         """End interaction. (實作 AbstractNPCFacade 抽象方法)"""
-        comp = self._get_NPCinteract_comp()
+        # ✨ 修正點: 改用繼承的 self._get_interact_comp()
+        comp = self._get_interact_comp()
         comp.is_interacting = False
         if self.game and self.game.menu_manager:
             self.game.menu_manager.hide_menu('alchemy_menu')
 
     def synthesize_item(self, ingredients: List[str]) -> Optional[str]:
         """Perform alchemy synthesis based on ingredients. (特有邏輯，保留)"""
-        comp = self._get_NPCinteract_comp()
+        # ✨ 修正點: 改用繼承的 self._get_interact_comp()
+        comp = self._get_interact_comp()
+        
         for option in comp.alchemy_options:
             if sorted(option['ingredients']) == sorted(ingredients):
                 result = option['result']
@@ -77,17 +82,17 @@ class AlchemyPotNPC(AbstractNPCFacade): # <--- 繼承抽象基類
     def take_damage(self, factor: float = 1.0, element: str = "untyped", base_damage: int = 0, 
                      max_hp_percentage_damage: int = 0, current_hp_percentage_damage: int = 0, 
                      lose_hp_percentage_damage: int = 0, cause_death: bool = True) -> Tuple[bool, int]:
-        """NPC takes minimal damage and regenerates. (保留特殊邏輯，僅使用繼承的組件獲取器)"""
+        """NPC takes minimal damage and regenerates. (保留特殊邏輯，使用繼承的組件獲取器)"""
         
         defense_comp = self._get_defense_comp() # 繼承自父類
         if defense_comp.invulnerable:
             return False, 0
             
-        # ⚠️ 注意：這段邏輯是特殊的自我修復，故保留。
-        damage = base_damage # 簡易模擬
+        # 邏輯保留：特殊的自我修復行為
+        damage = base_damage
         if damage > 0:
             health_comp = self._get_health_comp() # 繼承自父類
-            health_comp.current_hp = max(health_comp.current_hp - damage, 1) # 至少保留 1 HP
-            health_comp.current_hp = min(health_comp.current_hp + damage, health_comp.max_hp) # 立即自我治療
+            health_comp.current_hp = max(health_comp.current_hp - damage, 1)
+            health_comp.current_hp = min(health_comp.current_hp + damage, health_comp.max_hp)
         
         return False, damage
