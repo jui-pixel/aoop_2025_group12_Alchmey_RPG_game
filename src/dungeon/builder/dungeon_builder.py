@@ -204,6 +204,7 @@ class DungeonBuilder:
         """
         if not hasattr(self, 'tile_manager'):
             self.tile_manager = TileManager(self.config.grid_width, self.config.grid_height)
+        self.tile_manager._add_initial_walls()
         pass
     
     def adjust_wall(self) -> None:
@@ -212,6 +213,7 @@ class DungeonBuilder:
         """
         if not hasattr(self, 'tile_manager'):
             self.tile_manager = TileManager(self.config.grid_width, self.config.grid_height)
+        self.tile_manager.adjust_wall()
         # 這裡可以添加更多的牆壁調整邏輯
         pass
     

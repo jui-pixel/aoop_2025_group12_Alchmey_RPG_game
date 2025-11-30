@@ -261,7 +261,7 @@ class TileManager:
             self.grid[y][x] = 'Border_wall'
     
     
-    def adjust_wall(self, passable_tiles: Set[str]) -> None:
+    def adjust_wall(self, passable_tiles: Set[str]=PASSABLE_TILES) -> None:
         """
         調整邊界牆壁為不同變體，根據鄰居瓦片決定造型，支援凹牆、凸牆等變體。
         並將獨立牆變回地板。
