@@ -229,6 +229,8 @@ class NPCInteractComponent:
     """
     NPC 專屬的 ECS 組件。包含其交互範圍和狀態。
     """
+    # tag
+    tag = "npc"
     # 交互屬性
     interaction_range: float = 2*TILE_SIZE
     alchemy_options: List[Dict] = field(default_factory=list) # 合成配方列表

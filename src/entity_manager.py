@@ -13,7 +13,7 @@ from src.entities.ecs_factory import (
 # 引入 Player Facade (假設這是玩家實體的外部接口)
 from src.entities.player.player import Player 
 # 引入 ECS 組件 (用於清理和位置操作)
-from src.ecs.components import Position 
+from src.ecs.components import Position, NPCInteractComponent
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE
 
 class EntityManager:
@@ -203,3 +203,13 @@ class EntityManager:
         # 假設它們已包含在上面的 world._entities 列表中
         
         print(f"EntityManager: 已清除 {len(entities_to_delete)} 個非玩家實體。")
+    
+    def get_interactable_entities(self) -> List[Tuple[int, Position, 'NPCInteractComponent']]:
+        """
+        獲取所有具有 NPCInteractComponent 的可交互實體。
+        返回一個包含實體 ID、位置組件和交互組件的元組列表。
+        """
+        interactable_entities = []
+        for entity_id, (pos_comp, interact_comp) in self.world.get_components(Position, NPCInteractComponent):
+            interactable_entities.append((entity_id, pos_comp, interact_comp))
+        return interactable_entities
