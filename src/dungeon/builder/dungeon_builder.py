@@ -199,3 +199,13 @@ class DungeonBuilder:
             'door_count': tile_manager.count_tiles('Door'),
             'grid_size': (len(grid[0]), len(grid)),
         }
+    
+    def _initialize_grid(self) -> List[List[str]]:
+        """
+        初始化空的地牢網格
+        
+        Returns:
+            初始化的瓦片網格
+        """
+        return [['Outside' for _ in range(self.config.grid_width)]
+                for _ in range(self.config.grid_height)]
