@@ -60,6 +60,7 @@ def load_background_tileset(config: DungeonConfig, get_project_path) -> Dict[str
         'Border_wall_convex_top_right': 'Tileset_5_0.png',
         'Border_wall_convex_bottom_left': 'Tileset_6_0.png',
         'Border_wall_convex_bottom_right': 'Tileset_6_1.png',
+        'Lobby_room_floor': 'Tileset_1_1.png',
     }
     return load_tileset(config, get_project_path, tile_mapping)
 
