@@ -69,17 +69,29 @@ class Game:
 
         # 菜單註冊
         self.menu_manager.register_menu('main_menu', MainMenu(self))
-        self.menu_manager.register_menu('alchemy_menu', None) # 延遲初始化
-        self.menu_manager.register_menu('amplifier_menu', None) 
-        self.menu_manager.register_menu('amplifier_stat_menu', None) 
+        
+        # --- NPC 交互菜單 (延遲初始化) ---
+        self.menu_manager.register_menu('alchemy_menu', None) 
         self.menu_manager.register_menu('crystal_menu', None) 
         self.menu_manager.register_menu('dungeon_menu', None) 
-        self.menu_manager.register_menu('element_menu', None) 
-        self.menu_manager.register_menu('main_material_menu', None) 
-        self.menu_manager.register_menu('element_choose_menu', None) 
+        
+        # --- 技能與天賦菜單 (延遲初始化) ---
+        self.menu_manager.register_menu('skill_chain_menu', None)      # 新增
         self.menu_manager.register_menu('skill_chain_edit_menu', None) # 延遲初始化
-        # 假設還有其他菜單: stat_menu, amplifier_choose_menu, naming_menu, skill_library_menu
-        # ... (請補齊其他菜單註冊)
+        self.menu_manager.register_menu('skill_library_menu', None)    # 新增
+        self.menu_manager.register_menu('stat_menu', None)             # 新增 (角色狀態)
+        
+        # --- 增幅器與元素相關菜單 (延遲初始化) ---
+        self.menu_manager.register_menu('amplifier_menu', None) 
+        self.menu_manager.register_menu('amplifier_stat_menu', None) 
+        self.menu_manager.register_menu('amplifier_choose_menu', None)  # 新增
+        self.menu_manager.register_menu('element_menu', None) 
+        self.menu_manager.register_menu('element_choose_menu', None) 
+        
+        # --- 雜項與設置菜單 (延遲初始化) ---
+        self.menu_manager.register_menu('main_material_menu', None) 
+        self.menu_manager.register_menu('naming_menu', None)            # 新增
+        self.menu_manager.register_menu('settings_menu', None)          # 使用 settings_menu.py 中假設的 SettingsMenu 類
         
         self.show_menu('main_menu') # 顯示主菜單
 
@@ -173,6 +185,17 @@ class Game:
             
         print(f"Game: 已顯示菜單 {menu_name}，當前菜單：{self.menu_manager.current_menu.__class__.__name__ if self.menu_manager.current_menu else 'None'}")
 
+    def hide_menu(self, menu_name: str) -> None:
+        """Hide the specified menu and return to the previous one if available."""
+        if self.menu_manager.current_menu and self.menu_manager.current_menu.__class__.__name__.lower() == menu_name:
+            self.menu_manager.set_menu(None)
+            print(f"Game: 已隱藏菜單 {menu_name}")
+            # 從堆棧彈出上一個菜單（如果有的話）
+            if self.menu_stack:
+                previous_menu = self.menu_stack.pop()
+                self.show_menu(previous_menu)
+        else:
+            print(f"Game: 嘗試隱藏非當前活動菜單 {menu_name}，當前菜單為 {self.menu_manager.current_menu.__class__.__name__ if self.menu_manager.current_menu else 'None'}")
 
     async def update(self, dt: float) -> bool:
         """
