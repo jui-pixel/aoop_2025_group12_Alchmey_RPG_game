@@ -1,48 +1,35 @@
+# src/entities/npc/dungeon_portal_npc.py (修正後)
+
 import esper
-import pygame
-from src.config import TILE_SIZE
-from typing import Optional, List, Dict, Tuple
-from src.ecs.components import (
-    Position, Renderable, Health, Defense, Buffs, Tag, Collider,
-    NPCInteractComponent, DungeonPortalComponent
-)
-
-
-
-# src/entities/npc/dungeon_portal_npc.py (重構後)
-
-from typing import Optional, List, Dict, Tuple
 import pygame
 import math
-import esper
-# 假設所有 ECS Component 都可導入
+from typing import Optional, List, Dict, Tuple
+# 假設導入 AbstractNPCFacade
+from .base_npc_facade import AbstractNPCFacade 
 from src.ecs.components import DungeonPortalComponent, NPCInteractComponent, Defense, Position 
 from src.config import *
-# 移除 BasicEntity, HealthEntity, BuffableEntity 的舊式導入
 
-class DungeonPortalNPC:
+class DungeonPortalNPC(AbstractNPCFacade): # <--- 繼承抽象基類
     """
     地牢傳送門 NPC 門面 (Facade)。
     它提供一個接口來啟動傳送門交互，並使用 ECS Component 存儲狀態。
     """
     def __init__(self, game, ecs_entity: int):
-        self.game = game
-        self.ecs_entity = ecs_entity
-        self.world = game.world 
+        super().__init__(game, ecs_entity)
+        
+        # 確保在初始化時將 Facade 方法指派給 Component 屬性，供 ECS 系統使用。
+        interact_comp = self._get_interact_comp() # 繼承自父類
+        interact_comp.tag = "dungeon_portal_npc"
+        interact_comp.start_interaction = self.start_interaction
 
-    # --- 輔助方法：獲取核心組件 ---
+    # --- 輔助方法：特有組件獲取 ---
 
     def _get_portal_comp(self) -> 'DungeonPortalComponent':
+        """獲取 DungeonPortalComponent。"""
         return self.world.component_for_entity(self.ecs_entity, DungeonPortalComponent)
     
-    def _get_interact_comp(self) -> 'NPCInteractComponent':
-        return self.world.component_for_entity(self.ecs_entity, NPCInteractComponent)
-        
-    def _get_defense_comp(self) -> 'Defense':
-        return self.world.component_for_entity(self.ecs_entity, Defense)
-        
-    def _get_position_comp(self) -> 'Position':
-        return self.world.component_for_entity(self.ecs_entity, Position)
+    # 通用 getter (_get_interact_comp, _get_defense_comp, _get_position_comp) 
+    # 已移除，由 AbstractNPCFacade 提供。
 
     # --- 交互邏輯 (操作 Component) ---
 
@@ -54,24 +41,25 @@ class DungeonPortalNPC:
     def portal_effect_active(self) -> bool:
         return self._get_portal_comp().portal_effect_active
 
-    # 移除 update 和 draw 方法 (已移至 InteractionSystem 和 RenderSystem)
-
     def start_interaction(self) -> None:
-        """Show dungeon selection menu via MenuManager."""
-        interact_comp = self._get_interact_comp()
+        """Show dungeon selection menu via MenuManager. (實作 AbstractNPCFacade 抽象方法)"""
+        interact_comp = self._get_interact_comp() # 繼承自父類
         interact_comp.is_interacting = True
         
-        if self.game:
+        if self.game and self.game.menu_manager:
             dungeons = self._get_portal_comp().available_dungeons
             self.game.show_menu('dungeon_menu', dungeons)
         print(f"DungeonPortalNPC: Opening dungeon menu with {len(dungeons)} dungeons")
 
     def end_interaction(self) -> None:
-        """Close menu."""
-        interact_comp = self._get_interact_comp()
+        """Close menu. (實作 AbstractNPCFacade 抽象方法)"""
+        interact_comp = self._get_interact_comp() # 繼承自父類
         interact_comp.is_interacting = False
-        if self.game:
-            self.game.hide_menu('dungeon_menu')
+        if self.game and self.game.menu_manager:
+            # 這裡應該使用 game.hide_menu() 或 game.menu_manager.set_menu(None)
+            # 根據您的 Game 類設計，我們假設 hide_menu 或 set_menu(None) 可用
+            # 由於 Game.show_menu 有 stack 邏輯，這裡使用 set_menu(None) 保持一致
+            self.game.menu_manager.set_menu(None)
         print("DungeonPortalNPC: Closed dungeon menu")
 
     def enter_dungeon(self, dungeon_name: str) -> bool:
@@ -87,16 +75,17 @@ class DungeonPortalNPC:
                 if self.game and self.game.entity_manager.player:
                     # 核心遊戲狀態切換邏輯 (保留在 Facade 中)
                     print("DungeonPortalNPC: Initializing full dungeon")
-                    self.game.dungeon_manager.dungeon.initialize_dungeon() 
+                    # 修正: 呼叫 DungeonManager 而非直接呼叫其屬性
+                    self.game.dungeon_manager.initialize_dungeon(dungeon['dungeon_id']) 
                     
-                    # 假設 Player Facade 具有 displacement 屬性
                     player_facade = self.game.entity_manager.player 
                     if hasattr(player_facade, 'displacement'):
                         player_facade.displacement = (0, 0)
                         
                     self.game.entity_manager.initialize_dungeon_entities()
                     self.game.event_manager.state = "playing"
-                    self.game.hide_menu('dungeon_menu')
+                    
+                    # 關閉菜單
                     self.game.menu_manager.set_menu(None)
                     
                     # 更新 ECS Component 狀態
@@ -106,20 +95,6 @@ class DungeonPortalNPC:
         print(f"DungeonPortalNPC: Failed to enter {dungeon_name}")
         return False
 
-    def take_damage(self, factor: float = 1.0, element: str = "untyped", base_damage: int = 0, 
-                     max_hp_percentage_damage: int = 0, current_hp_percentage_damage: int = 0, 
-                     lose_hp_percentage_damage: int = 0, cause_death: bool = True) -> Tuple[bool, int]:
-        """NPC takes damage, checks invulnerability from Defense Component."""
-        if self._get_defense_comp().invulnerable:
-            return False, 0
-            
-        # 由於 HealthSystem 會在 ECS 中處理傷害，這裡僅是接口兼容，並假定它不會被殺死
-        return False, 0
-    
-    def calculate_distance_to(self, other_entity) -> float:
-        """Calculate the Euclidean distance to another entity."""
-        self_pos = self._get_position_comp()
-        # 假設 other_entity (Player Facade) 具有 x, y 屬性
-        dx = self_pos.x - other_entity.x
-        dy = self_pos.y - other_entity.y
-        return math.sqrt(dx**2 + dy**2)
+    # take_damage 和 calculate_distance_to 方法已移除，由 AbstractNPCFacade 提供。
+    # 如果 DungeonPortalNPC 需要特殊傷害邏輯，則在子類中覆寫 take_damage 即可。
+    # 這裡我們依賴父類提供的通用（無敵）邏輯。
