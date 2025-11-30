@@ -3,11 +3,11 @@
     "defense_level": 11,
     "movement_level": 22,
     "health_level": 12,
-    "mana": 18763755,
+    "mana": 18763754,
     "awakened_elements": [
-        "water",
         "ice",
-        "wind"
+        "wind",
+        "water"
     ],
     "amplifiers": {},
     "skills_library": [
@@ -98,6 +98,13 @@
                 "explosion": 1,
                 "elebuff": 1
             }
+        },
+        {
+            "name": "1",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "untyped",
+            "params": {}
         }
     ]
 }
