@@ -223,7 +223,7 @@ class EntityManager:
         if self.player:
             try:
                 player_comp = self.world.component_for_entity(self.player.ecs_entity, PlayerComponent)
-                return (player_comp,)
+                return player_comp
             except KeyError:
                 print("EntityManager: 玩家實體缺少 Position 組件。")
                 return None

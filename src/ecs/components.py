@@ -95,7 +95,7 @@ class PlayerComponent:
     max_skill_chain_length: int = 8
     
     # skill_chain: 技能鏈列表。由於是可變類型 (List)，使用 field(default_factory) 確保每個實例獨立。
-    skill_chain: List[List[SkillType]] = field(default_factory=lambda: [[] for _ in range(9)])
+    skill_chain: List[List[List[SkillType]]] = field(default_factory=lambda: [[[]] for _ in range(9)])
     
     # 當前活動技能鏈索引
     current_skill_chain_idx: int = 0
