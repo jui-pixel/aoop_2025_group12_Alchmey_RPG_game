@@ -236,7 +236,6 @@ class NPCInteractComponent:
     # 運行時狀態
     is_interacting: bool = False
     show_interact_prompt: bool = False # 用於 InteractionSystem 和 RenderSystem
-    start_interaction: function = None
 
 @dataclass
 class DungeonPortalComponent:
