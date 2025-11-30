@@ -182,6 +182,8 @@ class DungeonBuilder:
             height=height,
             room_type=room_type
         )
+        room.generate_tiles()
+        print(f"Generated Room ID {room_id} of type {room_type.name} at ({x}, {y}) with size ({width}x{height})")
         return room
     
     def _place_room(self, room: Room) -> None:

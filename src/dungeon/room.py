@@ -1,18 +1,9 @@
 # src/dungeon/room.py
 from typing import List, Tuple
 from dataclasses import dataclass
-from enum import Enum
+from src.dungeon.config.dungeon_config import RoomType
 import random
-# 定義房間類型枚舉，表示地牢中房間的不同功能
-class RoomType(Enum):
-    EMPTY = "empty"  # 空房間，沒有特殊功能
-    START = "start"  # 出生點房間，玩家的起始位置
-    MONSTER = "monster"  # 怪物房，包含敵人
-    TRAP = "trap"  # 陷阱房，包含危險陷阱
-    REWARD = "reward"  # 獎勵房，包含寶藏或道具
-    END = "end"  # 終點房間，包含傳送門
-    NPC = "npc"  # NPC房間，包含NPC
-    LOBBY = "lobby"  # 大廳房間，玩家可以在此選擇技能或武器
+
 
 # 定義房間數據結構，用於儲存房間的屬性和瓦片數據
 @dataclass
@@ -36,6 +27,7 @@ class Room:
     
     def generate_tiles(self) -> None:
         """Configure tiles based on room type with optimized item placement"""
+        print(f"Generating tiles for Room ID {self.id} of type {self.room_type}")
         if self.tiles is None:
             # 初始化瓦片為空地板
             self.tiles = [['Room_floor' for _ in range(int(self.width))] 
@@ -61,7 +53,7 @@ class Room:
             self.tiles[center_y][center_x] = 'Player_spawn'
             print(f"Start Room (ID: {self.id}) Player spawn placed.")
 
-        if self.room_type == RoomType.LOBBY:
+        elif self.room_type == RoomType.LOBBY:
             for row in range(int(self.height)):
                 for col in range(int(self.width)):
                     self.tiles[row][col] = 'Lobby_room_floor'
@@ -149,7 +141,12 @@ class Room:
             self.tiles[center_y][center_x] = 'NPC_spawn'
             print(f"NPC Room (ID: {self.id}) NPC placed.")
         # 未來可為其他房間類型（如 MONSTER、TRAP、REWARD）添加特殊瓦片邏輯
-
+        elif self.room_type == RoomType.EMPTY: pass
+        
+        else:
+            raise NotImplementedError(f"Tile generation not implemented for room type: {self.room_type}")
+        
+        
     def get_tiles(self) -> List[List[str]]:
         """返回房間的瓦片陣列"""
         return self.tiles

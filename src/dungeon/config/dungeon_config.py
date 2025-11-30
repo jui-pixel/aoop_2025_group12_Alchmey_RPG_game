@@ -5,6 +5,7 @@ from enum import Enum
 # 假設定義 RoomType 來自其他文件
 class RoomType(Enum):
     """房間類型定義 (僅作參考，實際應在 room.py 中)"""
+    EMPTY = 'Empty_room'
     START = 'Start_room'
     END = 'End_room'
     LOBBY = 'Lobby_room'
