@@ -81,11 +81,10 @@ class Dungeon:
         # 2. 從 Config 中獲取大廳尺寸
         lobby_width = self.config.lobby_width
         lobby_height = self.config.lobby_height
-        self.grid_width = lobby_width
-        self.grid_height = lobby_height
-        # 3. 計算大廳中心位置
-        lobby_x = (self.grid_width - lobby_width) // 2
-        lobby_y = (self.grid_height - lobby_height) // 2
+        
+        # 3. 計算大廳左上位置
+        lobby_x = 0
+        lobby_y = 0
         
         # 4. 生成並放置房間 (委派給 Builder)
         lobby_room = self.builder.generate_room(
@@ -121,7 +120,7 @@ class Dungeon:
         tile_size = self.config.tile_size # 使用配置
         
         if not self.background_tileset: return
-
+        if not self.dungeon_tiles: return
         # 計算瓦片範圍: 攝影機視圖 + 2 瓦片緩衝區
         start_tile_x = max(0, int((offset_x - 2 * tile_size) / tile_size))
         end_tile_x = min(self.grid_width, int((offset_x + SCREEN_WIDTH + 2 * tile_size) / tile_size))
@@ -133,7 +132,6 @@ class Dungeon:
             for tile_x in range(start_tile_x, end_tile_x):
                 # 安全邊界檢查
                 if not (0 <= tile_y < self.grid_height and 0 <= tile_x < self.grid_width): continue
-                     
                 tile_type = self.dungeon_tiles[tile_y][tile_x]
                 tile_image = self.background_tileset.get(tile_type, None)
                 screen_x = tile_x * tile_size - offset_x
@@ -151,12 +149,13 @@ class Dungeon:
         """
         Draw the dungeon foreground walls (2.5D effect).
         """
+        return
         offset_x, offset_y = camera_offset
         tile_size = self.config.tile_size # 使用配置
         half_tile = tile_size * 0.5
         
         if not self.foreground_tileset: return
-
+        if not self.dungeon_tiles: return
         # 瓦片範圍計算與背景相同 (使用 SCREEN_WIDTH, SCREEN_HEIGHT)
         start_tile_x = max(0, int((offset_x - 2 * tile_size) / tile_size))
         end_tile_x = min(self.grid_width, int((offset_x + SCREEN_WIDTH + 2 * tile_size) / tile_size))
