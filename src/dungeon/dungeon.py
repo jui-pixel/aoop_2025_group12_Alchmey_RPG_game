@@ -116,6 +116,7 @@ class Dungeon:
         """
         Draw the dungeon background tiles, optimized by camera clipping.
         """
+        print("Dungeon: 繪製背景瓦片...")
         offset_x, offset_y = camera_offset
         tile_size = self.config.tile_size # 使用配置
         
@@ -139,6 +140,7 @@ class Dungeon:
 
                 if tile_image:
                     screen.blit(tile_image, (screen_x, screen_y))
+                    print(f"繪製瓦片 {tile_type} 在屏幕位置 ({screen_x}, {screen_y})")
                 else:
                     # 回退到彩色矩形，使用配置中的通行性判斷
                     is_passable = self.config.is_tile_passable(tile_type)
