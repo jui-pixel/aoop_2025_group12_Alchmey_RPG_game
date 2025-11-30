@@ -140,7 +140,7 @@ class Dungeon:
 
                 if tile_image:
                     screen.blit(tile_image, (screen_x, screen_y))
-                    print(f"繪製瓦片 {tile_type} 在屏幕位置 ({screen_x}, {screen_y})")
+                    # print(f"繪製瓦片 {tile_type} 在屏幕位置 ({screen_x}, {screen_y})")
                 else:
                     # 回退到彩色矩形，使用配置中的通行性判斷
                     is_passable = self.config.is_tile_passable(tile_type)
