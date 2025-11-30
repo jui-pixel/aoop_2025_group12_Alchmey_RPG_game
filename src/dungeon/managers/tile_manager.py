@@ -5,7 +5,7 @@
 """
 from typing import List, Set, Tuple
 from ..room import Room
-
+from src.config import PASSABLE_TILES
 
 class TileManager:
     """
@@ -219,7 +219,7 @@ class TileManager:
         
         return neighbors
 
-    def finalize_walls(self, passable_tiles: Set[str]) -> None:
+    def finalize_walls(self, passable_tiles: Set[str]=PASSABLE_TILES) -> None:
         """
         協調牆壁生成和調整的步驟：
         1. 將緊鄰地板的 'Outside' 轉換為 'Border_wall' (走廊擴展後)
@@ -235,7 +235,7 @@ class TileManager:
         self.adjust_wall(passable_tiles)
 
 
-    def _add_initial_walls(self, passable_tiles: Set[str]) -> None:
+    def _add_initial_walls(self, passable_tiles: Set[str]=PASSABLE_TILES) -> None:
         """
         將所有緊鄰 PASSABLE_TILES 的 'Outside' 轉換為 'Border_wall'。
         （對應使用者提供的 _convert_outside_to_border_wall 邏輯）
