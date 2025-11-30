@@ -5,7 +5,7 @@ import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from math import ceil
 from typing import List, Optional
-from src.entities.skill.skill import create_skill_from_dict
+from src.skills.skill import create_skill_from_dict
 
 class SkillChainEditMenu(AbstractMenu):
     def __init__(self, game: 'Game', chain_idx: int, options=None):
