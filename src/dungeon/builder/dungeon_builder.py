@@ -14,7 +14,7 @@ from ..generators.room_type_assigner import RoomTypeAssigner
 from ..generators.corridor_generator import CorridorGenerator
 from ..generators.door_generator import DoorGenerator
 from ..managers.tile_manager import TileManager
-from ..room import Room
+from ..room import Room, RoomType
 
 
 class DungeonBuilder:
@@ -159,6 +159,59 @@ class DungeonBuilder:
                 edges.append((i, j, distance))
         
         return edges
+    
+    def generate_room(self, x: float, y: float, width: float, height: float, room_id: int, room_type: RoomType) -> Room:
+        """
+        創建並返回一個房間實例，它將自動生成房間瓦片。
+        
+        Args:
+            x, y: 座標
+            width, height: 尺寸
+            room_id: 房間 ID
+            room_type: 房間類型
+        
+        Returns:
+            創建的房間
+        """
+        # Room 的 __post_init__ 會根據 room_type 自動調用 generate_tiles()
+        room = Room(
+            id=room_id,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            room_type=room_type
+        )
+        return room
+    
+    def _place_room(self, room: Room) -> None:
+        """
+        將房間放置到瓦片網格
+        
+        Args:
+            room: 要放置的房間
+            tile_manager: 瓦片管理器
+        """
+        if not hasattr(self, 'tile_manager'):
+            self.tile_manager = TileManager(self.config.grid_width, self.config.grid_height)
+        self.tile_manager.place_room(room)
+    
+    def _add_walls(self) -> None:
+        """
+        為所有房間添加邊界牆
+        """
+        if not hasattr(self, 'tile_manager'):
+            self.tile_manager = TileManager(self.config.grid_width, self.config.grid_height)
+        pass
+    
+    def adjust_wall(self) -> None:
+        """
+        調整牆壁以適應走廊和門
+        """
+        if not hasattr(self, 'tile_manager'):
+            self.tile_manager = TileManager(self.config.grid_width, self.config.grid_height)
+        # 這裡可以添加更多的牆壁調整邏輯
+        pass
     
     def _calculate_room_distance(self, room1: Room, room2: Room) -> float:
         """

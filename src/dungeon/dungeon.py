@@ -81,7 +81,8 @@ class Dungeon:
         # 2. 從 Config 中獲取大廳尺寸
         lobby_width = self.config.lobby_width
         lobby_height = self.config.lobby_height
-        
+        self.grid_width = lobby_width
+        self.grid_height = lobby_height
         # 3. 計算大廳中心位置
         lobby_x = (self.grid_width - lobby_width) // 2
         lobby_y = (self.grid_height - lobby_height) // 2
@@ -98,6 +99,7 @@ class Dungeon:
         self.builder._place_room(lobby_room) 
         self.builder._add_walls() 
         self.builder.adjust_wall() 
+        self.dungeon_tiles = self.builder.tile_manager.grid
         
         print(f"初始化大廳：房間 {lobby_room.id} 在 ({lobby_x}, {lobby_y})，尺寸 {lobby_width}x{lobby_height}")
 
