@@ -218,3 +218,143 @@ class TileManager:
                 neighbors.append((nx, ny, self.grid[ny][nx]))
         
         return neighbors
+
+    def finalize_walls(self, passable_tiles: Set[str]) -> None:
+        """
+        協調牆壁生成和調整的步驟：
+        1. 將緊鄰地板的 'Outside' 轉換為 'Border_wall' (走廊擴展後)
+        2. 調整所有 'Border_wall' 的具體變體（凹凸角、獨立牆）
+        
+        Args:
+            passable_tiles: 可通行瓦片類型集合。
+        """
+        # 第一步：將緊鄰可通行區的 'Outside' 轉為 'Border_wall'
+        self._add_initial_walls(passable_tiles)
+        
+        # 第二步：調整牆壁變體
+        self.adjust_wall(passable_tiles)
+
+
+    def _add_initial_walls(self, passable_tiles: Set[str]) -> None:
+        """
+        將所有緊鄰 PASSABLE_TILES 的 'Outside' 轉換為 'Border_wall'。
+        （對應使用者提供的 _convert_outside_to_border_wall 邏輯）
+        """
+        to_border_wall: List[Tuple[int, int]] = []
+        
+        # 8 個方向 (含對角線)
+        directions = [(1,0),(-1,0),(0,1),(0,-1),(1,1),(1,-1),(-1,1),(-1,-1)] 
+        
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.grid[y][x] == 'Outside':
+                    for dx, dy in directions:
+                        nx, ny = x + dx, y + dy
+                        
+                        if 0 <= nx < self.width and 0 <= ny < self.height:
+                            # 檢查鄰居是否是可通行瓦片
+                            if self.grid[ny][nx] in passable_tiles:
+                                to_border_wall.append((x, y))
+                                break
+                                
+        for x, y in to_border_wall:
+            self.grid[y][x] = 'Border_wall'
+    
+    
+    def adjust_wall(self, passable_tiles: Set[str]) -> None:
+        """
+        調整邊界牆壁為不同變體，根據鄰居瓦片決定造型，支援凹牆、凸牆等變體。
+        並將獨立牆變回地板。
+        """
+        # 8個鄰居方向 (dx, dy)，採用標準 y-down 座標系（y 軸向下增加）：
+        # 0: TL(-1, -1), 1: T(0, -1), 2: TR(1, -1)
+        # 7: L(-1, 0),                       3: R(1, 0)
+        # 6: BL(-1, 1), 5: B(0, 1), 4: BR(1, 1)
+        directions = [
+            (-1, -1), (0, -1), (1, -1),  # 0: TL, 1: T, 2: TR
+            (1, 0),                      # 3: R
+            (1, 1), (0, 1), (-1, 1),     # 4: BR, 5: B, 6: BL
+            (-1, 0)                      # 7: L
+        ]
+
+        # 建立新瓦片陣列，避免迭代時修改時影響鄰居判斷
+        new_grid = [row[:] for row in self.grid]
+
+        for y in range(self.height):
+            for x in range(self.width):
+                # 只對通用的 'Border_wall' 瓦片進行調整
+                if self.grid[y][x] == 'Border_wall': 
+                    
+                    neighbors_mask = 0
+                    
+                    # 1. 檢查8個鄰居，生成位元遮罩
+                    for i, (dx, dy) in enumerate(directions):
+                        nx, ny = x + dx, y + dy
+                        
+                        if 0 <= nx < self.width and 0 <= ny < self.height:
+                            # 檢查鄰居是否是可通行瓦片
+                            if self.grid[ny][nx] in passable_tiles:
+                                neighbors_mask |= (1 << i)
+
+                    # 2. 獨立牆判定 (Isolated Wall)
+                    # 主軸鄰居位元：T(1), R(3), B(5), L(7)
+                    main_axis_mask = neighbors_mask & 0b10101010
+                    main_axis_count = bin(main_axis_mask).count('1')
+                    
+                    # 判斷：如果 4 個主軸方向中，有 3 個或 4 個是可通行的
+                    if main_axis_count >= 3:
+                        # 獨立牆變回 Bridge_floor（安全的地板類型）
+                        new_grid[y][x] = 'Bridge_floor'
+                        continue 
+
+                    variant = 'Border_wall' # 預設為一般牆壁
+
+                    # 3. 牆壁變體判斷（優先級：凹牆 > 凸牆 > 基本牆）
+                    
+                    # A. 凹牆 (Concave Wall) - 僅單一角落可通行
+                    # 僅 TL(0) 可通行 -> 凹 BR (0b00000001)
+                    if neighbors_mask == 0b00000001:
+                        variant = 'Border_wall_concave_bottom_right'
+                    # 僅 TR(2) 可通行 -> 凹 BL (0b00000100)
+                    elif neighbors_mask == 0b00000100:
+                        variant = 'Border_wall_concave_bottom_left'
+                    # 僅 BR(4) 可通行 -> 凹 TL (0b00010000)
+                    elif neighbors_mask == 0b00010000:
+                        variant = 'Border_wall_concave_top_left'
+                    # 僅 BL(6) 可通行 -> 凹 TR (0b01000000)
+                    elif neighbors_mask == 0b01000000:
+                        variant = 'Border_wall_concave_top_right'
+                        
+                    # B. 凸牆 (Convex Wall) - 三個相鄰格子可通行
+                    # TL(0), T(1), L(7) 可通行 -> 凸 BR (0b10000011)
+                    elif (neighbors_mask & 0b10000011) == 0b10000011:
+                        variant = 'Border_wall_convex_bottom_right'
+                    # T(1), TR(2), R(3) 可通行 -> 凸 BL (0b00001110)
+                    elif (neighbors_mask & 0b00001110) == 0b00001110:
+                        variant = 'Border_wall_convex_bottom_left'
+                    # R(3), BR(4), B(5) 可通行 -> 凸 TL (0b00111000)
+                    elif (neighbors_mask & 0b00111000) == 0b00111000:
+                        variant = 'Border_wall_convex_top_left'
+                    # B(5), BL(6), L(7) 可通行 -> 凸 TR (0b11100000)
+                    elif (neighbors_mask & 0b11100000) == 0b11100000:
+                        variant = 'Border_wall_convex_top_right'
+                        
+                    # C. 基本牆壁（單邊連接）
+                    # 排除掉複雜變體後，剩下的牆壁類型大多屬於直線單邊連接。
+                    # 上牆：B(5) 可通行
+                    elif (neighbors_mask & 0b00100000):
+                        variant = 'Border_wall_top'
+                    # 下牆：T(1) 可通行
+                    elif (neighbors_mask & 0b00000010):
+                        variant = 'Border_wall_bottom'
+                    # 左牆：R(3) 可通行
+                    elif (neighbors_mask & 0b00001000):
+                        variant = 'Border_wall_left'
+                    # 右牆：L(7) 可通行
+                    elif (neighbors_mask & 0b10000000):
+                        variant = 'Border_wall_right'
+
+                    new_grid[y][x] = variant
+
+        # 將新瓦片陣列應用回地牢
+        self.grid = new_grid
