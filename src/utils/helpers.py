@@ -3,7 +3,7 @@ import os
 from typing import Dict
 import pygame
 from src.dungeon.config.dungeon_config import DungeonConfig
-
+from src.config import DARK_GRAY, GRAY
 
 def get_project_path(*subpaths):
     """Get the absolute path to the project root (roguelike_dungeon/) and join subpaths."""
@@ -13,7 +13,7 @@ def get_project_path(*subpaths):
 def load_tileset(config, get_project_path, tile_mapping: Dict[str, str]) -> Dict[str, pygame.Surface]:
     """通用 Tileset 載入函數，處理縮放和回退邏輯。"""
     tileset = {}
-    tileset_dir = get_project_path("src", "assets", "tiles")
+    tileset_dir = get_project_path("assets", "tiles")
     tile_size = config.tile_size
     
     for tile_type, filename in tile_mapping.items():
@@ -43,10 +43,23 @@ def load_background_tileset(config: DungeonConfig, get_project_path) -> Dict[str
     """載入背景貼圖集。"""
     # 這裡應該定義所有背景瓦片 (地板、門、Spawn點) 的映射
     tile_mapping = {
-        'Room_floor': 'floor_0_0.png',
-        'Bridge_floor': 'bridge_0_0.png',
-        'Door': 'door_0_0.png',
-        # ... 
+        'Border_wall': 'Tileset_1_1.png',
+        'Border_wall_top': 'Tileset_0_1.png',
+        'Border_wall_bottom': 'Tileset_2_1.png',
+        'Border_wall_left': 'Tileset_1_0.png',
+        'Border_wall_right': 'Tileset_1_2.png',
+        'Border_wall_top_left_corner': 'Tileset_1_1.png',
+        'Border_wall_top_right_corner': 'Tileset_1_1.png',
+        'Border_wall_bottom_left_corner': 'Tileset_1_1.png',
+        'Border_wall_bottom_right_corner': 'Tileset_1_1.png',
+        'Border_wall_concave_top_left': 'Tileset_0_0.png',
+        'Border_wall_concave_top_right': 'Tileset_0_2.png',
+        'Border_wall_concave_bottom_left': 'Tileset_2_0.png',
+        'Border_wall_concave_bottom_right': 'Tileset_2_2.png',
+        'Border_wall_convex_top_left': 'Tileset_5_1.png',
+        'Border_wall_convex_top_right': 'Tileset_5_0.png',
+        'Border_wall_convex_bottom_left': 'Tileset_6_0.png',
+        'Border_wall_convex_bottom_right': 'Tileset_6_1.png',
     }
     return load_tileset(config, get_project_path, tile_mapping)
 

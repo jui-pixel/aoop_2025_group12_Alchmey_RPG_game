@@ -25,7 +25,7 @@ except ImportError:
     SCREEN_WIDTH, SCREEN_HEIGHT = 1400, 750
     GRAY, BLACK, DARK_GRAY = (100, 100, 100), (0, 0, 0), (40, 40, 40)
 
-
+from src.utils.helpers import load_background_tileset, load_foreground_tileset, get_project_path
 # ======================================================================
 #  Dungeon 類：狀態管理、門面與繪圖接口
 # ======================================================================
@@ -55,8 +55,8 @@ class Dungeon:
         self.total_appeared_rooms = 0  
 
         # --- 貼圖集資源 (由 ResourceLoader 注入) ---
-        self.background_tileset: Optional[Dict[str, pygame.Surface]] = None
-        self.foreground_tileset: Optional[Dict[str, pygame.Surface]] = None
+        self.background_tileset: Optional[Dict[str, pygame.Surface]] = load_background_tileset(self.config, get_project_path)
+        self.foreground_tileset: Optional[Dict[str, pygame.Surface]] = load_foreground_tileset(self.config, get_project_path)
 
         # --- 核心整合點：Builder ---
         self.builder: DungeonBuilder = DungeonBuilder(self) 
