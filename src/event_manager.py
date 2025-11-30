@@ -317,5 +317,5 @@ class EventManager:
             # 因此我們將輸出錯誤訊息，並保持不互動
             print("EventManager: ECS query helper not found. Cannot perform interaction check.")
             return False
-        
+        self.game.show_menu('skill_chain_menu')  # Open skill chain menu if no NPC
         return False

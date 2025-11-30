@@ -159,7 +159,8 @@ class Game:
                     new_menu_instance = SkillLibraryMenu(self, data)
                 elif menu_name == 'settings_menu':
                     new_menu_instance = SettingsMenu(self, data)
-                
+                elif menu_name == 'skill_chain_menu':
+                    new_menu_instance = SkillChainMenu(self, data)
                 # 特殊情況：skill_chain_edit_menu 需要 chain_idx
                 elif menu_name == 'skill_chain_edit_menu' and chain_idx is not None:
                     new_menu_instance = SkillChainEditMenu(self, chain_idx)

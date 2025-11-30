@@ -13,7 +13,7 @@ from src.entities.ecs_factory import (
 # 引入 Player Facade (假設這是玩家實體的外部接口)
 from src.entities.player.player import Player 
 # 引入 ECS 組件 (用於清理和位置操作)
-from src.ecs.components import Position, NPCInteractComponent
+from src.ecs.components import Position, NPCInteractComponent, PlayerComponent
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE
 
 class EntityManager:
@@ -214,3 +214,17 @@ class EntityManager:
         for entity_id, (pos_comp, interact_comp) in self.world.get_components(Position, NPCInteractComponent):
             interactable_entities.append((entity_id, pos_comp, interact_comp))
         return interactable_entities
+
+    def get_player_component(self) -> Optional[Tuple[Position]]:
+        """
+        獲取玩家實體的組件元組。
+        返回包含玩家位置組件的元組，或 None 如果玩家不存在。
+        """
+        if self.player:
+            try:
+                player_comp = self.world.component_for_entity(self.player.ecs_entity, PlayerComponent)
+                return (player_comp,)
+            except KeyError:
+                print("EntityManager: 玩家實體缺少 Position 組件。")
+                return None
+        return None
