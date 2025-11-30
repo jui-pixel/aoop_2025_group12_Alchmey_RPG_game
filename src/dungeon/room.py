@@ -33,7 +33,7 @@ class Room:
             self.connections = []
         # 根據房間類型設置瓦片
         self.generate_tiles()
-
+    
     def generate_tiles(self) -> None:
         """Configure tiles based on room type with optimized item placement"""
         if self.tiles is None:
@@ -52,12 +52,14 @@ class Room:
                 for col in range(1, int(self.width) - 1):
                     self.tiles[row][col] = 'End_room_floor'
             self.tiles[center_y][center_x] = 'End_room_portal'
+            print(f"End Room (ID: {self.id}) Portal placed.")
 
         elif self.room_type == RoomType.START:
             for row in range(int(self.height)):
                 for col in range(int(self.width)):
                     self.tiles[row][col] = 'Start_room_floor'
             self.tiles[center_y][center_x] = 'Player_spawn'
+            print(f"Start Room (ID: {self.id}) Player spawn placed.")
 
         if self.room_type == RoomType.LOBBY:
             for row in range(int(self.height)):
@@ -73,6 +75,7 @@ class Room:
             self.tiles[int(self.height) - 3][4] = 'Alchemy_pot_NPC_spawn'  # 左下
             self.tiles[int(self.height) - 3][int(self.width) - 4] = 'Dummy_spawn'  # 右下
             self.tiles[center_y + 3][center_x] = 'Player_spawn'  # 中心下
+            print(f"Lobby Room (ID: {self.id}) NPC and Player spawns placed.")
 
         elif self.room_type == RoomType.MONSTER:
             # Monster room: Scale number of monsters based on room size
@@ -92,6 +95,7 @@ class Room:
             for i in range(min(num_monsters, len(spawn_points))):
                 row, col = spawn_points[i]
                 self.tiles[row][col] = 'Monster_spawn'
+            print(f"Monster Room (ID: {self.id}) with {num_monsters} monsters placed.")
 
         elif self.room_type == RoomType.TRAP:
             # Trap room: Random trap placement with NPC in center
@@ -115,6 +119,7 @@ class Room:
             for i in range(min(num_traps, len(spawn_points))):
                 row, col = spawn_points[i]
                 self.tiles[row][col] = 'Trap_spawn'
+            print(f"Trap Room (ID: {self.id}) with {num_traps} traps placed.")
 
         elif self.room_type == RoomType.REWARD:
             # Reward room: Place 1-5 treasure chests in center area
@@ -135,11 +140,14 @@ class Room:
             for i in range(min(num_chests, len(center_area))):
                 row, col = center_area[i]
                 self.tiles[row][col] = 'Reward_spawn'
+            print(f"Reward Room (ID: {self.id}) with {num_chests} chests placed.")
+                
         elif self.room_type == RoomType.NPC:
             for row in range(int(self.height)):
                 for col in range(int(self.width)):
                     self.tiles[row][col] = 'NPC_room_floor'
             self.tiles[center_y][center_x] = 'NPC_spawn'
+            print(f"NPC Room (ID: {self.id}) NPC placed.")
         # 未來可為其他房間類型（如 MONSTER、TRAP、REWARD）添加特殊瓦片邏輯
 
     def get_tiles(self) -> List[List[str]]:
