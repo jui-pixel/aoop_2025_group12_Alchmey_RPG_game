@@ -27,8 +27,15 @@ from ..ecs.ai import (
     RefillActionList, PerformNextAction, Sequence, Selector, ConditionNode # 行為樹節點
 )
 
+# 【新增 Facade 類別的導入】
+# 確保這些 Facade 類別已在 src.entities.npc 中定義
+from ..entities.npc.alchemy_pot_npc import AlchemyPotNPC
+from ..entities.npc.dungeon_portal_npc import DungeonPortalNPC
+from ..entities.npc.magic_crystal_npc import MagicCrystalNPC
+
+
 def create_player_entity(
-    world: esper, x: float = 0.0, y: float = 0.0, tag: str = "player"
+    world: esper, x: float = 0.0, y: float = 0.0, tag: str = "player",game: 'Game' = None
 ) -> int:
     """
     創建一個 Player ECS 實體並附上所有必要的組件。
@@ -121,7 +128,7 @@ def create_player_entity(
 def create_enemy1_entity(
     world: esper, x: float = 0.0, y: float = 0.0, game: 'Game' = None, tag: str = "enemy",
     base_max_hp: int = 100, max_speed: float = 2 * TILE_SIZE, element: str = "fire", 
-    defense: int = 10, damage: int = 5, w: int = TILE_SIZE // 2, h: int = TILE_SIZE // 2
+    defense: int = 10, damage: int = 5, w: int = TILE_SIZE // 2, h: int = TILE_SIZE // 2,
 ) -> int:
     """
     創建一個 Enemy1 ECS 實體並附上所有組件。
@@ -233,18 +240,18 @@ def create_alchemy_pot_npc(
     base_max_hp: int = 999999, 
     element: str = "earth", 
     defense: int = 100,
-    invulnerable: bool = True
+    invulnerable: bool = True,
+    game: 'Game' = None # 【新增 game 參數以初始化 Facade】
 ) -> int:
     """創建一個 ECS 煉金鍋 NPC 實體。"""
     
-    npc_entity = world.create_entity()
+    npc_entity = world.create_entity() # <--- 變數名稱修正為 npc_entity
 
     # 1. 核心位置與標籤
     world.add_component(npc_entity, Tag(tag=tag))
     world.add_component(npc_entity, Position(x=x, y=y))
     
     # 2. 視覺屬性
-    # 注意：這裡應該載入圖片，但為了簡化，我們只設定屬性
     world.add_component(npc_entity, Renderable(
         image=None, 
         shape="rect",
@@ -280,60 +287,16 @@ def create_alchemy_pot_npc(
     # 5. 增益效果 (Buffs)
     world.add_component(npc_entity, Buffs())
 
-    # 6. 煉金鍋專屬狀態
+    # 6. 煉金鍋專屬狀態 (交互組件)
     world.add_component(npc_entity, NPCInteractComponent()) 
 
+    # 【新增 Facade 初始化邏輯】
+    if game:
+        # 這會調用 AlchemyPotNPC.__init__，將 start_interaction 方法連結到 NPCInteractComponent 上
+        AlchemyPotNPC(game, npc_entity) 
+    # ---------------------------------
+    
     return npc_entity
-
-def create_dummy_entity(
-    world: esper,
-    x: float = 0.0, 
-    y: float = 0.0, 
-    w: int = 32, 
-    h: int = 32,
-    base_max_hp: int = 999999999 # 模擬無限生命
-) -> int:
-    """創建一個 ECS 訓練假人實體。"""
-    
-    dummy_entity = world.create_entity()
-
-    # 1. 核心位置與標籤
-    world.add_component(dummy_entity, Tag(tag="dummy"))
-    world.add_component(dummy_entity, Position(x=x, y=y))
-    
-    # 2. 視覺屬性
-    # (註：這裡應處理圖片載入，但在 ECS 中我們只設定屬性)
-    world.add_component(dummy_entity, Renderable(
-        image=None,
-        shape="rect",
-        w=w,
-        h=h,
-        color=(255, 0, 0), # 紅色
-        layer=1 # 可能比地圖高
-    ))
-
-    # 3. 碰撞器 (假人是靜止的)
-    world.add_component(dummy_entity, Collider(
-        w=w, 
-        h=h, 
-        pass_wall=False, 
-        collision_group="enemy_dummy" # 假設有一個專門的碰撞組
-    ))
-
-    # 4. 健康與防禦
-    world.add_component(dummy_entity, Health(
-        max_hp=base_max_hp,
-        current_hp=base_max_hp,
-        regen_rate=base_max_hp
-    ))
-    world.add_component(dummy_entity, Defense(
-        defense=0,
-        element="untyped",
-        invulnerable=False # 允許受到傷害
-    ))
-
-
-    return dummy_entity
 
 def create_dungeon_portal_npc(
     world: esper,
@@ -341,7 +304,8 @@ def create_dungeon_portal_npc(
     y: float = 0.0, 
     w: int = 64, 
     h: int = 64, 
-    available_dungeons: Optional[List[Dict]] = None
+    available_dungeons: Optional[List[Dict]] = None,
+    game: 'Game' = None # 【新增 game 參數以初始化 Facade】
 ) -> int:
     """創建一個 ECS 地牢傳送門 NPC 實體。"""
     
@@ -388,6 +352,12 @@ def create_dungeon_portal_npc(
         available_dungeons=available_dungeons or [{'name': 'Test Dungeon', 'level': 1, 'dungeon_id': 1}]
     ))
 
+    # 【新增 Facade 初始化邏輯】
+    if game:
+        # 這會調用 DungeonPortalNPC.__init__，將 start_interaction 方法連結到 NPCInteractComponent 上
+        DungeonPortalNPC(game, npc_entity) 
+    # ---------------------------------
+
     return npc_entity
 
 def create_magic_crystal_npc(
@@ -400,7 +370,8 @@ def create_magic_crystal_npc(
     base_max_hp: int = 999999, 
     element: str = "light", 
     defense: int = 100,
-    invulnerable: bool = True
+    invulnerable: bool = True,
+    game: 'Game' = None # 【新增 game 參數以初始化 Facade】
 ) -> int:
     """創建一個 ECS 魔法水晶 NPC 實體。"""
     
@@ -444,5 +415,62 @@ def create_magic_crystal_npc(
 
     # 6. NPC 交互狀態 (interaction_range=80.0, is_interacting=False)
     world.add_component(npc_entity, NPCInteractComponent(interaction_range=80.0)) 
+
+    # 【新增 Facade 初始化邏輯】
+    if game:
+        # 這會調用 MagicCrystalNPC.__init__，將 start_interaction 方法連結到 NPCInteractComponent 上
+        MagicCrystalNPC(game, npc_entity) 
+    # ---------------------------------
+
+    return npc_entity
+
+def create_dummy_entity(
+    world: esper,
+    x: float = 0.0, 
+    y: float = 0.0, 
+    w: int = 32, 
+    h: int = 32, 
+    tag: str = "dummy_npc",
+    game: 'Game' = None # 【新增 game 參數以初始化 Facade】
+) -> int:
+    """創建一個簡單的 ECS NPC 實體作為佔位符。"""
+    
+    npc_entity = world.create_entity()
+
+    # 1. 核心位置與標籤
+    world.add_component(npc_entity, Tag(tag=tag))
+    world.add_component(npc_entity, Position(x=x, y=y))
+    
+    # 2. 視覺屬性
+    world.add_component(npc_entity, Renderable(
+        image=None, 
+        shape="rect",
+        w=w,
+        h=h,
+        color=(200, 200, 200), # 灰色
+        layer=0 
+    ))
+
+    # 3. 碰撞器
+    world.add_component(npc_entity, Collider(
+        w=w, 
+        h=h, 
+        pass_wall=False, 
+        collision_group="npc"
+    ))
+
+    # 4. 健康與防禦
+    world.add_component(npc_entity, Health(max_hp=99999999, current_hp=99999999,regen_rate=99999999))
+    world.add_component(npc_entity, Defense(
+        defense=0,
+        element="untyped",
+        invulnerable=False
+    ))
+
+    # 5. 增益效果 (Buffs)
+    world.add_component(npc_entity, Buffs())
+
+    # 6. NPC 交互狀態
+    world.add_component(npc_entity, NPCInteractComponent()) 
 
     return npc_entity

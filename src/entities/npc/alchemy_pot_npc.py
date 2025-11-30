@@ -50,7 +50,7 @@ class AlchemyPotNPC(AbstractNPCFacade): # <--- 繼承抽象基類
         comp = self._get_interact_comp()
         comp.is_interacting = True
         if self.game and self.game.menu_manager:
-            self.game.menu_manager.show_menu('alchemy_menu', comp.alchemy_options)
+            self.game.menu_manager.set_menu('alchemy_menu')
         print("Alchemy Pot NPC: Open alchemy synthesis menu.")
 
     def end_interaction(self) -> None:

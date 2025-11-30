@@ -114,10 +114,10 @@ class EntityManager:
                 if npc_key == 'dungeon_portal_npc':
                     npc_entity_id = factory_func(
                         self.world, x=npc_x, y=npc_y,
-                        available_dungeons=[{'name': 'Test Dungeon', 'level': 1, 'room_id': 1}]
+                        available_dungeons=[{'name': 'Test Dungeon', 'level': 1, 'room_id': 1}],game=self.game
                     )
                 else:
-                    npc_entity_id = factory_func(self.world, x=npc_x, y=npc_y)
+                    npc_entity_id = factory_func(self.world, x=npc_x, y=npc_y,game=self.game)
 
                 used_tiles.add(npc_tile)
                 print(f"EntityManager: 初始化 {npc_key} 實體 ID: {npc_entity_id}")
@@ -145,7 +145,8 @@ class EntityManager:
                     # 創建地牢傳送門實體 (使用工廠函數)
                     create_dungeon_portal_npc(
                         self.world, x=entity_x, y=entity_y,
-                        available_dungeons=[{'name': 'Test Dungeon', 'level': 1, 'room_id': 1}]
+                        available_dungeons=[{'name': 'Test Dungeon', 'level': 1, 'room_id': 1}],
+                        game=self.game
                     )
                         
                 elif tile_type == 'Player_spawn':

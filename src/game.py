@@ -25,6 +25,14 @@ from src.menu.menus.main_material_menu import MainMaterialMenu
 from src.menu.menus.element_choose_menu import ElementChooseMenu
 # 假設還需要 StatMenu, AmplifierChooseMenu, NamingMenu, SkillLibraryMenu, SkillChainEditMenu
 # 請自行補齊缺少的 import
+# 【補齊所有缺失的菜單類別】
+from src.menu.menus.stat_menu import StatMenu
+from src.menu.menus.amplifier_choose_menu import AmplifierChooseMenu
+from src.menu.menus.naming_menu import NamingMenu
+from src.menu.menus.skill_library_menu import SkillLibraryMenu
+from src.menu.menus.skill_chain_edit_menu import SkillChainEditMenu
+from src.menu.menus.skill_chain_menu import SkillChainMenu
+from src.menu.menus.setting_menu import SettingsMenu # 假設 setting_menu.py 定義了 SettingsMenu 類
 
 class Game:
     """遊戲主類別，管理所有遊戲狀態和子系統。"""
@@ -90,45 +98,79 @@ class Game:
             print("Game: 無法初始化大廳房間")
     
     def show_menu(self, menu_name: str, data = None, chain_idx: int = None) -> None:
-        """Show the specified menu and hide the current one if active."""
+        """Show the specified menu and hide the current one if active. (包含延遲初始化)"""
         if self.menu_manager.current_menu:
+            # 將當前菜單推入堆棧 (如果需要返回的話)
             self.menu_stack.append(self.menu_manager.current_menu.__class__.__name__.lower())
         
-        # ... (菜單初始化邏輯，保持您原有的邏輯)
-        # 這裡需要補齊您在原程式碼中缺少的菜單類別的 import
-        
         if menu_name in self.menu_manager.menus:
-            # 延遲初始化邏輯 (保持您原有的邏輯)
+            # 1. 延遲初始化檢查
             if self.menu_manager.menus[menu_name] is None:
-                # 這裡需要您將所有的菜單類別補齊，例如：
-                # from src.menu.menus.stat_menu import StatMenu
+                print(f"Game: 正在延遲初始化菜單: {menu_name}")
+                
+                new_menu_instance = None
                 
                 if menu_name == 'alchemy_menu':
-                    self.menu_manager.menus[menu_name] = AlchemyMenu(self, data)
-                # ... (其他菜單初始化，此處省略以保持簡潔)
-                # 您的原始代碼中缺少 StatMenu, AmplifierChooseMenu, NamingMenu, SkillLibraryMenu, SkillChainEditMenu 的 import
+                    new_menu_instance = AlchemyMenu(self, data)
+                elif menu_name == 'amplifier_menu':
+                    new_menu_instance = AmplifierMenu(self, data)
+                elif menu_name == 'amplifier_stat_menu':
+                    new_menu_instance = AmplifierStatMenu(self, data)
+                elif menu_name == 'crystal_menu':
+                    new_menu_instance = CrystalMenu(self, data)
+                elif menu_name == 'dungeon_menu':
+                    new_menu_instance = DungeonMenu(self, data)
+                elif menu_name == 'element_menu':
+                    new_menu_instance = ElementMenu(self, data)
+                elif menu_name == 'main_material_menu':
+                    new_menu_instance = MainMaterialMenu(self, data)
+                elif menu_name == 'element_choose_menu':
+                    new_menu_instance = ElementChooseMenu(self, data)
                 
-                # 假設 StatMenu 存在：
-                # elif menu_name == 'stat_menu':
-                #    self.menu_manager.menus[menu_name] = StatMenu(self, data)
-                # ...
+                # 【補齊其他菜單的延遲初始化】
+                elif menu_name == 'stat_menu':
+                    new_menu_instance = StatMenu(self, data)
+                elif menu_name == 'amplifier_choose_menu':
+                    new_menu_instance = AmplifierChooseMenu(self, data)
+                elif menu_name == 'naming_menu':
+                    new_menu_instance = NamingMenu(self, data)
+                elif menu_name == 'skill_library_menu':
+                    new_menu_instance = SkillLibraryMenu(self, data)
+                elif menu_name == 'settings_menu':
+                    new_menu_instance = SettingsMenu(self, data)
                 
+                # 特殊情況：skill_chain_edit_menu 需要 chain_idx
                 elif menu_name == 'skill_chain_edit_menu' and chain_idx is not None:
-                    self.menu_manager.menus[menu_name] = SkillChainEditMenu(self, chain_idx)
-                else:
-                    # 處理缺少參數的錯誤
-                    # ... 
-                    pass # Placeholder
-            
-            # 更新 SkillChainEditMenu 邏輯 (保持您原有的邏輯)
-            elif menu_name == 'skill_chain_edit_menu' and chain_idx is not None:
-                self.menu_manager.menus[menu_name].chain_idx = chain_idx
-                # 這裡假設 self.entity_manager.player 存在且結構正確
-                self.menu_manager.menus[menu_name].slots = self.entity_manager.player.skill_chain[chain_idx][:]
-                self.menu_manager.menus[menu_name].slots += [None] * (8 - len(self.menu_manager.menus[menu_name].slots))
-                self.menu_manager.menus[menu_name]._update_buttons()
+                    new_menu_instance = SkillChainEditMenu(self, chain_idx)
                 
+                # 將新實例註冊到 MenuManager
+                if new_menu_instance:
+                    self.menu_manager.menus[menu_name] = new_menu_instance
+                else:
+                    print(f"Game: 錯誤！菜單 {menu_name} 缺少必要參數 (如 chain_idx) 或未被定義初始化邏輯。")
+                    return # 中止執行
+
+            # 2. 更新需要特殊數據的菜單 (例如 SkillChainEditMenu)
+            if menu_name == 'skill_chain_edit_menu' and chain_idx is not None:
+                # 假設此時菜單已被初始化 (無論是延遲還是預先)
+                menu = self.menu_manager.menus[menu_name]
+                menu.chain_idx = chain_idx
+                
+                # 這裡假設 self.entity_manager.player 存在且結構正確
+                player_comp = self.entity_manager.get_player_component() 
+                if player_comp:
+                    menu.slots = player_comp.skill_chain[chain_idx][:]
+                    # 填充剩餘空位
+                    menu.slots += [None] * (8 - len(menu.slots))
+                    menu._update_buttons()
+                else:
+                    print("Game: 警告！嘗試編輯技能鏈時找不到 Player Component。")
+
+            # 3. 切換到新菜單
             self.menu_manager.set_menu(menu_name)
+        else:
+            print(f"Game: 警告！嘗試顯示未註冊的菜單名稱: {menu_name}")
+            
         print(f"Game: 已顯示菜單 {menu_name}，當前菜單：{self.menu_manager.current_menu.__class__.__name__ if self.menu_manager.current_menu else 'None'}")
 
 
