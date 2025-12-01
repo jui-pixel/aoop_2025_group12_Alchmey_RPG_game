@@ -43,6 +43,7 @@ def load_background_tileset(config: DungeonConfig, get_project_path) -> Dict[str
     """載入背景貼圖集。"""
     # 這裡應該定義所有背景瓦片 (地板、門、Spawn點) 的映射
     tile_mapping = {
+        # 邊界牆變體
         'Border_wall': 'Tileset_1_1.png',
         'Border_wall_top': 'Tileset_0_1.png',
         'Border_wall_bottom': 'Tileset_2_1.png',
@@ -52,15 +53,47 @@ def load_background_tileset(config: DungeonConfig, get_project_path) -> Dict[str
         'Border_wall_top_right_corner': 'Tileset_1_1.png',
         'Border_wall_bottom_left_corner': 'Tileset_1_1.png',
         'Border_wall_bottom_right_corner': 'Tileset_1_1.png',
+        
+        # 凹牆變體
         'Border_wall_concave_top_left': 'Tileset_0_0.png',
         'Border_wall_concave_top_right': 'Tileset_0_2.png',
         'Border_wall_concave_bottom_left': 'Tileset_2_0.png',
         'Border_wall_concave_bottom_right': 'Tileset_2_2.png',
+        
+        # 凸牆變體
         'Border_wall_convex_top_left': 'Tileset_5_1.png',
         'Border_wall_convex_top_right': 'Tileset_5_0.png',
         'Border_wall_convex_bottom_left': 'Tileset_6_0.png',
         'Border_wall_convex_bottom_right': 'Tileset_6_1.png',
-        'Lobby_room_floor': 'Tileset_1_1.png',
+        
+        # 樓層瓦片 (新的樓層類型使用 'temp.png')
+        'Room_floor': 'temp.png',
+        'Lobby_room_floor': 'Tileset_1_1.png', 
+        'End_room_floor': 'temp.png',
+        'Start_room_floor': 'temp.png',
+        'Monster_room_floor': 'temp.png',
+        'Trap_room_floor': 'temp.png',
+        'Reward_room_floor': 'temp.png',
+        'NPC_room_floor': 'temp.png',
+
+        # 環境與結構瓦片
+        'Outside': 'temp.png',
+        'Bridge_floor': 'temp.png',
+        'Door': 'temp.png',
+
+        # 特殊物件 & 生成點
+        'End_room_portal': 'temp.png',
+        'Player_spawn': 'temp.png',
+        'Monster_spawn': 'temp.png',
+        'Trap_spawn': 'temp.png',
+        'Reward_spawn': 'temp.png',
+        'NPC_spawn': 'temp.png',
+        
+        # 大廳 NPC/物件
+        'Magic_crystal_NPC_spawn': 'temp.png',
+        'Dungeon_portal_NPC_spawn': 'temp.png',
+        'Alchemy_pot_NPC_spawn': 'temp.png',
+        'Dummy_spawn': 'temp.png',
     }
     return load_tileset(config, get_project_path, tile_mapping)
 
