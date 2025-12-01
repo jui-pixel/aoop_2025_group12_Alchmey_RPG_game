@@ -72,14 +72,29 @@ class EventManager:
                 print("EventManager: Exiting game")
             elif action == "back_to_lobby":
                 self.state = "lobby"
-                self.game.hide_menu(self.game.menu_manager.current_menu.__class__.__name__.lower())
+                if self.game.menu_manager.current_menu:
+                    self.game.hide_menu(self.game.menu_manager.current_menu.__class__.__name__.lower())
                 print("EventManager: Returned to lobby")
             elif action == "close":
-                self.game.hide_menu(self.game.menu_manager.current_menu.__class__.__name__.lower())
+                if self.game.menu_manager.current_menu:
+                    self.game.hide_menu(self.game.menu_manager.current_menu.__class__.__name__.lower())
                 print("EventManager: Closed menu")
             elif action.startswith("edit_chain_"):
-                # No need to handle here as show_menu is called in the menu's handle_event
-                pass
+                # 【修正點 1】: 處理編輯技能鏈的動作，切換到技能選擇狀態
+                try:
+                    chain_idx = int(action.split('_')[-1])
+                    player = self.game.entity_manager.player
+                    if player and 0 <= chain_idx < player.max_skill_chains:
+                        self.selected_skill_chain_idx = chain_idx # 設置要編輯的技能鏈索引
+                        # 載入當前技能鏈中的技能列表，以便在選擇畫面中繼續編輯
+                        self.selected_skills = player.skill_chain[chain_idx][:] 
+                        self.state = "skill_selection" # 切換到技能選擇狀態
+                        self.game.hide_menu('skill_chain_menu') # 隱藏技能鏈選單
+                        print(f"EventManager: Entering skill selection for chain index {chain_idx}")
+                    else:
+                        print(f"EventManager: Invalid skill chain index: {chain_idx} or player not available.")
+                except (ValueError, IndexError, AttributeError) as e:
+                    print(f"EventManager: Failed to process action '{action}'. Error: {e}")
 
     def _handle_skill_selection_event(self, event: pygame.event.Event) -> None:
         """Handle events in skill selection state.
@@ -107,6 +122,8 @@ class EventManager:
                     if skill:
                         self.selected_skills.append(skill)
                         print(f"EventManager: Selected skill {skill.name}")
+                
+                # 如果達到上限或手動按 Enter 結束
                 if len(self.selected_skills) >= max_skills:
                     # skill_chain 屬性應返回對 PlayerComponent.skill_chain 的引用
                     self.game.entity_manager.player.skill_chain[self.selected_skill_chain_idx] = self.selected_skills[:]  # Save skill chain
@@ -203,7 +220,7 @@ class EventManager:
             elif event.key in range(pygame.K_1, pygame.K_9 + 1):
                 chain_idx = event.key - pygame.K_1  # 1-9 keys map to chain_idx 0-8
                 self.game.entity_manager.player.switch_skill_chain(chain_idx)
-                print(f"EventManager: Playing - Switched skill chain to {chain_idx}")           
+                print(f"EventManager: Playing - Switched skill chain to {chain_idx}")          
             elif event.key == pygame.K_w:
                 current_disp = self.game.entity_manager.player.displacement
                 self.game.entity_manager.player.displacement = (current_disp[0], -1)  # Move up
@@ -279,21 +296,16 @@ class EventManager:
         nearest_npc_comp = None # Used to store the Interactable component
 
         # --- ECS 兼容性修正: 使用 world.get_components 查詢 NPC ---
-        # 假設 EntityManager 有一個方法來獲取所有可互動實體及其組件
         
-        # 由於無法得知實際組件名稱，我們將依賴於 EntityManager 提供一個方法來執行查詢 (最優化耦合)
-        # 假設 EntityManager.get_interactable_entities() 存在
+        # 假設 EntityManager 有一個方法來獲取所有可互動實體及其組件
         if hasattr(self.game.entity_manager, 'get_interactable_entities'):
             # 假設此方法返回 (entity_id, position_comp, interactable_comp) 的迭代器
-            # 且 position_comp 有 .x/.y，interactable_comp 有 .interaction_range/.tag/.w/.h/.start_interaction
-            # 這樣可以避免在 EventManager 中導入大量 ECS 組件
             for entity_id, pos_comp, interactable_comp in self.game.entity_manager.get_interactable_entities():
                 # 排除玩家自己 (假設 Facade/EntityFactory 會確保 NPC 不會是玩家ID)
                 if entity_id == player.ecs_entity:
                     continue
                     
                 # 獲取 NPC 中心點座標
-                # 假設 Interactable 組件/實體有 w/h 屬性，如果沒有則使用 Position 的 x/y
                 npc_center_x = pos_comp.x + interactable_comp.w / 2 if hasattr(interactable_comp, 'w') else pos_comp.x
                 npc_center_y = pos_comp.y + interactable_comp.h / 2 if hasattr(interactable_comp, 'h') else pos_comp.y
                 
@@ -317,5 +329,6 @@ class EventManager:
             # 因此我們將輸出錯誤訊息，並保持不互動
             print("EventManager: ECS query helper not found. Cannot perform interaction check.")
             return False
-        self.game.show_menu('skill_chain_menu')  # Open skill chain menu if no NPC
+        # 【修正點 2】: 移除這裡冗餘的菜單開啟邏輯。
+        # self.game.show_menu('skill_chain_menu') 
         return False

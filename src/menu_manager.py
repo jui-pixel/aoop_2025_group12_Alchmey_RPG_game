@@ -16,6 +16,7 @@ class MenuManager:
         self.game = game  # 保存遊戲實例引用
         self.menus = {}  # 用於儲存所有菜單的字典，鍵為菜單名稱，值為菜單實例
         self.menu_stack: List[AbstractMenu] = []  # <--- 使用菜單堆棧來支援菜單疊加
+        self.current_menu: Optional[AbstractMenu] = self.get_current_menu()  # 當前活動菜單
         self.font = pygame.font.SysFont(None, 48)  # 初始化字體，字體大小為 48
 
     def register_menu(self, name, menu: AbstractMenu = None):
@@ -147,3 +148,8 @@ class MenuManager:
                 
             return result
         return ""
+    
+    def update_current_menus(self, delta_time: float) -> None:
+        """更新當前堆棧中的所有菜單（如果需要）。"""
+        for menu in self.menu_stack:
+            menu.update(delta_time)

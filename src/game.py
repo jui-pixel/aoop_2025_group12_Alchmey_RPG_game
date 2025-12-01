@@ -204,7 +204,8 @@ class Game:
             self.menu_manager.push_menu(menu_name) # <-- 修正點：使用 push_menu 實現疊加
         else:
             print(f"Game: 警告！嘗試顯示未註冊的菜單名稱: {menu_name}")
-            
+        
+        self.event_manager.state = "menu" # 切換到菜單狀態
         print(f"Game: 已顯示菜單 {menu_name}，堆棧大小：{len(self.menu_manager.menu_stack)}")
 
     def hide_menu(self, menu_name: str) -> None:
@@ -244,10 +245,58 @@ class Game:
                 self.running = False
                 return False
             # 將事件傳遞給 EventManager 處理 (包括菜單輸入)
-            result = self.event_manager.handle_event(event)
+            self.event_manager.handle_event(event)
+
+        # 根據遊戲狀態更新邏輯
+        state = self.event_manager.state
+        if state == "menu" and self.menu_manager.current_menu:
+            # 菜單模式：只更新菜單
+            self.menu_manager.update_current_menus(dt)
+        elif state in ["lobby", "playing", "skill_selection"]:
+            # 遊戲模式：更新 ECS 系統和攝影機
             
-            # 【新增：處理 MenuManager 傳回的退出訊號】
-            if result == 'RETURN_TO_GAME_STATE':
-                # 當菜單堆棧完全清空時，回到遊戲進行狀態
-                if not self.menu_manager.menu_stack:
-                    self.event_manager.state = "lobby" if self.dungeon_manager.is_in_lobby() else "dungeon"
+            # --- ECS 更新 ---
+            # 修正: 呼叫全域的 esper.process() 函式，並傳遞必要的參數
+            # 這裡傳遞 screen 和 camera_offset 是因為 RenderSystem 需要它們
+            esper.process(dt,
+                          screen=self.screen,
+                          camera_offset=self.render_manager.camera_offset)
+            
+            # 攝影機更新 (RenderManager 應該處理)
+            self.render_manager.update_camera(dt)
+            
+        elif state == "win":
+            pass # 勝利狀態，等待用戶輸入或過場動畫
+
+        return self.running
+    
+    async def run(self) -> None:
+        """主遊戲循環，與 asyncio 兼容。"""
+        print("Game: 已啟動，顯示主菜單")
+        while self.running:
+            dt = self.clock.tick(FPS) / 1000.0 # 控制幀率為 60 FPS
+            if not await self.update(dt): # 更新遊戲狀態
+                break
+            self.draw() # 繪製畫面
+        
+        pygame.quit() # 退出 Pygame
+    
+    def draw(self) -> None:
+        """根據當前遊戲狀態繪製畫面。"""
+        self.screen.fill((0, 0, 0)) # 清空畫面
+        
+        state = self.event_manager.state
+        # print(f"Game: 繪製狀態 {state}") # 避免在主循環中頻繁打印
+        
+        if state == "menu":
+            self.render_manager.draw_menu() # 繪製菜單
+        elif state == "skill_selection":
+            self.render_manager.draw_skill_selection() # 繪製技能選擇畫面
+        elif state == "lobby":
+            self.render_manager.draw_lobby() # 繪製大廳
+        elif state == "playing":
+            self.render_manager.draw_playing() # 繪製遊戲進行畫面
+        elif state == "win":
+            self.render_manager.draw_win() # 繪製勝利畫面
+        
+        pygame.display.flip()

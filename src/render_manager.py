@@ -203,7 +203,7 @@ class RenderManager:
 
     def draw_menu(self) -> None:
         """繪製當前菜單。"""
-        assert self.game.menu_manager.current_menu is not None
+        # assert self.game.menu_manager.current_menu is not None
         self.draw_game_world()
         self.game.menu_manager.draw()
         print(f"RenderManager: 繪製菜單 {self.game.menu_manager.current_menu.__class__.__name__ if self.game.menu_manager.current_menu else 'None'}")
