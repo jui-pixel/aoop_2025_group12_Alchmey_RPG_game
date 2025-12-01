@@ -39,6 +39,7 @@ class DungeonBuilder:
         self.room_placer = RoomPlacer(config)
         self.room_type_assigner = RoomTypeAssigner(config)
         self.door_generator = DoorGenerator()
+        self.tile_manager = TileManager(config.grid_width, config.grid_height)
     
     def build(self) -> Tuple[List[Room], List[List[str]]]:
         """
