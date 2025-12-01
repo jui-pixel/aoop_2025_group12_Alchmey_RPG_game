@@ -51,8 +51,8 @@ class ShootingSkill(Skill):
         self.last_used = current_time
 
         # 1. 計算子彈中心點和方向
-        player_center_x = player.x + player.w / 2
-        player_center_y = player.y + player.h / 2
+        player_center_x = player.x
+        player_center_y = player.y
         
         dx = target_position[0] - player_center_x
         dy = target_position[1] - player_center_y
