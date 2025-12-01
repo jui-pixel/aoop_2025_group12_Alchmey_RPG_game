@@ -59,11 +59,12 @@ class Dungeon:
         self.foreground_tileset: Optional[Dict[str, pygame.Surface]] = load_foreground_tileset(self.config, get_project_path)
 
         # --- 核心整合點：Builder ---
-        self.builder: DungeonBuilder = DungeonBuilder(self) 
+        self.builder: DungeonBuilder = DungeonBuilder(self.config) 
 
     def initialize_dungeon(self, dungeon_id: int) -> None:
         """地牢生成入口。委派給 DungeonBuilder 執行整個生成流程。"""
         print("Dungeon: 啟動 DungeonBuilder 進行地牢生成...")
+        self.builder = DungeonBuilder(self.config)  # 使用當前配置初始化 Builder
         self.builder.initialize_dungeon(dungeon_id)
         self.dungeon_tiles = self.builder.tile_manager.grid
         print("Dungeon: 生成完成，地牢數據已準備就緒。")

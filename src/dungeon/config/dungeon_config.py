@@ -103,6 +103,10 @@ class DungeonConfig:
     lobby_height: int = 20
     """大廳的高度（瓦片數）"""
     
+    # =======BSP 分割偏向參數=======
+    max_split_depth: int = 6
+    """BSP 分割的最大深度"""
+    
     # ========== 整合的瓦片屬性 (強化部分) ==========
     
     pathfinding_costs: Dict[str, float] = field(default_factory=lambda: {
