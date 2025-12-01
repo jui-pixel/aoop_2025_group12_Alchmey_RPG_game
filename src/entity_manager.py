@@ -114,7 +114,8 @@ class EntityManager:
                 if npc_key == 'dungeon_portal_npc':
                     npc_entity_id = factory_func(
                         self.world, x=npc_x, y=npc_y,
-                        available_dungeons=[{'name': 'Test Dungeon', 'level': 1, 'room_id': 1}],game=self.game
+                        available_dungeons=[{'name': 'Test Dungeon', 'level': 1, 'room_id': 1}],
+                        game=self.game
                     )
                 else:
                     npc_entity_id = factory_func(self.world, x=npc_x, y=npc_y,game=self.game)

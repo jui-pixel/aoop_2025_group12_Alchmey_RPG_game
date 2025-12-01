@@ -187,7 +187,12 @@ class Game:
                     menu._update_buttons()
                 else:
                     print("Game: 警告！嘗試編輯技能鏈時找不到 Player Component。")
-
+            elif menu_name == 'dungeon_menu':
+                # 更新 DungeonMenu 的 npc_facade（如果提供的話）
+                menu = self.menu_manager.menus[menu_name]
+                if isinstance(data, dict) and 'npc_facade' in data:
+                    menu.update_npc_facade(data['npc_facade'])
+                    
             # 3. 切換到新菜單
             self.menu_manager.set_menu(menu_name)
         else:

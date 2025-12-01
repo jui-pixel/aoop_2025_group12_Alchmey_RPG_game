@@ -129,3 +129,7 @@ class DungeonMenu(AbstractMenu):
                 self.buttons[self.selected_index].is_selected = True
             else:
                 self.buttons[self.selected_index].is_selected = False
+                
+    def update_npc_facade(self, npc_facade: 'DungeonPortalNPC') -> None:
+        """更新存儲的 DungeonPortalNPC 門面實例。"""
+        self.npc_facade = npc_facade
