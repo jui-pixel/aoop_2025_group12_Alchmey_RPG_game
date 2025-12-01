@@ -222,6 +222,9 @@ class Game:
         if current_top_menu and current_top_menu.__class__.__name__.lower() == menu_name:
             self.menu_manager.pop_menu() # <-- 修正點：使用 pop_menu 實現返回上一層
             print(f"Game: 已隱藏菜單 {menu_name}")
+            if not self.menu_manager.get_current_menu():
+                self.event_manager.state = "playing" # 無活動菜單時返回遊戲狀態
+                print("Game: 菜單堆棧為空，返回遊戲狀態")
             
         elif current_top_menu is None:
             print(f"Game: 嘗試隱藏菜單 {menu_name}，但菜單堆棧為空。")

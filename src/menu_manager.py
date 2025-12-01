@@ -127,7 +127,7 @@ class MenuManager:
         if current_menu:
             result = current_menu.handle_event(event)  # 將事件傳遞給堆棧頂部菜單
             print(f"MenuManager: 處理事件 {current_menu.__class__.__name__}，結果：{result}")
-
+            
             # 根據菜單返回的標準動作進行操作
             if result == 'EXIT_MENU' or result == 'BACK' or result == 'CONFIRM_CLOSE':
                 self.pop_menu()

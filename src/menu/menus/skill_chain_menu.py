@@ -88,8 +88,8 @@ class SkillChainMenu(AbstractMenu):
                     self.game.show_menu('skill_chain_edit_menu', chain_idx=chain_idx)
                     return f"edit_chain_{chain_idx}"
                 elif action == "close":
-                    self.game.hide_menu('skill_chain_menu')
-                    return "EXIT_MENU"
+                    self.game.hide_menu(self.__class__.__name__.lower())
+                    return "back"
         if event.type == pygame.MOUSEMOTION:
             for i, button in enumerate(self.buttons):
                 if button.rect.collidepoint(event.pos):
@@ -105,8 +105,8 @@ class SkillChainMenu(AbstractMenu):
                     self.game.show_menu('skill_chain_edit_menu', chain_idx=chain_idx)
                     return f"edit_chain_{chain_idx}"
                 elif action == "close":
-                    self.game.hide_menu('skill_chain_menu')
-                    return "EXIT_MENU"
+                    self.game.hide_menu(self.__class__.__name__.lower())
+                    return "back"
         return ""
 
     def get_selected_action(self) -> str:
