@@ -135,6 +135,12 @@ class DungeonBuilder:
         door_count = self.door_generator.count_doors(self.tile_manager.grid)
         print(f"  ✓ 門數量: {door_count}")
         
+        # 11. 最終牆壁調整
+        print("\n調整牆壁...")
+        self._add_walls()
+        self.adjust_wall()
+        print("  ✓ 牆壁調整完成")
+        
         print("\n" + "=" * 60)
         print("地牢生成完成！")
         print("=" * 60)
