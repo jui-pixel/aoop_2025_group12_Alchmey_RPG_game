@@ -254,21 +254,3 @@ class DungeonPortalComponent:
         default_factory=lambda: [{'name': 'Test Dungeon', 'level': 1, 'dungeon_id': 1}]
     )
     portal_effect_active: bool = False
-
-@dataclass
-class EnemyContext:
-    """
-    為 AI 行為樹提供的上下文門面 (Facade)。
-    封裝了對 ECS 世界和實體的訪問，並提供便捷方法。
-    """
-    world: object  # esper.World
-    entity: int    # 實體 ID
-    game: object   # Game 實例
-    
-    def get_component(self, component_type):
-        """獲取指定類型的組件實例。"""
-        return self.world.component_for_entity(self.entity, component_type)
-    
-    def get_player_entity(self) -> int:
-        """獲取玩家實體 ID。"""
-        return self.game.player_entity

@@ -895,7 +895,7 @@ class AISystem(esper.Processor):
 
         for ent, (pos, ai_comp) in esper.get_components(Position, AI):
             # 創建 Context Facade
-            context = EnemyContext(esper, ent, self.game)
+            context = EnemyContext(esper, ent, self.game, ai_comp)
             
             # 執行行為樹
             ai_comp.behavior_tree.execute(context, dt, current_time)
