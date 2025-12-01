@@ -88,11 +88,14 @@ class EventManager:
                         self.selected_skills = player.skill_chain[chain_idx][:] 
                         self.state = "skill_selection" # 切換到技能選擇狀態
                         self.game.hide_menu('skill_chain_menu') # 隱藏技能鏈選單
+                        self.game.show_menu('skill_selection_menu', chain_idx=chain_idx) # 顯示技能選擇選單
                         print(f"EventManager: Entering skill selection for chain index {chain_idx}")
                     else:
                         print(f"EventManager: Invalid skill chain index: {chain_idx} or player not available.")
                 except (ValueError, IndexError, AttributeError) as e:
                     print(f"EventManager: Failed to process action '{action}'. Error: {e}")
+            elif action == 'RETURN_TO_GAME_STATE':
+                self.state = 'playing'
 
     def _handle_skill_selection_event(self, event: pygame.event.Event) -> None:
         """Handle events in skill selection state.
