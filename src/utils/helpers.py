@@ -67,14 +67,14 @@ def load_background_tileset(config: DungeonConfig, get_project_path) -> Dict[str
         'Border_wall_convex_bottom_right': 'Tileset_6_1.png',
         
         # 樓層瓦片 (新的樓層類型使用 'temp.png')
-        'Room_floor': 'temp.png',
+        'Room_floor': 'Tileset_1_1.png',
         'Lobby_room_floor': 'Tileset_1_1.png', 
-        'End_room_floor': 'temp.png',
-        'Start_room_floor': 'temp.png',
-        'Monster_room_floor': 'temp.png',
-        'Trap_room_floor': 'temp.png',
-        'Reward_room_floor': 'temp.png',
-        'NPC_room_floor': 'temp.png',
+        'End_room_floor': 'Tileset_1_1.png',
+        'Start_room_floor': 'Tileset_1_1.png',
+        'Monster_room_floor': 'Tileset_1_1.png',
+        'Trap_room_floor': 'Tileset_1_1.png',
+        'Reward_room_floor': 'Tileset_1_1.png',
+        'NPC_room_floor': 'Tileset_1_1.png',
 
         # 環境與結構瓦片
         'Outside': 'temp.png',
