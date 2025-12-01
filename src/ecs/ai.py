@@ -17,11 +17,11 @@ from src.buffs.element_buff import ELEMENTAL_BUFFS
 
 class EnemyContext:
     """ECS 實體上下文門面，用於在 Action 類中訪問和修改組件。"""
-    def __init__(self, world: esper, entity_id: int, game: 'Game'):
+    def __init__(self, world: esper, entity_id: int, game: 'Game', ai_comp: AI = None):
         self.world = world
         self.ecs_entity = entity_id
         self.game = game # 遊戲主實例，用於訪問 entity_manager, dungeon_manager
-        
+        self.ai_comp = ai_comp if ai_comp else self._get_comp(AI)
     def _get_comp(self, component_type):
         """安全地獲取組件，若無則報錯（ECS 實體應有此組件）"""
         return self.world.component_for_entity(self.ecs_entity, component_type)

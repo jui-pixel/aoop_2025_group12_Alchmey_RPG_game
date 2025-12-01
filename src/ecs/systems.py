@@ -1,7 +1,8 @@
 import esper
 import pygame
 import math
-from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider, PlayerComponent, EnemyContext
+from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider, PlayerComponent
+from src.ecs.ai import EnemyContext
 from src.config import TILE_SIZE, PASSABLE_TILES, SCREEN_WIDTH, SCREEN_HEIGHT
 
 class MovementSystem(esper.Processor):
