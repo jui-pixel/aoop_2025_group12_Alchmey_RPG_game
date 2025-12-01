@@ -474,7 +474,4 @@ def create_dummy_entity(
     # 5. 增益效果 (Buffs)
     world.add_component(npc_entity, Buffs())
 
-    # 6. NPC 交互狀態
-    world.add_component(npc_entity, NPCInteractComponent()) 
-
     return npc_entity
