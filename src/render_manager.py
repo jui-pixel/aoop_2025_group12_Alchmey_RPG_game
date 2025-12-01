@@ -1,6 +1,6 @@
 import pygame
 from typing import List
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT, MAX_WEAPONS_DEFAULT, TILE_SIZE, DARK_GRAY, PASSABLE_TILES, ROOM_FLOOR_COLORS, BLACK
+from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE, DARK_GRAY, PASSABLE_TILES, ROOM_FLOOR_COLORS, BLACK
 from src.utils.helpers import get_project_path
 import math
 from src.ecs.systems import RenderSystem
@@ -11,7 +11,7 @@ class FontManager:
     def get_font(name: str, size: int) -> pygame.font.Font:
         key = (name, size)
         if key not in FontManager._fonts:
-            font_path = get_project_path("src", "assets", "fonts", name)
+            font_path = get_project_path("assets", "fonts", name)
             try:
                 FontManager._fonts[key] = pygame.font.Font(font_path, size)
                 print(f"成功載入字體: {font_path}")
@@ -212,7 +212,6 @@ class RenderManager:
         """繪製技能選擇畫面。"""
         self.screen.fill((0, 0, 0))
         font = FontManager.get_font("Silver.ttf", 36)
-        max_skills = self.game.entity_manager.player.max_skills if self.game.entity_manager.player else MAX_SKILLS_DEFAULT
         for i, skill in enumerate(self.game.storage_manager.skills):
             is_selected = skill in self.game.event_manager.selected_skills
             hovered = False
@@ -224,7 +223,7 @@ class RenderManager:
                 pygame.draw.rect(self.screen, (255, 255, 0), rect, 2)
         chain_text = font.render(f"技能鏈 {self.game.event_manager.selected_skill_chain_idx + 1}/{self.game.entity_manager.player.max_skill_chains}", True, (255, 255, 255))
         self.screen.blit(chain_text, (SCREEN_WIDTH // 2 - chain_text.get_width() // 2, 450))
-        count_text = font.render(f"已選擇：{len(self.game.event_manager.selected_skills)}/{max_skills}", True, (255, 255, 255))
+        count_text = font.render(f"已選擇：{len(self.game.event_manager.selected_skills)}/{4}", True, (255, 255, 255))
         self.screen.blit(count_text, (SCREEN_WIDTH // 2 - count_text.get_width() // 2, 400))
         pygame.display.flip()
 

@@ -163,7 +163,7 @@ class Player:
         buffs_comp = self._get_buffs_comp()
         buffs_comp.active_buffs.append(buff)
         buff.on_apply(self)
-
+    
     # --- Property 訪問器 (用於取代直接屬性訪問) ---
     @property
     def energy(self) -> float:

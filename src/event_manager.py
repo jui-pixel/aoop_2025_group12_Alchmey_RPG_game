@@ -1,7 +1,7 @@
 # src/event_manager.py
 import pygame
 from typing import List, Dict
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_SKILLS_DEFAULT
+from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from src.skills.abstract_skill import Skill
 import math
 
@@ -42,8 +42,6 @@ class EventManager:
             self._handle_menu_event(event)
         elif self.state == "menu":
             self._handle_menu_event(event)
-        elif self.state == "skill_selection":
-            self._handle_skill_selection_event(event)
         elif self.state == "lobby":
             self._handle_lobby_event(event)
         elif self.state == "playing":

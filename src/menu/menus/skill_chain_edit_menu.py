@@ -153,7 +153,7 @@ class SkillChainEditMenu(AbstractMenu):
                     return "next"
                 elif action == "skill_chain_menu":
                     self._save_chain()
-                    self.game.hide_menu('skill_chain_edit_menu')
+                    self.game.hide_menu(self.__class__.__name__)
                     self.game.show_menu('skill_chain_menu')
                     return "skill_chain_menu"
         return ""

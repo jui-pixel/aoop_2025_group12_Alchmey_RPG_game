@@ -290,8 +290,6 @@ class Game:
         
         if state == "menu":
             self.render_manager.draw_menu() # 繪製菜單
-        elif state == "skill_selection":
-            self.render_manager.draw_skill_selection() # 繪製技能選擇畫面
         elif state == "lobby":
             self.render_manager.draw_lobby() # 繪製大廳
         elif state == "playing":
