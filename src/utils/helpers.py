@@ -77,7 +77,7 @@ def load_background_tileset(config: DungeonConfig, get_project_path) -> Dict[str
         'NPC_room_floor': 'Tileset_1_1.png',
 
         # 環境與結構瓦片
-        'Outside': 'Tileset_0_3',
+        'Outside': 'Tileset_0_3.png',
         'Bridge_floor': 'Tileset_1_1.png',
         'Door': 'temp.png',
 
