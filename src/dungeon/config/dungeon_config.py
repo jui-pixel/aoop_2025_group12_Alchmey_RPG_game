@@ -58,16 +58,16 @@ class DungeonConfig:
     room_height: int = 20
     """單個房間的最大高度（瓦片數）"""
     
-    min_room_size: int = 15
+    min_room_size: int = 13
     """房間的最小尺寸（寬度和高度）"""
     
     room_gap: int = 2
     """房間之間的最小間距（瓦片數）"""
     
-    max_split_depth: int = 6
+    max_split_depth: int = 15
     """BSP 分割的最大深度（控制生成房間的數量）"""
     
-    min_split_size: Optional[int] = None
+    min_split_size: Optional[int] = 15
     """BSP 分割的最小尺寸（默認使用 min_room_size）"""
     
     bias_ratio: float = 0.8
@@ -83,7 +83,7 @@ class DungeonConfig:
     max_bridge_width: int = 4
     """走廊的最大寬度（瓦片數）"""
     
-    extra_bridge_ratio: float = 0.0
+    extra_bridge_ratio: float = 0.1
     """額外走廊的比例（0.0-1.0，增加連通性）"""
     
     # ========== 房間類型比例 ==========
@@ -102,10 +102,6 @@ class DungeonConfig:
     
     lobby_height: int = 20
     """大廳的高度（瓦片數）"""
-    
-    # =======BSP 分割偏向參數=======
-    max_split_depth: int = 6
-    """BSP 分割的最大深度"""
     
     # ========== 整合的瓦片屬性 (強化部分) ==========
     
