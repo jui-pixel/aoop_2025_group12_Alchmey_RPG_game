@@ -21,7 +21,7 @@ class DungeonManager:
 
         調用地牢的 initialize_dungeon 方法來生成地牢結構和房間。
         """
-        self.dungeon.initialize_dungeon()
+        self.dungeon.initialize_dungeon(dungeon_id)
         self.current_room_id = 1  # 將當前房間設置為第一個房間（非大廳）
     
     def initialize_lobby(self) -> None:

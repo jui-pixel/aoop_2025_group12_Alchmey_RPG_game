@@ -61,10 +61,11 @@ class Dungeon:
         # --- 核心整合點：Builder ---
         self.builder: DungeonBuilder = DungeonBuilder(self) 
 
-    def initialize_dungeon(self) -> None:
+    def initialize_dungeon(self, dungeon_id: int) -> None:
         """地牢生成入口。委派給 DungeonBuilder 執行整個生成流程。"""
         print("Dungeon: 啟動 DungeonBuilder 進行地牢生成...")
-        self.builder.initialize_dungeon()
+        self.builder.initialize_dungeon(dungeon_id)
+        self.dungeon_tiles = self.builder.tile_manager.grid
         print("Dungeon: 生成完成，地牢數據已準備就緒。")
 
     def initialize_lobby(self) -> None:

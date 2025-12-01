@@ -25,7 +25,7 @@ class DungeonBuilder:
     這是地牢生成的主要入口點。
     """
     
-    def __init__(self, config: DungeonConfig):
+    def __init__(self, config: DungeonConfig = DungeonConfig()):
         """
         初始化地牢構建器
         
@@ -139,6 +139,19 @@ class DungeonBuilder:
         print("=" * 60)
         
         return rooms, tile_manager.grid
+    
+    def initialize_dungeon(self, dungeon_id: int) -> None:
+        """
+        初始化整個地牢
+        
+        Args:
+            dungeon_id: 地牢 ID
+        """
+        print(f"DungeonBuilder: 開始初始化地牢 ID {dungeon_id}...")
+        rooms, grid = self.build()
+        print(f"DungeonBuilder: 地牢 ID {dungeon_id} 初始化完成，共有 {len(rooms)} 個房間。")
+        # 這裡可以將生成的 rooms 和 grid 返回給 Dungeon 實例進行後續處理
+        pass
     
     def _build_room_graph(self, rooms: List[Room]) -> List[Tuple[int, int, float]]:
         """
