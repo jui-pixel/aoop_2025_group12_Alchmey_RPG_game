@@ -129,11 +129,11 @@ class DungeonBuilder:
         )
         print(f"  ✓ 邊界牆瓦片數: {border_count}")
         
-        # 10. 生成門
-        print("\n[10/10] 生成門...")
-        self.door_generator.generate_doors(self.tile_manager.grid)
-        door_count = self.door_generator.count_doors(self.tile_manager.grid)
-        print(f"  ✓ 門數量: {door_count}")
+        # # 10. 生成門
+        # print("\n[10/10] 生成門...")
+        # self.door_generator.generate_doors(self.tile_manager.grid)
+        # door_count = self.door_generator.count_doors(self.tile_manager.grid)
+        # print(f"  ✓ 門數量: {door_count}")
         
         # 11. 最終牆壁調整
         print("\n調整牆壁...")

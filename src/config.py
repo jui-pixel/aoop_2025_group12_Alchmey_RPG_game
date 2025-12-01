@@ -116,6 +116,7 @@ ROOM_FLOOR_COLORS = {
 }
 
 PASSABLE_TILES = {
+    # 樓層瓦片
     'Room_floor',
     'Bridge_floor',
     'End_room_floor',
@@ -124,14 +125,20 @@ PASSABLE_TILES = {
     'Trap_room_floor',
     'Reward_room_floor',
     'Start_room_floor',
+    'NPC_room_floor',
+    
+    # 環境結構
+    'Door',
+    
+    # 特殊物件 & 生成點
     'End_room_portal',
     'Player_spawn',
     'NPC_spawn',
     'Monster_spawn',
     'Trap_spawn',
     'Reward_spawn',
-    'Door',
-    'NPC_room_floor',
+    
+    # 大廳 NPC/物件
     'Magic_crystal_NPC_spawn',
     'Dungeon_portal_NPC_spawn',
     'Alchemy_pot_NPC_spawn',

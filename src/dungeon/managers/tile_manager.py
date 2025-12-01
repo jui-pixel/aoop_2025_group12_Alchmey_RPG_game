@@ -272,8 +272,8 @@ class TileManager:
         # 6: BL(-1, 1), 5: B(0, 1), 4: BR(1, 1)
         directions = [
             (-1, -1), (0, -1), (1, -1),  # 0: TL, 1: T, 2: TR
-            (1, 0),                      # 3: R
-            (1, 1), (0, 1), (-1, 1),     # 4: BR, 5: B, 6: BL
+                               (1, 0),   #              3: R
+            (1, 1),   (0, 1),  (-1, 1),  # 4: BR, 5: B, 6: BL
             (-1, 0)                      # 7: L
         ]
 
@@ -313,16 +313,16 @@ class TileManager:
                     
                     # A. 凹牆 (Concave Wall) - 僅單一角落可通行
                     # 僅 TL(0) 可通行 -> 凹 BR (0b00000001)
-                    if neighbors_mask == 0b00000001:
+                    if (neighbors_mask & 0b00000001) == 0b00000001:
                         variant = 'Border_wall_concave_bottom_right'
                     # 僅 TR(2) 可通行 -> 凹 BL (0b00000100)
-                    elif neighbors_mask == 0b00000100:
+                    elif (neighbors_mask & 0b00000100) == 0b00000100:
                         variant = 'Border_wall_concave_bottom_left'
                     # 僅 BR(4) 可通行 -> 凹 TL (0b00010000)
-                    elif neighbors_mask == 0b00010000:
+                    elif (neighbors_mask & 0b00010000) == 0b00010000:
                         variant = 'Border_wall_concave_top_left'
                     # 僅 BL(6) 可通行 -> 凹 TR (0b01000000)
-                    elif neighbors_mask == 0b01000000:
+                    elif (neighbors_mask & 0b01000000) == 0b01000000:
                         variant = 'Border_wall_concave_top_right'
                         
                     # B. 凸牆 (Convex Wall) - 三個相鄰格子可通行
