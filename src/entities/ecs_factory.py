@@ -100,7 +100,7 @@ def create_player_entity(
         energy_regen_rate=5.0,
         base_energy_regen_rate=5.0,  # 初始基底能量回覆
         fog=True,
-        vision_radius=5
+        vision_radius=10
     ))
 
     # 8. tag組件
