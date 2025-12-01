@@ -2,7 +2,7 @@
 
 ## 專案架構概述
 
-這是一個基於 **ECS (Entity Component System)** 架構的 Roguelike 地牢遊戲專案，使用 Pygame 和 Esper 框架開發。
+這是一個AOOP架構的 Roguelike 地牢遊戲專案，使用 Pygame 和 Esper 框架開發。
 
 ---
 
