@@ -68,22 +68,5 @@ def load_foreground_tileset(config: DungeonConfig, get_project_path) -> Dict[str
     """載入前景貼圖集 (牆壁)。"""
     # 這裡是您提供的牆壁映射
     tile_mapping = {
-        'Border_wall': 'Tileset_1_1.png',
-        'Border_wall_top': 'Tileset_0_1.png',
-        'Border_wall_bottom': 'Tileset_2_1.png',
-        'Border_wall_left': 'Tileset_1_0.png',
-        'Border_wall_right': 'Tileset_1_2.png',
-        'Border_wall_top_left_corner': 'Tileset_1_1.png',
-        'Border_wall_top_right_corner': 'Tileset_1_1.png',
-        'Border_wall_bottom_left_corner': 'Tileset_1_1.png',
-        'Border_wall_bottom_right_corner': 'Tileset_1_1.png',
-        'Border_wall_concave_top_left': 'Tileset_0_0.png',
-        'Border_wall_concave_top_right': 'Tileset_0_2.png',
-        'Border_wall_concave_bottom_left': 'Tileset_2_0.png',
-        'Border_wall_concave_bottom_right': 'Tileset_2_2.png',
-        'Border_wall_convex_top_left': 'Tileset_5_1.png',
-        'Border_wall_convex_top_right': 'Tileset_5_0.png',
-        'Border_wall_convex_bottom_left': 'Tileset_6_0.png',
-        'Border_wall_convex_bottom_right': 'Tileset_6_1.png',
     }
     return load_tileset(config, get_project_path, tile_mapping)

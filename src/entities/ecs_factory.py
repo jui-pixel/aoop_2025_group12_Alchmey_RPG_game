@@ -208,11 +208,15 @@ def create_enemy1_entity(
     # 幾何與運動
     world.add_component(enemy, Position(x=x, y=y))
     world.add_component(enemy, Velocity(speed=max_speed, x=0.0, y=0.0))
-    world.add_component(enemy, Collider(w=w, h=h, tag=tag))
+    world.add_component(enemy, Collider(w=w, h=h))
+    world.add_component(enemy, Tag(tag=tag))
     
     # 健康與戰鬥
-    world.add_component(enemy, Health(max_hp=base_max_hp, current_hp=base_max_hp, defense=defense, dodge_rate=0.0))
-    world.add_component(enemy, Combat(damage=damage, atk_element=element, tag=tag, collision_cooldown=0.1))
+    world.add_component(enemy, Health(max_hp=base_max_hp, current_hp=base_max_hp))
+    world.add_component(enemy, Defense(defense=defense, dodge_rate=0.0, element=element, invulnerable=False))
+    world.add_component(enemy, Combat(damage=damage, atk_element=element, collision_cooldown=0.1))
+    world.add_component(enemy, Buffs())
+    world.add_component(enemy, Tag(tag=tag))
     
     # 渲染
     image = pygame.Surface((w, h))

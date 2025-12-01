@@ -92,7 +92,7 @@ class DungeonBuilder:
         
         # 7. 初始化瓦片網格
         print("\n[7/10] 初始化瓦片網格...")
-        tile_manager = TileManager(self.config.grid_width, self.config.grid_height)
+        self.tile_manager = TileManager(self.config.grid_width, self.config.grid_height)
         
         # 為每個房間生成瓦片
         for room in rooms:
@@ -100,29 +100,29 @@ class DungeonBuilder:
         
         # 放置房間到網格
         for room in rooms:
-            tile_manager.place_room(room)
+            self.tile_manager.place_room(room)
         print(f"  ✓ 網格尺寸: {self.config.grid_width}x{self.config.grid_height}")
         
         # 8. 生成走廊
         print("\n[8/10] 生成走廊...")
         pathfinder = AStarPathfinder(
-            tile_manager.grid,
+            self.tile_manager.grid,
             passable_tiles=None,  # 允許在 Outside 上尋路
             cost_map=self.config.pathfinding_costs
         )
         corridor_gen = CorridorGenerator(self.config, pathfinder)
-        corridor_gen.generate_corridors(rooms, connections, tile_manager.grid)
+        corridor_gen.generate_corridors(rooms, connections, self.tile_manager.grid)
         
         # 膨脹走廊
-        corridor_gen.expand_corridors(tile_manager.grid)
-        corridor_count = tile_manager.count_tiles('Bridge_floor')
+        corridor_gen.expand_corridors(self.tile_manager.grid)
+        corridor_count = self.tile_manager.count_tiles('Bridge_floor')
         print(f"  ✓ 走廊瓦片數: {corridor_count}")
         
         # 9. 添加房間邊界
         print("\n[9/10] 添加房間邊界...")
-        tile_manager.add_room_borders(rooms)
+        self.tile_manager.add_room_borders(rooms)
         border_count = sum(
-            tile_manager.count_tiles(f'Border_wall{suffix}')
+            self.tile_manager.count_tiles(f'Border_wall{suffix}')
             for suffix in ['', '_top', '_bottom', '_left', '_right',
                           '_top_left_corner', '_top_right_corner',
                           '_bottom_left_corner', '_bottom_right_corner']
@@ -131,15 +131,15 @@ class DungeonBuilder:
         
         # 10. 生成門
         print("\n[10/10] 生成門...")
-        self.door_generator.generate_doors(tile_manager.grid)
-        door_count = self.door_generator.count_doors(tile_manager.grid)
+        self.door_generator.generate_doors(self.tile_manager.grid)
+        door_count = self.door_generator.count_doors(self.tile_manager.grid)
         print(f"  ✓ 門數量: {door_count}")
         
         print("\n" + "=" * 60)
         print("地牢生成完成！")
         print("=" * 60)
         
-        return rooms, tile_manager.grid
+        return rooms, self.tile_manager.grid
     
     def initialize_dungeon(self, dungeon_id: int) -> None:
         """
