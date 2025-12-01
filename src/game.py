@@ -250,4 +250,4 @@ class Game:
             if result == 'RETURN_TO_GAME_STATE':
                 # 當菜單堆棧完全清空時，回到遊戲進行狀態
                 if not self.menu_manager.menu_stack:
-                    self.event_manager.state = "lobby" if self.dungeon_manager.is_in_lobby
+                    self.event_manager.state = "lobby" if self.dungeon_manager.is_in_lobby() else "dungeon"
