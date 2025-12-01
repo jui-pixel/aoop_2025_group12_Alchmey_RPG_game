@@ -95,25 +95,26 @@ class TileManager:
         Returns:
             邊界牆類型
         """
-        # 四個角
-        if x == x_start - 1 and y == y_start - 1:
-            return 'Border_wall_top_left_corner'
-        elif x == x_end and y == y_start - 1:
-            return 'Border_wall_top_right_corner'
-        elif x == x_start - 1 and y == y_end:
-            return 'Border_wall_bottom_left_corner'
-        elif x == x_end and y == y_end:
-            return 'Border_wall_bottom_right_corner'
+        # 轉移至adjust_wall方法處理更複雜的牆壁變體
+        # # 四個角
+        # if x == x_start - 1 and y == y_start - 1:
+        #     return 'Border_wall_top_left_corner'
+        # elif x == x_end and y == y_start - 1:
+        #     return 'Border_wall_top_right_corner'
+        # elif x == x_start - 1 and y == y_end:
+        #     return 'Border_wall_bottom_left_corner'
+        # elif x == x_end and y == y_end:
+        #     return 'Border_wall_bottom_right_corner'
         
-        # 四條邊
-        elif y == y_start - 1:
-            return 'Border_wall_top'
-        elif y == y_end:
-            return 'Border_wall_bottom'
-        elif x == x_start - 1:
-            return 'Border_wall_left'
-        elif x == x_end:
-            return 'Border_wall_right'
+        # # 四條邊
+        # elif y == y_start - 1:
+        #     return 'Border_wall_top'
+        # elif y == y_end:
+        #     return 'Border_wall_bottom'
+        # elif x == x_start - 1:
+        #     return 'Border_wall_left'
+        # elif x == x_end:
+        #     return 'Border_wall_right'
         
         return 'Border_wall'
     
@@ -313,16 +314,16 @@ class TileManager:
                     
                     # A. 凹牆 (Concave Wall) - 僅單一角落可通行
                     # 僅 TL(0) 可通行 -> 凹 BR (0b00000001)
-                    if (neighbors_mask & 0b00000001) == 0b00000001:
+                    if neighbors_mask == 0b00000001:
                         variant = 'Border_wall_concave_bottom_right'
                     # 僅 TR(2) 可通行 -> 凹 BL (0b00000100)
-                    elif (neighbors_mask & 0b00000100) == 0b00000100:
+                    elif neighbors_mask == 0b00000100:
                         variant = 'Border_wall_concave_bottom_left'
                     # 僅 BR(4) 可通行 -> 凹 TL (0b00010000)
-                    elif (neighbors_mask & 0b00010000) == 0b00010000:
+                    elif neighbors_mask == 0b00010000:
                         variant = 'Border_wall_concave_top_left'
                     # 僅 BL(6) 可通行 -> 凹 TR (0b01000000)
-                    elif (neighbors_mask & 0b01000000) == 0b01000000:
+                    elif neighbors_mask == 0b01000000:
                         variant = 'Border_wall_concave_top_right'
                         
                     # B. 凸牆 (Convex Wall) - 三個相鄰格子可通行
