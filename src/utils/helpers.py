@@ -78,22 +78,22 @@ def load_background_tileset(config: DungeonConfig, get_project_path) -> Dict[str
 
         # 環境與結構瓦片
         'Outside': 'temp.png',
-        'Bridge_floor': 'temp.png',
+        'Bridge_floor': 'Tileset_1_1.png',
         'Door': 'temp.png',
 
         # 特殊物件 & 生成點
-        'End_room_portal': 'temp.png',
-        'Player_spawn': 'temp.png',
-        'Monster_spawn': 'temp.png',
-        'Trap_spawn': 'temp.png',
-        'Reward_spawn': 'temp.png',
-        'NPC_spawn': 'temp.png',
+        'End_room_portal': 'Tileset_1_1.png',
+        'Player_spawn': 'Tileset_1_1.png',
+        'Monster_spawn': 'Tileset_1_1.png',
+        'Trap_spawn': 'Tileset_1_1.png',
+        'Reward_spawn': 'Tileset_1_1.png',
+        'NPC_spawn': 'Tileset_1_1.png',
         
         # 大廳 NPC/物件
-        'Magic_crystal_NPC_spawn': 'temp.png',
-        'Dungeon_portal_NPC_spawn': 'temp.png',
-        'Alchemy_pot_NPC_spawn': 'temp.png',
-        'Dummy_spawn': 'temp.png',
+        'Magic_crystal_NPC_spawn': 'Tileset_1_1.png',
+        'Dungeon_portal_NPC_spawn': 'Tileset_1_1.png',
+        'Alchemy_pot_NPC_spawn': 'Tileset_1_1.png',
+        'Dummy_spawn': 'Tileset_1_1.png',
     }
     return load_tileset(config, get_project_path, tile_mapping)
 
