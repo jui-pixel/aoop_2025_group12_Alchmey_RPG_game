@@ -148,6 +148,7 @@ class EntityManager:
                         available_dungeons=[{'name': 'Test Dungeon', 'level': 1, 'room_id': 1}],
                         game=self.game
                     )
+                    
                         
                 elif tile_type == 'Player_spawn':
                     if self.player:
