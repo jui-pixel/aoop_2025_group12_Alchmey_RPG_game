@@ -16,6 +16,14 @@ class DungeonManager:
         self.dungeon.game = game  # 將遊戲實例設置到地牢中
         self.current_room_id = 0  # 當前房間的 ID，初始為 0（大廳）
 
+    def initialize_dungeon(self) -> None:
+        """初始化整個地牢。
+
+        調用地牢的 initialize_dungeon 方法來生成地牢結構和房間。
+        """
+        self.dungeon.initialize_dungeon()
+        self.current_room_id = 1  # 將當前房間設置為第一個房間（非大廳）
+    
     def initialize_lobby(self) -> None:
         """初始化大廳房間。
 

@@ -21,6 +21,9 @@ class DungeonPortalNPC(AbstractNPCFacade): # <--- 繼承抽象基類
         interact_comp = self._get_interact_comp() # 繼承自父類
         interact_comp.tag = "dungeon_portal_npc"
         interact_comp.start_interaction = self.start_interaction
+        
+        dungeon_comp = self._get_portal_comp()
+        dungeon_comp.available_dungeons = [{'name': 'Test Dungeon', 'level': 1, 'dungeon_id': 1}]
 
     # --- 輔助方法：特有組件獲取 ---
 
