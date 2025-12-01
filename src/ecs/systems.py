@@ -1,7 +1,7 @@
 import esper
 import pygame
 import math
-from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider, PlayerComponent
+from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider, PlayerComponent, EnemyContext
 from src.config import TILE_SIZE, PASSABLE_TILES, SCREEN_WIDTH, SCREEN_HEIGHT
 
 class MovementSystem(esper.Processor):
@@ -876,7 +876,7 @@ class EnergySystem(esper.Processor):
     def process(self, dt: float, *args, **kwargs) -> None:
         """處理所有擁有 PlayerComponent 的實體的能量再生。"""
         
-        for ent, comp in self.world.get_component(PlayerComponent):
+        for ent, comp in esper.get_component(PlayerComponent):
             # 檢查是否需要再生
             if comp.energy < comp.max_energy:
                 comp.energy += comp.energy_regen_rate * dt
@@ -893,9 +893,9 @@ class AISystem(esper.Processor):
         dt = args[0]
         current_time = self.game.current_time
 
-        for ent, (pos, ai_comp) in self.world.get_components(Position, AI):
+        for ent, (pos, ai_comp) in esper.get_components(Position, AI):
             # 創建 Context Facade
-            context = Context(self.world, ent, self.game)
+            context = EnemyContext(esper, ent, self.game)
             
             # 執行行為樹
             ai_comp.behavior_tree.execute(context, dt, current_time)
