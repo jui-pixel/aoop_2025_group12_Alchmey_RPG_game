@@ -49,7 +49,7 @@ def create_expanding_circle_bullet(
     x: float,
     y: float,
     direction: Tuple[float, float],
-    tag: str = "player_bullet",
+    tag: str,
     damage: int = 10,
     max_speed: float = 300.0,
     outer_radius: float = TILE_SIZE,

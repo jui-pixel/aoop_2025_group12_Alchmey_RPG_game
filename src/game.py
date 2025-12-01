@@ -11,7 +11,10 @@ from src.entity_manager import EntityManager
 from src.menu_manager import MenuManager
 
 # 引入 ECS 系統（假設它們在 src.ecs.systems 中）
-from src.ecs.systems import InputSystem, MovementSystem, CombatSystem, RenderSystem 
+from src.ecs.systems import (
+    InputSystem, MovementSystem, CombatSystem, RenderSystem, 
+    HealthSystem, BuffSystem, EnergySystem, AISystem
+)
 
 # 引入所有菜單類別
 from src.menu.menus.alchemy_menu import AlchemyMenu
@@ -61,11 +64,16 @@ class Game:
         esper.game = self 
         
         # 註冊 ECS 系統 (使用全域註冊)
-        esper.add_processor(InputSystem())
-        esper.add_processor(MovementSystem())
-        esper.add_processor(CombatSystem())
-        # RenderSystem 通常在 draw 階段手動調用，或者設置為最低優先級
-        esper.add_processor(RenderSystem())
+        self.world.add_processor(InputSystem())
+        self.world.add_processor(AISystem(self)) # AISystem 需要 game 實例
+
+        self.world.add_processor(MovementSystem())
+        self.world.add_processor(CombatSystem())
+        self.world.add_processor(HealthSystem())
+        self.world.add_processor(BuffSystem())
+        self.world.add_processor(EnergySystem())
+
+        self.world.add_processor(RenderSystem())
 
         # 菜單註冊
         self.menu_manager.register_menu('main_menu', MainMenu(self))

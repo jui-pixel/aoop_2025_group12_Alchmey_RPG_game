@@ -891,11 +891,11 @@ class AISystem(esper.Processor):
 
     def process(self, *args, **kwargs):
         dt = args[0]
-        current_time = args[1] # 假設 update 傳遞了 current_time
+        current_time = self.game.current_time
 
         for ent, (pos, ai_comp) in self.world.get_components(Position, AI):
             # 創建 Context Facade
-            context = EnemyContext(self.world, ent, self.game)
+            context = Context(self.world, ent, self.game)
             
             # 執行行為樹
             ai_comp.behavior_tree.execute(context, dt, current_time)
