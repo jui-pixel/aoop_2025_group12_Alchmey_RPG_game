@@ -237,47 +237,7 @@ class DungeonConfig:
             max_bridge_width=getattr(config_module, 'MAX_BRIDGE_WIDTH', 4),
             extra_bridge_ratio=getattr(config_module, 'EXTRA_BRIDGE_RATIO', 0.0),
             # 注意：使用您原始的 MOMSTER_ROOM_RATIO 拼寫
-            monster_room_ratio=getattr(config_module, 'MOMSTER_ROOM_RATIO', 0.8), 
-            trap_room_ratio=getattr(config_module, 'TRAP_ROOM_RATIO', 0.1),
-            reward_room_ratio=getattr(config_module, 'REWARD_ROOM_RATIO', 0.1),
-            lobby_width=getattr(config_module, 'LOBBY_WIDTH', 30),
-            lobby_height=getattr(config_module, 'LOBBY_HEIGHT', 20),
-            bias_ratio=getattr(config_module, 'BIAS_RATIO', 0.8),
-            bias_strength=getattr(config_module, 'BIAS_STRENGTH', 0.3),
-            tile_size=getattr(config_module, 'TILE_SIZE', 32),
-            
-            # 從通用配置中提取通行瓦片集合
-            passable_tiles_set=set(getattr(config_module, 'PASSABLE_TILES', set())),
-            pathfinding_costs=initial_costs
-        )
-    
-    def copy(self, **changes) -> 'DungeonConfig':
-        """
-        創建配置副本並應用修改
-        """
-        import copy
-        # 使用深拷貝來複製內部的 mutable 結構 (例如 passable_tiles_set, pathfinding_costs)
-        new_config = copy.deepcopy(self) 
-        for key, value in changes.items():
-            if hasattr(new_config, key):
-                setattr(new_config, key, value)
-            else:
-                raise ValueError(f"未知的配置屬性: {key}")
-        # 執行 post_init 邏輯以確保新的副本狀態一致
-        new_config.__post_init__() 
-        return new_config
-
-
-# 預定義配置
-DEFAULT_CONFIG = DungeonConfig()
-"""默認配置"""
-
-SMALL_DUNGEON_CONFIG = DungeonConfig(
-    grid_width=60,
-    grid_height=50,
-    max_split_depth=4,
-)
-"""小型地牢配置"""
+            )
 
 LARGE_DUNGEON_CONFIG = DungeonConfig(
     grid_width=200,
@@ -291,3 +251,13 @@ DENSE_DUNGEON_CONFIG = DungeonConfig(
     max_split_depth=7,
 )
 """高連通性地牢配置"""
+
+DEFAULT_CONFIG = DungeonConfig()
+"""默認地牢配置"""
+
+SMALL_DUNGEON_CONFIG = DungeonConfig(
+    grid_width=80,
+    grid_height=60,
+    max_split_depth=5,
+)
+"""小型地牢配置"""
