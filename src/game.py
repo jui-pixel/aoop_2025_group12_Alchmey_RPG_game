@@ -206,7 +206,7 @@ class Game:
             print(f"Game: 警告！嘗試顯示未註冊的菜單名稱: {menu_name}")
         
         self.event_manager.state = "menu" # 切換到菜單狀態
-        print(f"Game: 已顯示菜單 {menu_name}，堆棧大小：{len(self.menu_manager.menu_stack)}")
+        print(f"Game: 已顯示菜單 {menu_name}，激活菜單數：{len(self.menu_manager.active_menus)}")
 
     def hide_menu(self, menu_name: str) -> None:
         """
@@ -252,7 +252,7 @@ class Game:
 
         # 根據遊戲狀態更新邏輯
         state = self.event_manager.state
-        if state == "menu" and self.menu_manager.current_menu:
+        if state == "menu" and self.menu_manager.active_menus:
             # 菜單模式：只更新菜單
             self.menu_manager.update_current_menus(dt)
         elif state in ["lobby", "playing", "skill_selection"]:

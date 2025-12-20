@@ -10,3 +10,7 @@ class AbstractMenu(ABC):
     def get_selected_action(self): pass  # 獲取當前選中動作
     @abstractmethod
     def activate(self, active: bool): pass  # 啟用/禁用選單
+    
+    def get_name(self) -> str:
+        """獲取菜單名稱"""
+        return self.__class__.__name__

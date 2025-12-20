@@ -2,154 +2,250 @@
 from src.menu.abstract_menu import AbstractMenu
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
-from typing import List, Optional # 引入 List 和 Optional 類型提示
+from typing import List, Optional, Union
 
 class MenuManager:
     def __init__(self, game):
         """初始化菜單管理器，負責管理遊戲中的各個菜單。
 
         Args:
-            screen: Pygame 的顯示表面，用於渲染菜單。
             game: 遊戲主類的實例，用於與其他模組交互。
         """
         self.screen = game.screen  # 保存 Pygame 顯示表面
         self.game = game  # 保存遊戲實例引用
         self.menus = {}  # 用於儲存所有菜單的字典，鍵為菜單名稱，值為菜單實例
-        self.menu_stack: List[AbstractMenu] = []  # <--- 使用菜單堆棧來支援菜單疊加
-        self.current_menu: Optional[AbstractMenu] = self.get_current_menu()  # 當前活動菜單
+        self.active_menus: List[AbstractMenu] = []  # 當前激活的菜單列表（同時顯示）
         self.font = pygame.font.SysFont(None, 48)  # 初始化字體，字體大小為 48
 
-    def register_menu(self, name, menu: AbstractMenu = None):
+    def register_menu(self, menu_name: str, menu: AbstractMenu = None, update = False) -> None:
         """註冊一個菜單。
 
         Args:
-            name: 菜單的名稱。
+            menu_name: 菜單的名稱。
             menu: 菜單實例（AbstractMenu 的子類），可以為 None（延遲初始化）。
-
-        將菜單加入到 menus 字典中，並設置其初始激活狀態為 False。
         """
-        if name in self.menus and self.menus[name] is not None:
-            print(f"MenuManager: 菜單 {name} 已存在，無法重複註冊")
+        if menu_name in self.menus and self.menus[menu_name] is not None:
+            if not update:
+                self.menus[menu_name] = menu
+            print(f"MenuManager: 菜單 {menu_name} 已存在，無法重複註冊")
             return
-        self.menus[name] = menu
+        self.menus[menu_name] = menu
         if menu is not None:
             menu.activate(False)  # 設置菜單為非激活狀態
-        print(f"MenuManager: 已註冊菜單 {name}，實例：{menu.__class__.__name__ if menu else 'None'}")
+        print(f"MenuManager: 已註冊菜單 {menu_name}，實例：{menu.__class__.__name__ if menu else 'None'}")
 
     # =====================================================================
-    #  核心疊加邏輯：push_menu, pop_menu, get_current_menu (取代 set_menu)
+    #  核心列表邏輯：open_menu, close_menu, close_all_menus
     # =====================================================================
 
-    def push_menu(self, menu_name: str) -> None:
+    def open_menu(self, menu_name: str) -> None:
         """
-        將指定菜單推入堆棧頂部，並將其激活。
-        如果堆棧非空，舊的頂層菜單將被禁用（不處理輸入）。
+        打開指定菜單並添加到激活列表。
+        如果菜單已經在列表中，則不重複添加。
+        
+        Args:
+            menu_name: 要打開的菜單名稱
         """
         if menu_name not in self.menus or self.menus[menu_name] is None:
             print(f"MenuManager: 菜單 {menu_name} 尚未註冊或未實例化。")
             return
 
-        new_menu = self.menus[menu_name]
+        menu = self.menus[menu_name]
+        
+        # 檢查菜單是否已經在激活列表中
+        if menu in self.active_menus:
+            print(f"MenuManager: 菜單 {menu_name} 已經打開，不重複添加。")
+            return
 
-        # 1. 如果堆棧不為空，將當前頂層菜單設為禁用 (阻止其處理輸入)
-        current_top = self.get_current_menu()
-        if current_top:
-            current_top.activate(False) 
+        # 添加到激活列表並激活
+        self.active_menus.append(menu)
+        menu.activate(True)
+        print(f"MenuManager: 打開菜單 {menu_name}. 當前激活菜單數: {len(self.active_menus)}")
 
-        # 2. 推入新菜單
-        self.menu_stack.append(new_menu)
+    def close_menu(self, menu_identifier: Union[str, AbstractMenu]) -> bool:
+        """
+        關閉指定的菜單（通過名稱或實例）。
+        可以獨立關閉任何一個菜單，不需要按順序。
+        
+        Args:
+            menu_identifier: 菜單名稱（字符串）或菜單實例
+            
+        Returns:
+            bool: 如果成功關閉返回 True，否則返回 False
+        """
+        menu_to_close = None
+        
+        # 根據標識符類型找到要關閉的菜單
+        if isinstance(menu_identifier, str):
+            # 通過名稱查找
+            if menu_identifier in self.menus:
+                menu_to_close = self.menus[menu_identifier]
+        else:
+            # 直接使用菜單實例
+            menu_to_close = menu_identifier
+        
+        # 檢查菜單是否在激活列表中
+        if menu_to_close and menu_to_close in self.active_menus:
+            self.active_menus.remove(menu_to_close)
+            menu_to_close.activate(False)
+            menu_name = self._get_menu_name(menu_to_close)
+            print(f"MenuManager: 關閉菜單 {menu_name}. 當前激活菜單數: {len(self.active_menus)}")
+            return True
+        else:
+            print(f"MenuManager: 菜單 {menu_identifier} 未在激活列表中。")
+            return False
 
-        # 3. 激活新菜單 (允許其處理輸入)
-        new_menu.activate(True)
-        print(f"MenuManager: Pushed {menu_name}. Stack size: {len(self.menu_stack)}")
+    def close_all_menus(self) -> None:
+        """關閉所有激活的菜單。"""
+        for menu in self.active_menus[:]:  # 使用切片創建副本以避免迭代時修改列表
+            menu.activate(False)
+        self.active_menus.clear()
+        print("MenuManager: 已關閉所有菜單。")
+
+    def is_menu_open(self, menu_name: str) -> bool:
+        """
+        檢查指定菜單是否已打開。
+        
+        Args:
+            menu_name: 菜單名稱
+            
+        Returns:
+            bool: 如果菜單已打開返回 True，否則返回 False
+        """
+        if menu_name not in self.menus:
+            return False
+        menu = self.menus[menu_name]
+        return menu in self.active_menus
+
+    def get_active_menus(self) -> List[AbstractMenu]:
+        """獲取所有激活的菜單列表。"""
+        return self.active_menus.copy()
+
+    # =====================================================================
+    #  兼容性方法：保留舊接口以支持現有代碼
+    # =====================================================================
+
+    def push_menu(self, menu_name: str) -> None:
+        """
+        兼容性方法：推入菜單（等同於 open_menu）。
+        保留此方法以支持現有代碼。
+        """
+        self.open_menu(menu_name)
 
     def pop_menu(self) -> Optional[AbstractMenu]:
         """
-        彈出堆棧頂部的菜單（關閉當前活動菜單）。
-        如果堆棧中仍有其他菜單，則激活新的頂層菜單。
-        """
-        if not self.menu_stack:
-            return None
-
-        # 1. 彈出並禁用頂部菜單
-        popped_menu = self.menu_stack.pop()
-        popped_menu.activate(False)
+        兼容性方法：彈出最後打開的菜單。
+        保留此方法以支持現有代碼。
         
-        # 2. 激活新的頂層菜單（如果存在）
-        new_top = self.get_current_menu()
-        if new_top:
-            new_top.activate(True)
-            print(f"MenuManager: Popped {popped_menu.__class__.__name__}. New top: {new_top.__class__.__name__}. Stack size: {len(self.menu_stack)}")
-        else:
-            print(f"MenuManager: Popped {popped_menu.__class__.__name__}. Stack is empty.")
-            
-        return popped_menu
+        Returns:
+            被關閉的菜單實例，如果沒有菜單則返回 None
+        """
+        if not self.active_menus:
+            return None
+        
+        # 關閉最後一個菜單
+        last_menu = self.active_menus[-1]
+        self.close_menu(last_menu)
+        return last_menu
 
     def get_current_menu(self) -> Optional[AbstractMenu]:
-        """獲取當前堆棧頂部的菜單 (即唯一能處理輸入的菜單)。"""
-        return self.menu_stack[-1] if self.menu_stack else None
-
-    # 為了兼容舊代碼，保留 set_menu，但將其重定向到 push/pop
-    def set_menu(self, menu_name):
-        """兼容舊接口：設置當前顯示的菜單。
-        
-        注意：由於採用了堆棧邏輯，此方法不再直接替換菜單，
-        而是先清空堆棧，然後推入新菜單。
         """
-        # 先清空堆棧
-        while self.menu_stack:
-            self.pop_menu() # 這裡的 pop_menu 會在內部輸出 log
+        兼容性方法：獲取最後打開的菜單。
+        保留此方法以支持現有代碼。
+        """
+        return self.active_menus[-1] if self.active_menus else None
+
+    def set_menu(self, menu_name: Optional[str]) -> None:
+        """
+        兼容性方法：設置當前顯示的菜單。
+        先關閉所有菜單，然後打開指定菜單。
+        """
+        self.close_all_menus()
         
-        # 然後推入新菜單
         if menu_name:
-            self.push_menu(menu_name)
+            self.open_menu(menu_name)
         else:
-            print("MenuManager: 設置菜單為 None (堆棧已清空)")
+            print("MenuManager: 設置菜單為 None (已關閉所有菜單)")
 
-    def draw(self):
+    # =====================================================================
+    #  繪製與事件處理
+    # =====================================================================
+
+    def draw(self) -> None:
         """
-        繪製菜單堆棧中的所有菜單，從底部到頂部。
-        這允許菜單疊加顯示。
+        繪製所有激活的菜單，從第一個到最後一個。
+        這允許多個菜單同時顯示。
         """
-        if self.menu_stack:
-            for menu in self.menu_stack:
-                menu.draw(self.screen)  # 繪製所有菜單
+        if self.active_menus:
+            for menu in self.active_menus:
+                menu.draw(self.screen)  # 繪製所有激活的菜單
             pygame.display.flip()  # 更新螢幕顯示
 
-    def handle_event(self, event):
+    def handle_event(self, event: pygame.event.Event) -> str:
         """
         處理菜單相關的事件。
-
-        只將事件傳遞給堆棧頂部的菜單處理。
-        """
-        current_menu = self.get_current_menu()
         
-        if current_menu:
-            result = current_menu.handle_event(event)  # 將事件傳遞給堆棧頂部菜單
-            print(f"MenuManager: 處理事件 {current_menu.__class__.__name__}，結果：{result}")
+        事件處理順序：從最後打開的菜單開始（反向遍歷），
+        這樣最上層的菜單優先處理事件。
+        
+        Args:
+            event: Pygame 事件對象
             
-            # 根據菜單返回的標準動作進行操作
-            if result == 'EXIT_MENU' or result == 'BACK' or result == 'CONFIRM_CLOSE':
-                self.pop_menu()
-                # 檢查 pop_menu 後是否回到主遊戲狀態
-                if not self.get_current_menu() and self.game.event_manager.state == 'menu':
-                    # 如果堆棧為空且狀態仍為菜單，則通知遊戲返回上一狀態
-                    # 假設返回 'GAME_STATE_CHANGE' 讓 EventManager 處理
-                    return 'RETURN_TO_GAME_STATE' 
-                return 'MENU_CLOSED' # 通知上層迴圈菜單已關閉
-
-            # 原有的特定菜單邏輯（建議在菜單類本身或 Game 類中處理）
-            if current_menu.__class__.__name__ == "SettingsMenu" and result in ["toggle_sound", "back"]:
-                if result == "toggle_sound":
-                    print("MenuManager: 正在切換音效（尚未實現）")
-                elif result == "back":
-                    self.pop_menu() # 只需要彈出菜單，不再需要 game.hide_menu
-                return ""
+        Returns:
+            str: 菜單處理結果
+        """
+        if not self.active_menus:
+            return ""
+        
+        # 從後往前遍歷（最後打開的菜單優先處理）
+        for menu in reversed(self.active_menus):
+            result = menu.handle_event(event)
+            
+            if result:  # 如果菜單處理了事件
+                print(f"MenuManager: 處理事件 {menu.__class__.__name__}，結果：{result}")
                 
-            return result
+                # 根據菜單返回的標準動作進行操作
+                if result == 'EXIT_MENU' or result == 'BACK' or result == 'CONFIRM_CLOSE':
+                    self.close_menu(menu)
+                    
+                    # 檢查是否所有菜單都已關閉
+                    if not self.active_menus and hasattr(self.game, 'event_manager') and self.game.event_manager.state == 'menu':
+                        return 'RETURN_TO_GAME_STATE'
+                    return 'MENU_CLOSED'
+
+                # 特定菜單邏輯（建議在菜單類本身處理）
+                if menu.__class__.__name__ == "SettingsMenu" and result in ["toggle_sound", "back"]:
+                    if result == "toggle_sound":
+                        print("MenuManager: 正在切換音效（尚未實現）")
+                    elif result == "back":
+                        self.close_menu(menu)
+                    return ""
+                
+                # 事件已被處理，不再傳遞給下層菜單
+                return result
+        
         return ""
     
     def update_current_menus(self, delta_time: float) -> None:
-        """更新當前堆棧中的所有菜單（如果需要）。"""
-        for menu in self.menu_stack:
+        """更新所有激活的菜單。"""
+        for menu in self.active_menus:
             menu.update(delta_time)
+
+    # =====================================================================
+    #  輔助方法
+    # =====================================================================
+
+    def _get_menu_name(self, menu: AbstractMenu) -> str:
+        """
+        根據菜單實例獲取菜單名稱。
+        
+        Args:
+            menu: 菜單實例
+            
+        Returns:
+            菜單名稱，如果找不到則返回類名
+        """
+        for name, registered_menu in self.menus.items():
+            if registered_menu is menu:
+                return name
+        return menu.__class__.__name__
