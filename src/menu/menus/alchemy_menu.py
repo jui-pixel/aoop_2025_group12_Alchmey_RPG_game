@@ -4,6 +4,15 @@ from src.menu.button import Button
 import pygame
 import random
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from src.menu.menu_config import (
+    MenuAction,
+    MenuResult,
+    MenuConfig,
+    get_menu_config,
+    create_menu_result,
+    back_result,
+    confirm_result
+)
 from typing import List, Dict
 from ...utils.elements import ELEMENTS, WEAKTABLE
 
