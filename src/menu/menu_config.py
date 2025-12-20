@@ -7,77 +7,178 @@ from typing import Dict, List, Any, Optional
 from enum import Enum
 
 
-class MenuAction(str, Enum):
-    """標準菜單動作枚舉"""
-    # 通用動作
+# ============================================================================
+# 基本動作類 - 所有菜單通用的基礎動作
+# ============================================================================
+
+class BasicAction(str, Enum):
+    """基本菜單動作 - 所有菜單通用"""
+    # 通用控制動作
     BACK = "BACK"
     EXIT_MENU = "EXIT_MENU"
     CONFIRM = "CONFIRM"
     CANCEL = "CANCEL"
-    CONFIRM_CLOSE = "CONFIRM_CLOSE"
+    CLOSE = "CLOSE"
     
-    # 導航動作
+    # 遊戲狀態動作
     ENTER_LOBBY = "enter_lobby"
-    SHOW_SETTING = "show_setting"
     EXIT_GAME = "exit"
+    PAUSE_GAME = "pause_game"
+    RESUME_GAME = "resume_game"
+
+
+# ============================================================================
+# 菜單導航類 - 專門用於菜單之間的切換
+# ============================================================================
+
+class MenuNavigation(str, Enum):
+    """菜單導航動作 - 用於菜單切換"""
+    # 主要菜單
+    MAIN_MENU = "main_menu"
+    SETTINGS_MENU = "settings_menu"
     
-    # 菜單切換動作
-    SHOW_MAIN_MENU = "main_menu"
-    SHOW_CRYSTAL_MENU = "crystal_menu"
-    SHOW_STAT_MENU = "stat_menu"
-    SHOW_ALCHEMY_MENU = "alchemy_menu"
-    SHOW_DUNGEON_MENU = "dungeon_menu"
-    SHOW_ELEMENT_MENU = "element_menu"
-    SHOW_AMPLIFIER_MENU = "amplifier_menu"
-    SHOW_SKILL_CHAIN_MENU = "skill_chain_menu"
-    SHOW_SKILL_LIBRARY_MENU = "skill_library_menu"
-    SHOW_SETTINGS_MENU = "settings_menu"
+    # NPC 交互菜單
+    CRYSTAL_MENU = "crystal_menu"
+    ALCHEMY_MENU = "alchemy_menu"
+    DUNGEON_MENU = "dungeon_menu"
     
-    # 主材料選擇動作
-    SELECT_MAIN_MATERIAL = "select_main_material"
-    MAIN_MATERIAL_MISSILE = "main_material_missile"
-    MAIN_MATERIAL_SHIELD = "main_material_shield"
-    MAIN_MATERIAL_CLOTH = "main_material_cloth"
+    # 玩家菜單
+    STAT_MENU = "stat_menu"
+    SKILL_CHAIN_MENU = "skill_chain_menu"
+    SKILL_LIBRARY_MENU = "skill_library_menu"
+    SKILL_CHAIN_EDIT_MENU = "skill_chain_edit_menu"
     
-    # 元素選擇動作
-    SELECT_ELEMENT = "select_element"
-    ELEMENT_FIRE = "element_fire"
-    ELEMENT_WATER = "element_water"
-    ELEMENT_EARTH = "element_earth"
-    ELEMENT_WIND = "element_wind"
+    # 選擇菜單
+    ELEMENT_MENU = "element_menu"
+    ELEMENT_CHOOSE_MENU = "element_choose_menu"
+    AMPLIFIER_MENU = "amplifier_menu"
+    AMPLIFIER_CHOOSE_MENU = "amplifier_choose_menu"
+    AMPLIFIER_STAT_MENU = "amplifier_stat_menu"
+    MAIN_MATERIAL_MENU = "main_material_menu"
     
-    # 增幅器選擇動作
-    SELECT_AMPLIFIER = "select_amplifier"
-    AMPLIFIER_DAMAGE = "amplifier_damage"
-    AMPLIFIER_PENETRATION = "amplifier_penetration"
-    AMPLIFIER_REDUCTION = "amplifier_reduction"
-    AMPLIFIER_DODGE = "amplifier_dodge"
-    
-    # 屬性升級動作
+    # 輔助菜單
+    NAMING_MENU = "naming_menu"
+
+
+# ============================================================================
+# 各菜單專屬動作類
+# ============================================================================
+
+class MainMenuAction(str, Enum):
+    """主菜單專屬動作"""
+    ENTER_LOBBY = "enter_lobby"
+    SHOW_SETTINGS = "show_setting"
+    EXIT_GAME = "exit"
+
+
+class StatMenuAction(str, Enum):
+    """屬性菜單專屬動作"""
     UPGRADE_ATTACK = "upgrade_attack"
     UPGRADE_DEFENSE = "upgrade_defense"
     UPGRADE_MOVEMENT = "upgrade_movement"
     UPGRADE_HEALTH = "upgrade_health"
-    
-    # 煉金動作
+    BACK_TO_CRYSTAL = "crystal_menu"
+
+
+class AlchemyMenuAction(str, Enum):
+    """煉金菜單專屬動作"""
+    SELECT_MAIN_MATERIAL = "select_main_material"
+    SELECT_ELEMENT = "select_element"
+    SELECT_AMPLIFIER = "select_amplifier"
     CRAFT_SKILL = "craft_skill"
     CONFIRM_CRAFT = "confirm_craft"
-    
-    # 技能鏈動作
-    EDIT_SKILL_CHAIN = "edit_skill_chain"
-    SAVE_SKILL_CHAIN = "save_skill_chain"
-    ADD_SKILL_TO_CHAIN = "add_skill_to_chain"
-    REMOVE_SKILL_FROM_CHAIN = "remove_skill_from_chain"
-    
-    # 副本動作
-    ENTER_DUNGEON = "enter_dungeon"
-    SELECT_DUNGEON = "select_dungeon"
+    RESET = "reset"
+    BACK = "back"
 
+
+class CrystalMenuAction(str, Enum):
+    """魔法水晶菜單專屬動作"""
+    AWAKEN_ELEMENT = "awaken_element"
+    UPGRADE_STATS = "upgrade_stats"
+    VIEW_ELEMENTS = "view_elements"
+    BACK = "back"
+
+
+class DungeonMenuAction(str, Enum):
+    """副本菜單專屬動作"""
+    SELECT_DUNGEON = "select_dungeon"
+    ENTER_DUNGEON = "enter_dungeon"
+    VIEW_DUNGEON_INFO = "view_dungeon_info"
+    BACK = "back"
+
+
+class ElementMenuAction(str, Enum):
+    """元素菜單專屬動作"""
+    SELECT_FIRE = "element_fire"
+    SELECT_WATER = "element_water"
+    SELECT_EARTH = "element_earth"
+    SELECT_WIND = "element_wind"
+    SELECT_LIGHT = "element_light"
+    SELECT_DARK = "element_dark"
+    CONFIRM_SELECTION = "confirm_element"
+    BACK = "back"
+
+
+class AmplifierMenuAction(str, Enum):
+    """增幅器菜單專屬動作"""
+    SELECT_DAMAGE = "amplifier_damage"
+    SELECT_PENETRATION = "amplifier_penetration"
+    SELECT_REDUCTION = "amplifier_reduction"
+    SELECT_DODGE = "amplifier_dodge"
+    SELECT_CRITICAL = "amplifier_critical"
+    CONFIRM_SELECTION = "confirm_amplifier"
+    BACK = "back"
+
+
+class SkillChainMenuAction(str, Enum):
+    """技能鏈菜單專屬動作"""
+    EDIT_CHAIN = "edit_skill_chain"
+    CREATE_CHAIN = "create_skill_chain"
+    DELETE_CHAIN = "delete_skill_chain"
+    SWITCH_CHAIN = "switch_skill_chain"
+    BACK = "back"
+
+
+class SkillChainEditMenuAction(str, Enum):
+    """技能鏈編輯菜單專屬動作"""
+    ADD_SKILL = "add_skill_to_chain"
+    REMOVE_SKILL = "remove_skill_from_chain"
+    MOVE_SKILL_UP = "move_skill_up"
+    MOVE_SKILL_DOWN = "move_skill_down"
+    SAVE_CHAIN = "save_skill_chain"
+    CANCEL_EDIT = "cancel_edit"
+
+
+class SkillLibraryMenuAction(str, Enum):
+    """技能庫菜單專屬動作"""
+    SELECT_SKILL = "select_skill"
+    VIEW_SKILL_DETAILS = "view_skill_details"
+    DELETE_SKILL = "delete_skill"
+    SORT_BY_NAME = "sort_by_name"
+    SORT_BY_ELEMENT = "sort_by_element"
+    SORT_BY_TYPE = "sort_by_type"
+    BACK = "back"
+
+
+class SettingsMenuAction(str, Enum):
+    """設置菜單專屬動作"""
+    TOGGLE_SOUND = "toggle_sound"
+    TOGGLE_MUSIC = "toggle_music"
+    ADJUST_VOLUME = "adjust_volume"
+    CHANGE_RESOLUTION = "change_resolution"
+    TOGGLE_FULLSCREEN = "toggle_fullscreen"
+    RESET_SETTINGS = "reset_settings"
+    BACK = "back"
+
+
+# ============================================================================
+# 菜單結果數據類
+# ============================================================================
 
 @dataclass
 class MenuResult:
     """菜單操作結果的標準化數據類"""
-    action: str  # 動作名稱（可以是 MenuAction 枚舉值）
+    action: str  # 動作名稱（可以是任何 Action 枚舉值）
     success: bool = True  # 操作是否成功
     data: Optional[Dict[str, Any]] = None  # 附加數據
     message: Optional[str] = None  # 提示訊息
@@ -291,3 +392,141 @@ def error_result(message: str, data: Optional[Dict[str, Any]] = None) -> MenuRes
         message=message,
         data=data
     )
+
+
+# ============================================================================
+# 菜單動作輔助類 - 簡化菜單切換和動作創建
+# ============================================================================
+
+class MenuActionHelper:
+    """菜單動作輔助類 - 提供便捷的菜單操作方法"""
+    
+    @staticmethod
+    def navigate_to(menu_name: str, close_current: bool = True, data: Optional[Dict[str, Any]] = None) -> MenuResult:
+        """
+        導航到指定菜單
+        
+        Args:
+            menu_name: 目標菜單名稱
+            close_current: 是否關閉當前菜單（默認 True）
+            data: 傳遞給目標菜單的數據
+            
+        Returns:
+            MenuResult: 導航結果
+        """
+        return MenuResult(
+            action=f"navigate_to_{menu_name}",
+            next_menu=menu_name,
+            close_current=close_current,
+            data=data
+        )
+    
+    @staticmethod
+    def switch_menu(from_menu: str, to_menu: str, data: Optional[Dict[str, Any]] = None) -> MenuResult:
+        """
+        從一個菜單切換到另一個菜單（關閉當前，打開新的）
+        
+        Args:
+            from_menu: 當前菜單名稱
+            to_menu: 目標菜單名稱
+            data: 傳遞給目標菜單的數據
+            
+        Returns:
+            MenuResult: 切換結果
+        """
+        return MenuResult(
+            action=f"switch_from_{from_menu}_to_{to_menu}",
+            next_menu=to_menu,
+            close_current=True,
+            data=data
+        )
+    
+    @staticmethod
+    def overlay_menu(base_menu: str, overlay_menu: str, data: Optional[Dict[str, Any]] = None) -> MenuResult:
+        """
+        在當前菜單上疊加新菜單（不關閉當前菜單）
+        
+        Args:
+            base_menu: 基礎菜單名稱
+            overlay_menu: 要疊加的菜單名稱
+            data: 傳遞給疊加菜單的數據
+            
+        Returns:
+            MenuResult: 疊加結果
+        """
+        return MenuResult(
+            action=f"overlay_{overlay_menu}_on_{base_menu}",
+            next_menu=overlay_menu,
+            close_current=False,
+            data=data
+        )
+    
+    @staticmethod
+    def action_with_navigation(
+        action: str,
+        success: bool = True,
+        message: Optional[str] = None,
+        next_menu: Optional[str] = None,
+        close_current: bool = False,
+        data: Optional[Dict[str, Any]] = None
+    ) -> MenuResult:
+        """
+        創建帶導航的動作結果（執行動作後可選擇性導航）
+        
+        Args:
+            action: 動作名稱
+            success: 是否成功
+            message: 提示訊息
+            next_menu: 下一個菜單（可選）
+            close_current: 是否關閉當前菜單
+            data: 附加數據
+            
+        Returns:
+            MenuResult: 動作結果
+        """
+        return MenuResult(
+            action=action,
+            success=success,
+            message=message,
+            next_menu=next_menu,
+            close_current=close_current,
+            data=data
+        )
+
+
+# ============================================================================
+# 向後兼容性支持
+# ============================================================================
+
+# 為了向後兼容，創建 MenuAction 別名指向 BasicAction
+MenuAction = BasicAction
+
+# 導出所有 Action 類的字典，方便動態訪問
+MENU_ACTION_CLASSES = {
+    'basic': BasicAction,
+    'navigation': MenuNavigation,
+    'main_menu': MainMenuAction,
+    'stat_menu': StatMenuAction,
+    'alchemy_menu': AlchemyMenuAction,
+    'crystal_menu': CrystalMenuAction,
+    'dungeon_menu': DungeonMenuAction,
+    'element_menu': ElementMenuAction,
+    'amplifier_menu': AmplifierMenuAction,
+    'skill_chain_menu': SkillChainMenuAction,
+    'skill_chain_edit_menu': SkillChainEditMenuAction,
+    'skill_library_menu': SkillLibraryMenuAction,
+    'settings_menu': SettingsMenuAction,
+}
+
+
+def get_action_class(menu_name: str):
+    """
+    根據菜單名稱獲取對應的 Action 類
+    
+    Args:
+        menu_name: 菜單名稱
+        
+    Returns:
+        對應的 Action 枚舉類，如果不存在則返回 BasicAction
+    """
+    return MENU_ACTION_CLASSES.get(menu_name, BasicAction)
