@@ -203,10 +203,14 @@ class RenderManager:
 
     def draw_menu(self) -> None:
         """繪製當前菜單。"""
-        # assert self.game.menu_manager.current_menu is not None
         self.draw_game_world()
         self.game.menu_manager.draw()
-        print(f"RenderManager: 繪製菜單 {self.game.menu_manager.current_menu.__class__.__name__ if self.game.menu_manager.current_menu else 'None'}")
+        # 顯示所有激活的菜單名稱
+        if self.game.menu_manager.active_menus:
+            menu_names = [menu.__class__.__name__ for menu in self.game.menu_manager.active_menus]
+            print(f"RenderManager: 繪製菜單 {', '.join(menu_names)}")
+        else:
+            print("RenderManager: 無激活菜單")
 
     def draw_skill_selection(self) -> None:
         """繪製技能選擇畫面。"""
