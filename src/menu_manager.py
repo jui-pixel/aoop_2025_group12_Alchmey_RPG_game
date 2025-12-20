@@ -23,11 +23,14 @@ class MenuManager:
         Args:
             menu_name: 菜單的名稱。
             menu: 菜單實例（AbstractMenu 的子類），可以為 None（延遲初始化）。
+            update: 如果菜單已存在，是否更新其實例。
         """
         if menu_name in self.menus and self.menus[menu_name] is not None:
-            if not update:
+            if update:
+                print(f"MenuManager: 菜單 {menu_name} 已存在，正在更新實例。")
                 self.menus[menu_name] = menu
-            print(f"MenuManager: 菜單 {menu_name} 已存在，無法重複註冊")
+            else:
+                print(f"MenuManager: 菜單 {menu_name} 已存在，且未強制更新 ，因此無法重複註冊")
             return
         self.menus[menu_name] = menu
         if menu is not None:
