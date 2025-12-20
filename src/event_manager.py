@@ -37,8 +37,9 @@ class EventManager:
 
         Dispatch event handling based on current game state (menu, skill_selection, lobby, playing).
         """
-        if self.game.menu_manager.current_menu:
-            print(f"EventManager: Passing event {event.type} to MenuManager due to active menu")
+        # 檢查是否有激活的菜單（使用新的列表模式）
+        if self.game.menu_manager.active_menus:
+            print(f"EventManager: Passing event {event.type} to MenuManager due to active menus")
             self._handle_menu_event(event)
         elif self.state == "menu":
             self._handle_menu_event(event)
@@ -70,12 +71,14 @@ class EventManager:
                 print("EventManager: Exiting game")
             elif action == "back_to_lobby":
                 self.state = "lobby"
-                if self.game.menu_manager.current_menu:
-                    self.game.hide_menu(self.game.menu_manager.current_menu.__class__.__name__.lower())
+                # 關閉所有菜單
+                self.game.menu_manager.close_all_menus()
                 print("EventManager: Returned to lobby")
             elif action == "close":
-                if self.game.menu_manager.current_menu:
-                    self.game.hide_menu(self.game.menu_manager.current_menu.__class__.__name__.lower())
+                # 關閉最後一個菜單
+                current_menu = self.game.menu_manager.get_current_menu()
+                if current_menu:
+                    self.game.menu_manager.close_menu(current_menu)
                 print("EventManager: Closed menu")
             elif action.startswith("edit_chain_"):
                 # 【修正點 1】: 處理編輯技能鏈的動作，切換到技能選擇狀態
