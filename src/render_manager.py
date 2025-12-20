@@ -235,7 +235,7 @@ class RenderManager:
         """繪製大廳狀態。"""
         self.draw_game_world()
         self._draw_ui()
-        if self.game.menu_manager.current_menu:
+        if self.game.menu_manager.active_menus:
             self.game.menu_manager.draw()
         pygame.display.flip()
 
@@ -243,7 +243,7 @@ class RenderManager:
         """繪製遊戲進行狀態。"""
         self.draw_game_world()
         self._draw_ui()
-        if self.game.menu_manager.current_menu:
+        if self.game.menu_manager.active_menus:
             self.game.menu_manager.draw()
         pygame.display.flip()
 

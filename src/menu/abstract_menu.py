@@ -14,3 +14,7 @@ class AbstractMenu(ABC):
     def get_name(self) -> str:
         """獲取菜單名稱"""
         return self.__class__.__name__
+    
+    def update(self, delta_time: float) -> None:
+        """更新菜單狀態（可選）"""
+        pass
