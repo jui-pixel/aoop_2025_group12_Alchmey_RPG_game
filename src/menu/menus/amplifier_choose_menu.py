@@ -82,16 +82,16 @@ class AmplifierChooseMenu(AbstractMenu):
                     return ""
             if self.back_button.rect.collidepoint(pos):
                 self.game.menu_manager.close_menu(MenuNavigation.AMPLIFIER_CHOOSE_MENU)
-                self.game.menu_manager.open_menu(MenuNavigation.ALCHMEY_MENU)
+                self.game.menu_manager.open_menu(MenuNavigation.ALCHEMY_MENU)
                 return BasicAction.EXIT_MENU
         active, action = self.back_button.handle_event(event)
         if active and action == "back":
             self.game.menu_manager.close_menu(MenuNavigation.AMPLIFIER_CHOOSE_MENU)
-            self.game.menu_manager.open_menu(MenuNavigation.ALCHMEY_MENU)
+            self.game.menu_manager.open_menu(MenuNavigation.ALCHEMY_MENU)
             return BasicAction.EXIT_MENU
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             self.game.menu_manager.close_menu(MenuNavigation.AMPLIFIER_CHOOSE_MENU)
-            self.game.menu_manager.open_menu(MenuNavigation.ALCHMEY_MENU)
+            self.game.menu_manager.open_menu(MenuNavigation.ALCHEMY_MENU)
             return BasicAction.EXIT_MENU
         return ""
 
