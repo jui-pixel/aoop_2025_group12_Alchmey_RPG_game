@@ -5,7 +5,10 @@ import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from math import ceil
 from typing import List, Dict, Tuple
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 class SkillLibraryMenu(AbstractMenu):
     def __init__(self, game: 'Game', options: List[Dict]):
         """Initialize the skill library menu, displaying 8 skills per page with navigation buttons.
@@ -153,9 +156,9 @@ class SkillLibraryMenu(AbstractMenu):
             elif event.key == pygame.K_RETURN:
                 action = self.buttons[self.selected_index].action
                 if action == "crystal_menu":
-                    self.game.hide_menu('skill_library_menu')
-                    self.game.show_menu('crystal_menu')
-                    return "crystal_menu"
+                    self.game.menu_manager.close_menu(MenuNavigation.SKILL_LIBRARY_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.CRYSTAL_MENU)
+                    return BasicAction.EXIT_MENU
                 elif action == "previous" and self.current_page > 0:
                     self.current_page -= 1
                     self._update_buttons()
@@ -173,9 +176,9 @@ class SkillLibraryMenu(AbstractMenu):
             active, action = button.handle_event(event)
             if active:
                 if action == "crystal_menu":
-                    self.game.hide_menu('skill_library_menu')
-                    self.game.show_menu('crystal_menu')
-                    return "crystal_menu"
+                    self.game.menu_manager.close_menu(MenuNavigation.SKILL_LIBRARY_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.CRYSTAL_MENU)
+                    return BasicAction.EXIT_MENU
                 elif action == "previous" and self.current_page > 0:
                     self.current_page -= 1
                     self._update_buttons()
