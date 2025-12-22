@@ -70,7 +70,7 @@ class DungeonMenu(AbstractMenu):
         if self.npc_facade:
             # 【關鍵修正】直接調用 Facade 的方法，而不是在 Entity Manager 中搜索
             self.npc_facade.enter_dungeon(dungeon_name)
-            self.game.menu_manager.set_menu(None) # 進入地牢後關閉所有菜單
+            self.game.menu_manager.close_all_menus() # 進入地牢後關閉所有菜單
         else:
             print("DungeonMenu: 錯誤！找不到 DungeonPortalNPC 門面實例。")
             
