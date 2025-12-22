@@ -4,7 +4,10 @@ from src.menu.button import Button
 import pygame
 from typing import List, Dict, Tuple
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 
 class AmplifierStatMenu(AbstractMenu):
     def __init__(self, game: 'Game', options: Dict = None):
@@ -135,9 +138,9 @@ class AmplifierStatMenu(AbstractMenu):
             elif event.key == pygame.K_RETURN:
                 action = self.buttons[self.selected_index].action
                 if action == "back":
-                    self.game.hide_menu('amplifier_stat_menu')
-                    self.game.show_menu('amplifier_menu')
-                    return "back"
+                    self.game.menu_manager.close_menu(MenuNavigation.AMPLIFIER_STAT_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.AMPLIFIER_MENU)
+                    return BasicAction.EXIT_MENU
                 elif action.startswith("view_"):
                     effect = "_".join(action.split("_")[1:])  # Join all parts after 'view_'
                     for effect_name, _, description in self.effect_mapping:
@@ -149,9 +152,9 @@ class AmplifierStatMenu(AbstractMenu):
             active, action = button.handle_event(event)
             if active:
                 if action == "back":
-                    self.game.hide_menu('amplifier_stat_menu')
-                    self.game.show_menu('amplifier_menu')
-                    return "back"
+                    self.game.menu_manager.close_menu(MenuNavigation.AMPLIFIER_STAT_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.AMPLIFIER_MENU)
+                    return BasicAction.EXIT_MENU
                 elif action.startswith("view_"):
                     effect = "_".join(action.split("_")[1:])  # Join all parts after 'view_'
                     for effect_name, _, description in self.effect_mapping:

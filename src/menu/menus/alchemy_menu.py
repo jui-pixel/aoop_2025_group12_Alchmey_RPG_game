@@ -159,7 +159,7 @@ class AlchemyMenu(AbstractMenu):
             active, action = button.handle_event(event)
             if active:
                 if action == "back":
-                    self.game.menu_manager.close_menu(MenuNavigation.ALCHMEY_MENU)
+                    self.game.menu_manager.close_menu(MenuNavigation.ALCHEMY_MENU)
                     return BasicAction.EXIT_MENU
                 elif action == "choose_main":
                     self.game.menu_manager.open_menu(MenuNavigation.MAIN_MATERIAL_MENU)
