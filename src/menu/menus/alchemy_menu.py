@@ -143,6 +143,8 @@ class AlchemyMenu(AbstractMenu):
                     return "choose_element"
                 elif action == "choose_amplifier":
                     amp_menu = self.game.menu_manager.menus[MenuNavigation.AMPLIFIER_CHOOSE_MENU]
+                    if not amp_menu:
+                        amp_menu = self.game.menu_manager.menus[MenuNavigation.AMPLIFIER_CHOOSE_MENU] = AmplifierChooseMenu(self.game, None)
                     amp_menu.update_amplifiers()
                     self.game.menu_manager.open_menu(MenuNavigation.AMPLIFIER_CHOOSE_MENU)
                     return "choose_amplifier"
