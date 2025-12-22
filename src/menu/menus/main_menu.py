@@ -4,10 +4,14 @@ from src.menu.button import Button
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from typing import List, Dict
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 class MainMenu(AbstractMenu):
     def __init__(self, game: 'Game', options: List[Dict]=None):
         self.title = "Main Menu"
+        self.game = game
         self.buttons = [
             Button(
                 SCREEN_WIDTH // 2 - 150, 100 + i * 50, 300, 40,
@@ -63,6 +67,11 @@ class MainMenu(AbstractMenu):
                 print(f"MainMenu: Enter pressed, action: {action}")
                 if action == "exit":
                     pygame.event.post(pygame.event.Event(pygame.QUIT))
+                    return BasicAction.EXIT_MENU
+                if action == "enter_lobby":
+                    self.game.menu_manager.close_menu(MenuNavigation.MAIN_MENU)
+                    self.game.start_game()
+                    return BasicAction.EXIT_MENU
                 return action
         for button in self.buttons:
             active, action = button.handle_event(event)
@@ -70,6 +79,11 @@ class MainMenu(AbstractMenu):
                 print(f"MainMenu: Button clicked, action: {action}")
                 if action == "exit":
                     pygame.event.post(pygame.event.Event(pygame.QUIT))
+                    return BasicAction.EXIT_MENU
+                if action == "enter_lobby":
+                    self.game.menu_manager.close_menu(MenuNavigation.MAIN_MENU)
+                    self.game.start_game()
+                    return BasicAction.EXIT_MENU
                 return action
         return ""
 

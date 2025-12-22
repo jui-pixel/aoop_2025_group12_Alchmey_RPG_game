@@ -43,12 +43,15 @@ class EventManager:
         if self.game.menu_manager.active_menus:
             print(f"EventManager: Passing event {event.type} to MenuManager due to active menus")
             self._handle_menu_event(event)
-        elif self.state == "menu":
-            self._handle_menu_event(event)
-        elif self.state == "lobby":
-            self._handle_lobby_event(event)
-        elif self.state == "playing":
+        else:
             self._handle_playing_event(event)
+        return
+        # elif self.state == "menu":
+        #     self._handle_menu_event(event)
+        # elif self.state == "lobby":
+        #     self._handle_lobby_event(event)
+        # elif self.state == "playing":
+        #     self._handle_playing_event(event)
 
     def _handle_menu_event(self, event: pygame.event.Event) -> None:
         """Handle events in menu state.
