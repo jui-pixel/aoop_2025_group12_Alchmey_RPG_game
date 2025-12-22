@@ -4,7 +4,10 @@ from src.menu.button import Button
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from typing import List, Dict, Tuple
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 class ElementMenu(AbstractMenu):
     def __init__(self, game: 'Game', options: List[Dict]):
         """Initialize the element awakening menu.
@@ -27,7 +30,7 @@ class ElementMenu(AbstractMenu):
         self.buttons.append(
             Button(
                 SCREEN_WIDTH // 2 - 150, 100 + len(self.elements) * 50, 300, 40,
-                "Back", pygame.Surface((300, 40)), "crystal_menu",
+                "Back", pygame.Surface((300, 40)), "back",
                 pygame.font.SysFont(None, 36)
             )
         )
@@ -50,7 +53,7 @@ class ElementMenu(AbstractMenu):
         screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 50))
         awakened_elements = self.game.storage_manager.awakened_elements
         for button in self.buttons:
-            if button.action != "crystal_menu" and button.action.startswith("awaken_"):
+            if button.action != "back" and button.action.startswith("awaken_"):
                 element = button.action.split("_")[1]
                 if element in awakened_elements:
                     button.image.fill((255, 215, 0))  # Gold background for awakened
@@ -89,10 +92,10 @@ class ElementMenu(AbstractMenu):
                 self.buttons[self.selected_index].is_selected = True
             elif event.key == pygame.K_RETURN:
                 action = self.buttons[self.selected_index].action
-                if action == "crystal_menu":
-                    self.game.hide_menu('element_menu')
-                    self.game.show_menu('crystal_menu')
-                    return "crystal_menu"
+                if action == "back":
+                    self.game.menu_manager.close_menu(MenuNavigation.ELEMENT_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.CRYSTAL_MENU)
+                    return BasicAction.EXIT_MENU
                 elif action.startswith("awaken_"):
                     element = action.split("_")[1]
                     success, reason = self._awaken_element(element)
@@ -104,10 +107,10 @@ class ElementMenu(AbstractMenu):
         for button in self.buttons:
             active, action = button.handle_event(event)
             if active:
-                if action == "crystal_menu":
-                    self.game.hide_menu('element_menu')
-                    self.game.show_menu('crystal_menu')
-                    return "crystal_menu"
+                if action == "back":
+                    self.game.menu_manager.close_menu(MenuNavigation.ELEMENT_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.CRYSTAL_MENU)
+                    return BasicAction.EXIT_MENU
                 elif action.startswith("awaken_"):
                     element = action.split("_")[1]
                     success, reason = self._awaken_element(element)
