@@ -4,7 +4,10 @@ from src.menu.button import Button
 import pygame
 from typing import List, Dict
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 class CrystalMenu(AbstractMenu):
     def __init__(self, game: 'Game', options: List[Dict]):
         """Initialize the crystal shop menu with options for stat, amplifier, element, skill library, and back.
@@ -25,13 +28,29 @@ class CrystalMenu(AbstractMenu):
                 ("Amplifier", "show_amplifier"),
                 ("Element", "show_element"),
                 ("Skill Library", "show_skill_library"),
-                ("Back", "back_to_lobby")
+                ("Back", "back")
             ])
         ]
         self.selected_index = 0
         self.active = False
         self.font = pygame.font.SysFont(None, 48)
         self.buttons[self.selected_index].is_selected = True
+        self._register_menus()
+        
+    def _register_menus(self):
+        # Register dependent menus if not already registered
+        if not self.game.menu_manager.menus.get(MenuNavigation.STAT_MENU):
+            from src.menu.menus.stat_menu import StatMenu
+            self.game.menu_manager.register_menu(MenuNavigation.STAT_MENU, StatMenu(self.game, None))
+        if not self.game.menu_manager.menus.get(MenuNavigation.AMPLIFIER_MENU):
+            from src.menu.menus.amplifier_menu import AmplifierMenu
+            self.game.menu_manager.register_menu(MenuNavigation.AMPLIFIER_MENU, AmplifierMenu(self.game, None))
+        if not self.game.menu_manager.menus.get(MenuNavigation.ELEMENT_MENU):
+            from src.menu.menus.element_menu import ElementMenu
+            self.game.menu_manager.register_menu(MenuNavigation.ELEMENT_MENU, ElementMenu(self.game, None))
+        if not self.game.menu_manager.menus.get(MenuNavigation.SKILL_LIBRARY_MENU):
+            from src.menu.menus.skill_library_menu import SkillLibraryMenu
+            self.game.menu_manager.register_menu(MenuNavigation.SKILL_LIBRARY_MENU, SkillLibraryMenu(self.game, None))
 
     def draw(self, screen: pygame.Surface) -> None:
         """Draw the crystal menu, including title and buttons."""
@@ -72,38 +91,38 @@ class CrystalMenu(AbstractMenu):
                 self.buttons[self.selected_index].is_selected = True
             elif event.key == pygame.K_RETURN:
                 action = self.buttons[self.selected_index].action
-                if action == "back_to_lobby":
-                    self.game.hide_menu('crystal_menu')
-                    return "back_to_lobby"
+                if action == "back":
+                    self.game.menu_manager.close_menu(MenuNavigation.CRYSTAL_MENU)
+                    return "back"
                 elif action == "show_stat":
-                    self.game.show_menu('stat_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.STAT_MENU)
                     return action
                 elif action == "show_amplifier":
-                    self.game.show_menu('amplifier_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.AMPLIFIER_MENU)
                     return action
                 elif action == "show_element":
-                    self.game.show_menu('element_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.ELEMENT_MENU)
                     return action
                 elif action == "show_skill_library":
-                    self.game.show_menu('skill_library_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.SKILL_LIBRARY_MENU)
                     return action
         for button in self.buttons:
             active, action = button.handle_event(event)
             if active:
-                if action == "back_to_lobby":
-                    self.game.hide_menu('crystal_menu')
-                    return "back_to_lobby"
+                if action == "back":
+                    self.game.menu_manager.close_menu(MenuNavigation.CRYSTAL_MENU)
+                    return "back"
                 elif action == "show_stat":
-                    self.game.show_menu('stat_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.STAT_MENU)
                     return action
                 elif action == "show_amplifier":
-                    self.game.show_menu('amplifier_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.AMPLIFIER_MENU)
                     return action
                 elif action == "show_element":
-                    self.game.show_menu('element_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.ELEMENT_MENU)
                     return action
                 elif action == "show_skill_library":
-                    self.game.show_menu('skill_library_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.SKILL_LIBRARY_MENU)
                     return action
         return ""
 

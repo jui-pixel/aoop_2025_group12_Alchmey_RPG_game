@@ -33,6 +33,16 @@ class AlchemyMenu(AbstractMenu):
         self.active = False
         self.font = pygame.font.SysFont(None, 36)
         self.buttons[self.selected_index].is_selected = True
+        self._register_menus()
+    
+    def _register_menus(self):
+        # Register dependent menus if not already registered
+        if not self.game.menu_manager.menus.get(MenuNavigation.MAIN_MATERIAL_MENU):
+            from src.menu.menus.main_material_menu import MainMaterialMenu
+            self.game.menu_manager.register_menu(MenuNavigation.MAIN_MATERIAL_MENU, MainMaterialMenu(self.game, None))
+        if not self.game.menu_manager.menus.get(MenuNavigation.ELEMENT_CHOOSE_MENU):
+            from src.menu.menus.element_choose_menu import ElementChooseMenu
+            self.game.menu_manager.register_menu(MenuNavigation.ELEMENT_CHOOSE_MENU, ElementChooseMenu(self.game, None))
 
     def calculate_success_rate(self):
         if self.element != "untyped":  # Count as 1 if selected

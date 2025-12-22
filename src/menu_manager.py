@@ -3,7 +3,9 @@ from src.menu.abstract_menu import AbstractMenu
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from typing import List, Optional, Union
-
+from src.menu.menu_config import (
+    BasicAction,
+)
 class MenuManager:
     def __init__(self, game):
         """初始化菜單管理器，負責管理遊戲中的各個菜單。
@@ -208,7 +210,7 @@ class MenuManager:
                 print(f"MenuManager: 處理事件 {menu.__class__.__name__}，結果：{result}")
                 
                 # 根據菜單返回的標準動作進行操作
-                if result == 'EXIT_MENU' or result == 'BACK' or result == 'CONFIRM_CLOSE':
+                if result == BasicAction.EXIT_MENU:
                     self.close_menu(menu)
                     
                     # 檢查是否所有菜單都已關閉
