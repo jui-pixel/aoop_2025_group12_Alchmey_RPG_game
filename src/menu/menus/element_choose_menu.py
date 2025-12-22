@@ -3,7 +3,10 @@ from src.menu.abstract_menu import AbstractMenu
 from src.menu.button import Button
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 class ElementChooseMenu(AbstractMenu):
     def __init__(self, game: 'Game', options=None):
         self.title = "Choose Element"
@@ -52,23 +55,25 @@ class ElementChooseMenu(AbstractMenu):
             elif event.key == pygame.K_RETURN:
                 action = self.buttons[self.selected_index].action
                 if action == "back":
-                    self.game.show_menu('alchemy_menu')
-                    return "back"
+                    self.game.menu_manager.close_menu(MenuNavigation.ELEMENT_CHOOSE_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.ALCHEMY_MENU)
+                    return BasicAction.EXIT_MENU
                 else:
-                    alchemy_menu = self.game.menu_manager.menus['alchemy_menu']
+                    alchemy_menu = self.game.menu_manager.menus[MenuNavigation.ALCHEMY_MENU]
                     alchemy_menu.element = action if action != "none" else "untyped"
-                    self.game.show_menu('alchemy_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.ALCHEMY_MENU)
                     return action
         for button in self.buttons:
             active, action = button.handle_event(event)
             if active:
                 if action == "back":
-                    self.game.show_menu('alchemy_menu')
-                    return "back"
+                    self.game.menu_manager.close_menu(MenuNavigation.ELEMENT_CHOOSE_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.ALCHEMY_MENU)
+                    return BasicAction.EXIT_MENU
                 else:
-                    alchemy_menu = self.game.menu_manager.menus['alchemy_menu']
+                    alchemy_menu = self.game.menu_manager.menus[MenuNavigation.ALCHEMY_MENU]
                     alchemy_menu.element = action if action != "none" else "untyped"
-                    self.game.show_menu('alchemy_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.ALCHEMY_MENU)
                     return action
         return ""
 
