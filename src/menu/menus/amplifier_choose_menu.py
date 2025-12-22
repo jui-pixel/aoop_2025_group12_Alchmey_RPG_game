@@ -3,7 +3,10 @@ from src.menu.abstract_menu import AbstractMenu
 from src.menu.button import Button
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 class AmplifierChooseMenu(AbstractMenu):
     def __init__(self, game: 'Game', options=None):
         self.title = "Choose Amplifiers"
@@ -16,14 +19,28 @@ class AmplifierChooseMenu(AbstractMenu):
         self.capped = {'elebuff': 1, 'remove_element': 1, 'remove_counter': 1}  # Names with max 1
 
     def update_amplifiers(self):
-        alchemy_menu = self.game.menu_manager.menus['alchemy_menu']
+        alchemy_menu = self.game.menu_manager.menus[MenuNavigation.ALCHMEY_MENU]
         main = alchemy_menu.main_material
         if main == "missile":
-            self.amplifier_names = ['damage_level', 'penetration_level', 'elebuff_level', 'explosion_level', 'speed_level']
+            self.amplifier_names = ['damage_level',
+                                    'penetration_level',
+                                    'elebuff_level',
+                                    'explosion_level',
+                                    'speed_level',
+                                    ]
         elif main == "shield":
-            self.amplifier_names = ['element_resistance_level', 'remove_element_level', 'counter_element_resistance_level', 'remove_counter_level', 'duration_level', 'shield_level']
+            self.amplifier_names = ['element_resistance_level',
+                                    'remove_element_level',
+                                    'counter_element_resistance_level',
+                                    'remove_counter_level',
+                                    'duration_level',
+                                    'shield_level',
+                                    ]
         elif main == "step":
-            self.amplifier_names = ['avoid_level', 'speed_level', 'duration_level']
+            self.amplifier_names = ['avoid_level',
+                                    'speed_level',
+                                    'duration_level',
+                                    ]
         else:
             self.amplifier_names = []
 
@@ -37,7 +54,7 @@ class AmplifierChooseMenu(AbstractMenu):
         title_surface = self.font.render(self.title, True, (255, 255, 255))
         screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 50))
         self.rects = []
-        alchemy_menu = self.game.menu_manager.menus['alchemy_menu']
+        alchemy_menu = self.game.menu_manager.menus[MenuNavigation.ALCHMEY_MENU]
         for i, name in enumerate(self.amplifier_names):
             level = alchemy_menu.amplifier_levels.get(name, 0)
             text = f"{name.replace('_level', '').capitalize()}: {level}"
@@ -55,7 +72,7 @@ class AmplifierChooseMenu(AbstractMenu):
             for i, rect in enumerate(self.rects):
                 if rect.collidepoint(pos):
                     name = self.amplifier_names[i]
-                    alchemy_menu = self.game.menu_manager.menus['alchemy_menu']
+                    alchemy_menu = self.game.menu_manager.menus[MenuNavigation.ALCHMEY_MENU]
                     if event.button == 1:  # Left click increase
                         alchemy_menu.amplifier_levels[name] = alchemy_menu.amplifier_levels.get(name, 0) + 1
                         if name.replace('_level', '') in self.capped:
@@ -64,15 +81,18 @@ class AmplifierChooseMenu(AbstractMenu):
                         alchemy_menu.amplifier_levels[name] = max(0, alchemy_menu.amplifier_levels.get(name, 0) - 1)
                     return ""
             if self.back_button.rect.collidepoint(pos):
-                self.game.show_menu('alchemy_menu')
-                return "back"
+                self.game.menu_manager.close_menu(MenuNavigation.AMPLIFIER_CHOOSE_MENU)
+                self.game.menu_manager.open_menu(MenuNavigation.ALCHMEY_MENU)
+                return BasicAction.EXIT_MENU
         active, action = self.back_button.handle_event(event)
         if active and action == "back":
-            self.game.show_menu('alchemy_menu')
-            return "back"
+            self.game.menu_manager.close_menu(MenuNavigation.AMPLIFIER_CHOOSE_MENU)
+            self.game.menu_manager.open_menu(MenuNavigation.ALCHMEY_MENU)
+            return BasicAction.EXIT_MENU
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            self.game.show_menu('alchemy_menu')
-            return "back"
+            self.game.menu_manager.close_menu(MenuNavigation.AMPLIFIER_CHOOSE_MENU)
+            self.game.menu_manager.open_menu(MenuNavigation.ALCHMEY_MENU)
+            return BasicAction.EXIT_MENU
         return ""
 
     def get_selected_action(self) -> str:
