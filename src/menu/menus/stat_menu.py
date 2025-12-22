@@ -4,7 +4,10 @@ from src.menu.button import Button
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from typing import List, Dict, Tuple
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 class StatMenu(AbstractMenu):
     def __init__(self, game: 'Game', options: List[Dict]):
         """Initialize the stat upgrade menu with options for attack, defense, movement, health, and back.
@@ -102,9 +105,9 @@ class StatMenu(AbstractMenu):
             elif event.key == pygame.K_RETURN:
                 action = self.buttons[self.selected_index].action
                 if action == "crystal_menu":
-                    self.game.hide_menu('stat_menu')
-                    self.game.show_menu('crystal_menu')
-                    return "crystal_menu"
+                    self.game.menu_manager.close_menu(MenuNavigation.STAT_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.CRYSTAL_MENU)
+                    return BasicAction.EXIT_MENU
                 elif action.startswith("upgrade_"):
                     stat = action.split("_")[1]
                     success, reason = self._upgrade_stat(stat)
@@ -117,9 +120,9 @@ class StatMenu(AbstractMenu):
             active, action = button.handle_event(event)
             if active:
                 if action == "crystal_menu":
-                    self.game.hide_menu('stat_menu')
-                    self.game.show_menu('crystal_menu')
-                    return "crystal_menu"
+                    self.game.menu_manager.close_menu(MenuNavigation.STAT_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.CRYSTAL_MENU)
+                    return BasicAction.EXIT_MENU
                 elif action.startswith("upgrade_"):
                     stat = action.split("_")[1]
                     success, reason = self._upgrade_stat(stat)

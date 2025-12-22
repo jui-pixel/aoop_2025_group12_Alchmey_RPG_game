@@ -4,7 +4,9 @@ from typing import List, Dict
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from src.skills.abstract_skill import Skill
 import math
-
+from src.menu.menu_config import (
+    BasicAction,
+)
 # --- 為了 ECS 查詢兼容性，假設需要導入 ECS 組件 (例如 Position, Interactable) ---
 # 實際部署時，請確保這些組件已正確導入
 # from src.ecs.components import Position
@@ -98,6 +100,8 @@ class EventManager:
                 except (ValueError, IndexError, AttributeError) as e:
                     print(f"EventManager: Failed to process action '{action}'. Error: {e}")
             elif action == 'RETURN_TO_GAME_STATE':
+                self.state = 'playing'
+            elif action == BasicAction.EXIT_MENU:
                 self.state = 'playing'
 
     def _handle_skill_selection_event(self, event: pygame.event.Event) -> None:
