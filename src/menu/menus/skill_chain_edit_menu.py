@@ -6,7 +6,10 @@ from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from math import ceil
 from typing import List, Optional
 from src.skills.skill import create_skill_from_dict
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 class SkillChainEditMenu(AbstractMenu):
     def __init__(self, game: 'Game', chain_idx: int, options=None):
         """Initialize the skill chain edit menu for a specific chain."""
@@ -108,8 +111,8 @@ class SkillChainEditMenu(AbstractMenu):
             return ""
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             self._save_chain()
-            self.game.hide_menu('skill_chain_edit_menu')
-            return "close"
+            self.game.menu_manager.close_menu(MenuNavigation.SKILL_CHAIN_EDIT_MENU)
+            return BasicAction.EXIT_MENU
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 2:  # Middle mouse button to clear slot
                 for button in self.buttons:
@@ -153,9 +156,9 @@ class SkillChainEditMenu(AbstractMenu):
                     return "next"
                 elif action == "skill_chain_menu":
                     self._save_chain()
-                    self.game.hide_menu(self.__class__.__name__.lower())
-                    self.game.show_menu('SkillChainMenu')
-                    return "skill_chain_menu"
+                    self.game.menu_manager.close_menu(MenuNavigation.SKILL_CHAIN_EDIT_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.SKILL_CHAIN_MENU)
+                    return BasicAction.EXIT_MENU
         return ""
 
     def _save_chain(self):

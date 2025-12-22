@@ -3,7 +3,10 @@ from src.menu.abstract_menu import AbstractMenu
 from src.menu.button import Button
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 class SkillChainMenu(AbstractMenu):
     def __init__(self, game: 'Game', options=None):
         """Initialize the skill chain menu with 9 slots for skill chains 1-9 and a complete button."""
