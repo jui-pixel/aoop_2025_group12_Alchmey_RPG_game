@@ -72,7 +72,7 @@ class AmplifierChooseMenu(AbstractMenu):
             for i, rect in enumerate(self.rects):
                 if rect.collidepoint(pos):
                     name = self.amplifier_names[i]
-                    alchemy_menu = self.game.menu_manager.menus[MenuNavigation.ALCHMEY_MENU]
+                    alchemy_menu = self.game.menu_manager.menus[MenuNavigation.ALCHEMY_MENU]
                     if event.button == 1:  # Left click increase
                         alchemy_menu.amplifier_levels[name] = alchemy_menu.amplifier_levels.get(name, 0) + 1
                         if name.replace('_level', '') in self.capped:

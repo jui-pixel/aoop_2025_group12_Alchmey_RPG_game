@@ -43,6 +43,12 @@ class AlchemyMenu(AbstractMenu):
         if not self.game.menu_manager.menus.get(MenuNavigation.ELEMENT_CHOOSE_MENU):
             from src.menu.menus.element_choose_menu import ElementChooseMenu
             self.game.menu_manager.register_menu(MenuNavigation.ELEMENT_CHOOSE_MENU, ElementChooseMenu(self.game, None))
+        if not self.game.menu_manager.menus.get(MenuNavigation.AMPLIFIER_CHOOSE_MENU):
+            from src.menu.menus.amplifier_choose_menu import AmplifierChooseMenu
+            self.game.menu_manager.register_menu(MenuNavigation.AMPLIFIER_CHOOSE_MENU, AmplifierChooseMenu(self.game, None))
+        if not self.game.menu_manager.menus.get(MenuNavigation.NAMING_MENU):
+            from src.menu.menus.naming_menu import NamingMenu
+            self.game.menu_manager.register_menu(MenuNavigation.NAMING_MENU, NamingMenu(self.game, None))
 
     def calculate_success_rate(self):
         if self.element != "untyped":  # Count as 1 if selected

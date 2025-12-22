@@ -93,7 +93,7 @@ class CrystalMenu(AbstractMenu):
                 action = self.buttons[self.selected_index].action
                 if action == "back":
                     self.game.menu_manager.close_menu(MenuNavigation.CRYSTAL_MENU)
-                    return "back"
+                    return BasicAction.EXIT_MENU
                 elif action == "show_stat":
                     self.game.menu_manager.open_menu(MenuNavigation.STAT_MENU)
                     return action
@@ -111,7 +111,7 @@ class CrystalMenu(AbstractMenu):
             if active:
                 if action == "back":
                     self.game.menu_manager.close_menu(MenuNavigation.CRYSTAL_MENU)
-                    return "back"
+                    return BasicAction.EXIT_MENU
                 elif action == "show_stat":
                     self.game.menu_manager.open_menu(MenuNavigation.STAT_MENU)
                     return action
