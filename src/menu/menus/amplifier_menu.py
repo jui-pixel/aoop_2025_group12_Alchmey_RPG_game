@@ -4,7 +4,10 @@ from src.menu.button import Button
 import pygame
 from typing import List, Dict
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 class AmplifierMenu(AbstractMenu):
     def __init__(self, game: 'Game', options: List[Dict]):
         """Initialize the amplifier selection menu with options for magic missile, shield, step, and back.
@@ -71,29 +74,29 @@ class AmplifierMenu(AbstractMenu):
             elif event.key == pygame.K_RETURN:
                 action = self.buttons[self.selected_index].action
                 if action == "crystal_menu":
-                    self.game.hide_menu('amplifier_menu')
-                    self.game.show_menu('crystal_menu')
-                    return "crystal_menu"
+                    self.game.menu_manager.close_menu(MenuNavigation.AMPLIFIER_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.CRYSTAL_MENU)
+                    return BasicAction.EXIT_MENU
                 elif action.startswith("show_"):
                     amplifier_type = action.split("_")[1] + "_" + action.split("_")[2]
                     if self.game.menu_manager.menus['amplifier_stat_menu'] is not None:
                         self.game.menu_manager.menus['amplifier_stat_menu'].update_type(amplifier_type)
                     data = {'type': amplifier_type}
-                    self.game.show_menu('amplifier_stat_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.AMPLIFIER_STAT_MENU)
                     return action
         for button in self.buttons:
             active, action = button.handle_event(event)
             if active:
                 if action == "crystal_menu":
-                    self.game.hide_menu('amplifier_menu')
-                    self.game.show_menu('crystal_menu')
-                    return "crystal_menu"
+                    self.game.menu_manager.close_menu(MenuNavigation.AMPLIFIER_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.CRYSTAL_MENU)
+                    return BasicAction.EXIT_MENU
                 elif action.startswith("show_"):
                     amplifier_type = action.split("_")[1] + "_" + action.split("_")[2]
                     if self.game.menu_manager.menus['amplifier_stat_menu'] is not None:
                         self.game.menu_manager.menus['amplifier_stat_menu'].update_type(amplifier_type)
                     data = {'type': amplifier_type}
-                    self.game.show_menu('amplifier_stat_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.AMPLIFIER_STAT_MENU)
                     return action
         return ""
 
