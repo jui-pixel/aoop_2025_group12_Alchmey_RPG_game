@@ -8,7 +8,10 @@ from typing import Optional, List, Dict, Tuple
 from .base_npc_facade import AbstractNPCFacade 
 from src.ecs.components import DungeonPortalComponent, NPCInteractComponent, Defense, Position 
 from src.config import *
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 class DungeonPortalNPC(AbstractNPCFacade): # <--- 繼承抽象基類
     """
     地牢傳送門 NPC 門面 (Facade)。
@@ -53,7 +56,7 @@ class DungeonPortalNPC(AbstractNPCFacade): # <--- 繼承抽象基類
             dungeons = self._get_portal_comp().available_dungeons
             # 【修正點】將數據打包成字典，包含 dungeons 列表和 npc_facade 實例
             menu_data = {'dungeons': dungeons, 'npc_facade': self}
-            self.game.show_menu('dungeon_menu', menu_data)
+            self.game.menu_manager.open_menu(MenuNavigation.DUNGEON_MENU, data=menu_data)
         print(f"DungeonPortalNPC: Opening dungeon menu with {len(dungeons)} dungeons")
 
     def end_interaction(self) -> None:
@@ -64,7 +67,7 @@ class DungeonPortalNPC(AbstractNPCFacade): # <--- 繼承抽象基類
             # 這裡應該使用 game.hide_menu() 或 game.menu_manager.set_menu(None)
             # 根據您的 Game 類設計，我們假設 hide_menu 或 set_menu(None) 可用
             # 由於 Game.show_menu 有 stack 邏輯，這裡使用 set_menu(None) 保持一致
-            self.game.menu_manager.set_menu(None)
+            self.game.menu_manager.close_menu(MenuNavigation.DUNGEON_MENU)
         print("DungeonPortalNPC: Closed dungeon menu")
 
     def enter_dungeon(self, dungeon_name: str) -> bool:
@@ -91,7 +94,7 @@ class DungeonPortalNPC(AbstractNPCFacade): # <--- 繼承抽象基類
                     self.game.event_manager.state = "playing"
                     
                     # 關閉菜單
-                    self.game.menu_manager.set_menu(None)
+                    self.game.menu_manager.close_all_menus()
                     
                     # 更新 ECS Component 狀態
                     portal_comp.portal_effect_active = True

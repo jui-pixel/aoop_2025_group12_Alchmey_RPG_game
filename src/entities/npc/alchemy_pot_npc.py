@@ -11,7 +11,10 @@ from typing import Optional, Dict, List, Tuple
 import math
 from src.buffs.element_buff import ELEMENTAL_BUFFS
 from src.config import *
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 # 假設導入您在上一輪創建的抽象基類
 from .base_npc_facade import AbstractNPCFacade 
 
@@ -50,7 +53,7 @@ class AlchemyPotNPC(AbstractNPCFacade): # <--- 繼承抽象基類
         comp = self._get_interact_comp()
         comp.is_interacting = True
         if self.game and self.game.menu_manager:
-            self.game.show_menu('alchemy_menu')
+            self.game.menu_manager.open_menu(MenuNavigation.ALCHEMY_MENU, data=self)
         print("Alchemy Pot NPC: Open alchemy synthesis menu.")
 
     def end_interaction(self) -> None:
@@ -59,7 +62,7 @@ class AlchemyPotNPC(AbstractNPCFacade): # <--- 繼承抽象基類
         comp = self._get_interact_comp()
         comp.is_interacting = False
         if self.game and self.game.menu_manager:
-            self.game.menu_manager.hide_menu('alchemy_menu')
+            self.game.menu_manager.close_menu(MenuNavigation.ALCHEMY_MENU)
 
     def synthesize_item(self, ingredients: List[str]) -> Optional[str]:
         """Perform alchemy synthesis based on ingredients. (特有邏輯，保留)"""

@@ -6,6 +6,7 @@ from src.skills.abstract_skill import Skill
 import math
 from src.menu.menu_config import (
     BasicAction,
+    MenuNavigation,
 )
 # --- 為了 ECS 查詢兼容性，假設需要導入 ECS 組件 (例如 Position, Interactable) ---
 # 實際部署時，請確保這些組件已正確導入
@@ -22,7 +23,7 @@ class EventManager:
             game: The main game instance for interaction with other modules.
         """
         self.game = game  # Save game instance reference
-        self.state = "menu"  # Initial game state is menu
+        self.state = "playing"  # Initial game state is menu
         self.selected_menu_option = 0  # Current selected menu option index
         self.menu_options = ["Enter Lobby", "Exit"]  # Main menu options
         self.npc_menu_options = ["Select Skills", "Start Game"]  # NPC interaction menu options
@@ -62,6 +63,7 @@ class EventManager:
         Pass event to menu manager and perform actions based on returned action.
         """
         action = self.game.menu_manager.handle_event(event)
+        return
         if action:
             print(f"EventManager: Received action {action} from menu")
             if action == "enter_lobby":
@@ -107,110 +109,110 @@ class EventManager:
             elif action == BasicAction.EXIT_MENU:
                 self.state = 'playing'
 
-    def _handle_skill_selection_event(self, event: pygame.event.Event) -> None:
-        """Handle events in skill selection state.
+    # def _handle_skill_selection_event(self, event: pygame.event.Event) -> None:
+    #     """Handle events in skill selection state.
 
-        Args:
-            event: Pygame event object.
+    #     Args:
+    #         event: Pygame event object.
 
-        Allow player to select skills using keyboard and add to skill chain.
-        """
-        # --- 修正: 使用更符合 ECS/Facade 命名慣例的屬性 ---
-        # 假設 Player 門面已實現 max_skill_chain_length 屬性
-        player = self.game.entity_manager.player
-        max_skills = player.max_skill_chain_length if player else MAX_SKILLS_DEFAULT
-        # --------------------------------------------------
+    #     Allow player to select skills using keyboard and add to skill chain.
+    #     """
+    #     # --- 修正: 使用更符合 ECS/Facade 命名慣例的屬性 ---
+    #     # 假設 Player 門面已實現 max_skill_chain_length 屬性
+    #     player = self.game.entity_manager.player
+    #     max_skills = player.max_skill_chain_length if player else MAX_SKILLS_DEFAULT
+    #     # --------------------------------------------------
         
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                self.selected_skill = (self.selected_skill - 1) % len(self.game.storage_manager.skills_library)  # Select previous skill
-            elif event.key == pygame.K_DOWN:
-                self.selected_skill = (self.selected_skill + 1) % len(self.game.storage_manager.skills_library)  # Select next skill
-            elif event.key == pygame.K_RETURN:
-                if len(self.selected_skills) < max_skills:
-                    skill_dict = self.game.storage_manager.skills_library[self.selected_skill]
-                    skill = self.game.storage_manager.get_skill_instance(skill_dict['name'])
-                    if skill:
-                        self.selected_skills.append(skill)
-                        print(f"EventManager: Selected skill {skill.name}")
+    #     if event.type == pygame.KEYDOWN:
+    #         if event.key == pygame.K_UP:
+    #             self.selected_skill = (self.selected_skill - 1) % len(self.game.storage_manager.skills_library)  # Select previous skill
+    #         elif event.key == pygame.K_DOWN:
+    #             self.selected_skill = (self.selected_skill + 1) % len(self.game.storage_manager.skills_library)  # Select next skill
+    #         elif event.key == pygame.K_RETURN:
+    #             if len(self.selected_skills) < max_skills:
+    #                 skill_dict = self.game.storage_manager.skills_library[self.selected_skill]
+    #                 skill = self.game.storage_manager.get_skill_instance(skill_dict['name'])
+    #                 if skill:
+    #                     self.selected_skills.append(skill)
+    #                     print(f"EventManager: Selected skill {skill.name}")
                 
-                # 如果達到上限或手動按 Enter 結束
-                if len(self.selected_skills) >= max_skills:
-                    # skill_chain 屬性應返回對 PlayerComponent.skill_chain 的引用
-                    self.game.entity_manager.player.skill_chain[self.selected_skill_chain_idx] = self.selected_skills[:]  # Save skill chain
-                    self.game.storage_manager.apply_skills_to_player()  # Apply skills to player
-                    self.selected_skills = []  # Clear selected skills
-                    self.state = "lobby"  # Return to lobby state
-                    print("EventManager: Skill selection complete, returned to lobby")
-            elif event.key == pygame.K_ESCAPE:
-                self.state = "lobby"  # Cancel selection, return to lobby
-                print("EventManager: Exited skill selection, returned to lobby")
+    #             # 如果達到上限或手動按 Enter 結束
+    #             if len(self.selected_skills) >= max_skills:
+    #                 # skill_chain 屬性應返回對 PlayerComponent.skill_chain 的引用
+    #                 self.game.entity_manager.player.skill_chain[self.selected_skill_chain_idx] = self.selected_skills[:]  # Save skill chain
+    #                 self.game.storage_manager.apply_skills_to_player()  # Apply skills to player
+    #                 self.selected_skills = []  # Clear selected skills
+    #                 self.state = "lobby"  # Return to lobby state
+    #                 print("EventManager: Skill selection complete, returned to lobby")
+    #         elif event.key == pygame.K_ESCAPE:
+    #             self.state = "lobby"  # Cancel selection, return to lobby
+    #             print("EventManager: Exited skill selection, returned to lobby")
 
-    def _handle_lobby_event(self, event: pygame.event.Event) -> None:
-        """Handle events in lobby state.
+    # def _handle_lobby_event(self, event: pygame.event.Event) -> None:
+    #     """Handle events in lobby state.
 
-        Args:
-            event: Pygame event object.
+    #     Args:
+    #         event: Pygame event object.
 
-        Handle player movement (WASD keys) and NPC interaction or skill chain menu (E key).
-        """
-        # 注意: 這裡的 player.displacement 屬性必須在 Player 門面中正確實現，
-        # 才能讀取並設定 Velocity 組件中的移動方向。
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_e:
-                interacted = self._handle_interaction()  # Handle NPC interaction
-                if not interacted:
-                    self.game.show_menu('skill_chain_menu')  # Open skill chain menu if no NPC
-            elif event.key == pygame.K_w:
-                current_disp = self.game.entity_manager.player.displacement
-                self.game.entity_manager.player.displacement = (current_disp[0], -1)  # Move up
-                print(f"EventManager: Lobby - Set displacement to {self.game.entity_manager.player.displacement}")
-            elif event.key == pygame.K_s:
-                current_disp = self.game.entity_manager.player.displacement
-                self.game.entity_manager.player.displacement = (current_disp[0], 1)  # Move down
-                print(f"EventManager: Lobby - Set displacement to {self.game.entity_manager.player.displacement}")
-            elif event.key == pygame.K_a:
-                current_disp = self.game.entity_manager.player.displacement
-                self.game.entity_manager.player.displacement = (-1, current_disp[1])  # Move left
-                print(f"EventManager: Lobby - Set displacement to {self.game.entity_manager.player.displacement}")
-            elif event.key == pygame.K_d:
-                current_disp = self.game.entity_manager.player.displacement
-                self.game.entity_manager.player.displacement = (1, current_disp[1])  # Move right
-                print(f"EventManager: Lobby - Set displacement to {self.game.entity_manager.player.displacement}")
-        elif event.type == pygame.KEYUP:
-            current_disp = self.game.entity_manager.player.displacement
-            if event.key in (pygame.K_w, pygame.K_s):
-                self.game.entity_manager.player.displacement = (current_disp[0], 0)  # Reset vertical displacement
-                print(f"EventManager: Lobby - Reset vertical displacement to {self.game.entity_manager.player.displacement}")
-            elif event.key in (pygame.K_a, pygame.K_d):
-                self.game.entity_manager.player.displacement = (0, current_disp[1])  # Reset horizontal displacement
-                print(f"EventManager: Lobby - Reset horizontal displacement to {self.game.entity_manager.player.displacement}")
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1: 
-                mouse_pos = pygame.mouse.get_pos()  # Get mouse position
-                target_pos = (mouse_pos[0] + self.game.render_manager.camera_offset[0], 
-                              mouse_pos[1] + self.game.render_manager.camera_offset[1])  # Calculate target position
-                dx = target_pos[0] - (self.game.entity_manager.player.x + self.game.entity_manager.player.w / 2)
-                dy = target_pos[1] - (self.game.entity_manager.player.y + self.game.entity_manager.player.h / 2)
-                magnitude = math.sqrt(dx**2 + dy**2)  # Calculate distance
-                direction = (dx / magnitude, dy / magnitude) if magnitude > 0 else (0, 0)  # Calculate direction vector
-                self.game.entity_manager.player.activate_skill(direction, self.game.current_time, target_pos)  # Activate skill
-                self.game.audio_manager.play_sound_effect("skill_activate")  # Play skill sound effect
-                print("EventManager: Playing - Activated skill")
-            elif event.button == 2:
-                pass
-            elif event.button == 3:
-                pass
-            elif event.button == 4:  # Mouse wheel up: switch to next skill chain
-                current_idx = self.game.entity_manager.player.current_skill_chain_idx
-                next_idx = (current_idx + 1) % self.game.entity_manager.player.max_skill_chains
-                self.game.entity_manager.player.switch_skill_chain(next_idx)
-                print(f"EventManager: Playing - Switched to next skill chain {next_idx}")
-            elif event.button == 5:  # Mouse wheel down: switch to previous skill chain
-                current_idx = self.game.entity_manager.player.current_skill_chain_idx
-                prev_idx = (current_idx - 1) % self.game.entity_manager.player.max_skill_chains
-                self.game.entity_manager.player.switch_skill_chain(prev_idx)
-                print(f"EventManager: Playing - Switched to previous skill chain {prev_idx}")
+    #     Handle player movement (WASD keys) and NPC interaction or skill chain menu (E key).
+    #     """
+    #     # 注意: 這裡的 player.displacement 屬性必須在 Player 門面中正確實現，
+    #     # 才能讀取並設定 Velocity 組件中的移動方向。
+    #     if event.type == pygame.KEYDOWN:
+    #         if event.key == pygame.K_e:
+    #             interacted = self._handle_interaction()  # Handle NPC interaction
+    #             if not interacted:
+    #                 self.game.show_menu('skill_chain_menu')  # Open skill chain menu if no NPC
+    #         elif event.key == pygame.K_w:
+    #             current_disp = self.game.entity_manager.player.displacement
+    #             self.game.entity_manager.player.displacement = (current_disp[0], -1)  # Move up
+    #             print(f"EventManager: Lobby - Set displacement to {self.game.entity_manager.player.displacement}")
+    #         elif event.key == pygame.K_s:
+    #             current_disp = self.game.entity_manager.player.displacement
+    #             self.game.entity_manager.player.displacement = (current_disp[0], 1)  # Move down
+    #             print(f"EventManager: Lobby - Set displacement to {self.game.entity_manager.player.displacement}")
+    #         elif event.key == pygame.K_a:
+    #             current_disp = self.game.entity_manager.player.displacement
+    #             self.game.entity_manager.player.displacement = (-1, current_disp[1])  # Move left
+    #             print(f"EventManager: Lobby - Set displacement to {self.game.entity_manager.player.displacement}")
+    #         elif event.key == pygame.K_d:
+    #             current_disp = self.game.entity_manager.player.displacement
+    #             self.game.entity_manager.player.displacement = (1, current_disp[1])  # Move right
+    #             print(f"EventManager: Lobby - Set displacement to {self.game.entity_manager.player.displacement}")
+    #     elif event.type == pygame.KEYUP:
+    #         current_disp = self.game.entity_manager.player.displacement
+    #         if event.key in (pygame.K_w, pygame.K_s):
+    #             self.game.entity_manager.player.displacement = (current_disp[0], 0)  # Reset vertical displacement
+    #             print(f"EventManager: Lobby - Reset vertical displacement to {self.game.entity_manager.player.displacement}")
+    #         elif event.key in (pygame.K_a, pygame.K_d):
+    #             self.game.entity_manager.player.displacement = (0, current_disp[1])  # Reset horizontal displacement
+    #             print(f"EventManager: Lobby - Reset horizontal displacement to {self.game.entity_manager.player.displacement}")
+    #     elif event.type == pygame.MOUSEBUTTONDOWN:
+    #         if event.button == 1: 
+    #             mouse_pos = pygame.mouse.get_pos()  # Get mouse position
+    #             target_pos = (mouse_pos[0] + self.game.render_manager.camera_offset[0], 
+    #                           mouse_pos[1] + self.game.render_manager.camera_offset[1])  # Calculate target position
+    #             dx = target_pos[0] - (self.game.entity_manager.player.x + self.game.entity_manager.player.w / 2)
+    #             dy = target_pos[1] - (self.game.entity_manager.player.y + self.game.entity_manager.player.h / 2)
+    #             magnitude = math.sqrt(dx**2 + dy**2)  # Calculate distance
+    #             direction = (dx / magnitude, dy / magnitude) if magnitude > 0 else (0, 0)  # Calculate direction vector
+    #             self.game.entity_manager.player.activate_skill(direction, self.game.current_time, target_pos)  # Activate skill
+    #             self.game.audio_manager.play_sound_effect("skill_activate")  # Play skill sound effect
+    #             print("EventManager: Playing - Activated skill")
+    #         elif event.button == 2:
+    #             pass
+    #         elif event.button == 3:
+    #             pass
+    #         elif event.button == 4:  # Mouse wheel up: switch to next skill chain
+    #             current_idx = self.game.entity_manager.player.current_skill_chain_idx
+    #             next_idx = (current_idx + 1) % self.game.entity_manager.player.max_skill_chains
+    #             self.game.entity_manager.player.switch_skill_chain(next_idx)
+    #             print(f"EventManager: Playing - Switched to next skill chain {next_idx}")
+    #         elif event.button == 5:  # Mouse wheel down: switch to previous skill chain
+    #             current_idx = self.game.entity_manager.player.current_skill_chain_idx
+    #             prev_idx = (current_idx - 1) % self.game.entity_manager.player.max_skill_chains
+    #             self.game.entity_manager.player.switch_skill_chain(prev_idx)
+    #             print(f"EventManager: Playing - Switched to previous skill chain {prev_idx}")
                 
     def _handle_playing_event(self, event: pygame.event.Event) -> None:
         """Handle events in playing state.
@@ -227,7 +229,7 @@ class EventManager:
             if event.key == pygame.K_e:
                 interacted = self._handle_interaction()  # Handle NPC interaction
                 if not interacted:
-                    self.game.show_menu('skill_chain_menu')  # Open skill chain menu if no NPC
+                    self.game.menu_manager.open_menu(MenuNavigation.SKILL_CHAIN_MENU)  # Open skill chain menu if no NPC
             elif event.key in range(pygame.K_1, pygame.K_9 + 1):
                 chain_idx = event.key - pygame.K_1  # 1-9 keys map to chain_idx 0-8
                 self.game.entity_manager.player.switch_skill_chain(chain_idx)

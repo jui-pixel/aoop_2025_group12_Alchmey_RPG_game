@@ -8,7 +8,10 @@ from typing import Optional, Dict, Tuple, List
 from .base_npc_facade import AbstractNPCFacade
 from src.ecs.components import NPCInteractComponent, Health, Defense, Position 
 from src.config import *
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 
 class MagicCrystalNPC(AbstractNPCFacade): # <--- 繼承抽象基類
     """
@@ -35,7 +38,7 @@ class MagicCrystalNPC(AbstractNPCFacade): # <--- 繼承抽象基類
         comp = self._get_interact_comp() # 繼承自父類
         comp.is_interacting = True
         if self.game and self.game.menu_manager:
-            self.game.show_menu('crystal_menu')
+            self.game.menu_manager.open_menu(MenuNavigation.CRYSTAL_MENU, data=self)
         print("Magic Crystal NPC: Browse elemental crystals and buffs.")
 
     def end_interaction(self) -> None:

@@ -6,6 +6,23 @@ from typing import List, Optional, Union
 from src.menu.menu_config import (
     BasicAction,
 )
+from src.menu.menus.alchemy_menu import AlchemyMenu
+from src.menu.menus.amplifier_menu import AmplifierMenu
+from src.menu.menus.amplifier_stat_menu import AmplifierStatMenu
+from src.menu.menus.crystal_menu import CrystalMenu
+from src.menu.menus.dungeon_menu import DungeonMenu
+from src.menu.menus.element_menu import ElementMenu
+from src.menu.menus.main_menu import MainMenu
+from src.menu.menus.main_material_menu import MainMaterialMenu
+from src.menu.menus.element_choose_menu import ElementChooseMenu
+from src.menu.menus.stat_menu import StatMenu
+from src.menu.menus.amplifier_choose_menu import AmplifierChooseMenu
+from src.menu.menus.naming_menu import NamingMenu
+from src.menu.menus.skill_library_menu import SkillLibraryMenu
+from src.menu.menus.skill_chain_edit_menu import SkillChainEditMenu
+from src.menu.menus.skill_chain_menu import SkillChainMenu
+from src.menu.menus.setting_menu import SettingsMenu
+
 class MenuManager:
     def __init__(self, game):
         """初始化菜單管理器，負責管理遊戲中的各個菜單。
@@ -43,7 +60,7 @@ class MenuManager:
     #  核心列表邏輯：open_menu, close_menu, close_all_menus
     # =====================================================================
 
-    def open_menu(self, menu_name: str) -> None:
+    def open_menu(self, menu_name: str, data = None) -> None:
         """
         打開指定菜單並添加到激活列表。
         如果菜單已經在列表中，則不重複添加。
@@ -53,6 +70,44 @@ class MenuManager:
         """
         if menu_name not in self.menus or self.menus[menu_name] is None:
             print(f"MenuManager: 菜單 {menu_name} 尚未註冊或未實例化。")
+            if menu_name == "alchemy_menu":
+                self.register_menu(menu_name, AlchemyMenu(self.game, data))
+            elif menu_name == "amplifier_menu":
+                self.register_menu(menu_name, AmplifierMenu(self.game, data))
+            elif menu_name == 'amplifier_stat_menu':
+                self.register_menu(menu_name, AmplifierStatMenu(self.game, data))
+            elif menu_name == 'crystal_menu':
+                self.register_menu(menu_name, CrystalMenu(self.game, data))
+            elif menu_name == 'element_menu':
+                self.register_menu(menu_name, ElementMenu(self.game, data))
+            elif menu_name == 'main_material_menu':
+                self.register_menu(menu_name, MainMaterialMenu(self.game, data))
+            elif menu_name == 'element_choose_menu':
+                self.register_menu(menu_name, ElementChooseMenu(self.game, data))
+            elif menu_name == 'stat_menu':
+                self.register_menu(menu_name, StatMenu(self.game, data))
+            elif menu_name == 'amplifier_choose_menu':
+                self.register_menu(menu_name, AmplifierChooseMenu(self.game, data))
+            elif menu_name == 'naming_menu':
+                self.register_menu(menu_name, NamingMenu(self.game, data))
+            elif menu_name == 'skill_library_menu':
+                self.register_menu(menu_name, SkillLibraryMenu(self.game, data))
+            elif menu_name == 'settings_menu':
+                self.register_menu(menu_name, SettingsMenu(self.game, data))
+            elif menu_name == 'skill_chain_menu':
+                self.register_menu(menu_name, SkillChainMenu(self.game, data))
+            elif menu_name == 'skill_chain_edit_menu':
+                self.register_menu(menu_name, SkillChainEditMenu(self.game, data))
+            elif menu_name == 'dungeon_menu':
+                    # 【修正點】解包 data 並將其傳遞給 DungeonMenu
+                    dungeons = data.get('dungeons', []) if isinstance(data, dict) else data 
+                    npc_facade = data.get('npc_facade') if isinstance(data, dict) else None
+                    
+                    if not isinstance(dungeons, list):
+                        dungeons = data 
+                        npc_facade = None 
+
+                    self.register_menu(menu_name, DungeonMenu(self.game, dungeons, npc_facade))
             return
 
         menu = self.menus[menu_name]
