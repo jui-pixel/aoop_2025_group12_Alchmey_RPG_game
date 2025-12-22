@@ -18,6 +18,13 @@ class SkillChainMenu(AbstractMenu):
         self.active = False
         self.font = pygame.font.SysFont(None, 48)
         self._update_buttons()
+        self._register_menus()
+        
+    def _register_menus(self):
+        # Register the SkillChainEditMenu if not already registered
+        if not self.game.menu_manager.menus.get(MenuNavigation.SKILL_CHAIN_EDIT_MENU):
+            from src.menu.menus.skill_chain_edit_menu import SkillChainEditMenu
+            self.game.menu_manager.register_menu(MenuNavigation.SKILL_CHAIN_EDIT_MENU, SkillChainEditMenu(self.game, 0))
 
     def _update_buttons(self):
         """Update the button list for the 3x3 grid of skill chains and the complete button."""
@@ -66,8 +73,8 @@ class SkillChainMenu(AbstractMenu):
             return ""
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                self.game.hide_menu('skill_chain_menu')
-                return "EXIT_MENU"
+                self.game.menu_manager.close_menu(MenuNavigation.SKILL_CHAIN_MENU)
+                return BasicAction.EXIT_MENU
             elif event.key == pygame.K_UP:
                 self.buttons[self.selected_index].is_selected = False
                 self.selected_index = (self.selected_index - 3) % len(self.buttons) if self.selected_index >= 3 else self.selected_index
@@ -88,11 +95,13 @@ class SkillChainMenu(AbstractMenu):
                 action = self.buttons[self.selected_index].action
                 if action.startswith("edit_chain_"):
                     chain_idx = int(action.split("_")[2])
-                    self.game.show_menu('skill_chain_edit_menu', chain_idx=chain_idx)
+                    menu = self.game.menu_manager.menus[MenuNavigation.SKILL_CHAIN_EDIT_MENU]
+                    menu.update_slots_for_chain(chain_idx)
+                    self.game.menu_manager.open_menu(MenuNavigation.SKILL_CHAIN_EDIT_MENU)
                     return f"edit_chain_{chain_idx}"
                 elif action == "close":
-                    self.game.hide_menu(self.__class__.__name__.lower())
-                    return "back"
+                    self.game.menu_manager.close_menu(MenuNavigation.SKILL_CHAIN_MENU)
+                    return BasicAction.EXIT_MENU
         if event.type == pygame.MOUSEMOTION:
             for i, button in enumerate(self.buttons):
                 if button.rect.collidepoint(event.pos):
@@ -105,11 +114,13 @@ class SkillChainMenu(AbstractMenu):
             if active:
                 if action.startswith("edit_chain_"):
                     chain_idx = int(action.split("_")[2])
-                    self.game.show_menu('skill_chain_edit_menu', chain_idx=chain_idx)
+                    menu = self.game.menu_manager.menus[MenuNavigation.SKILL_CHAIN_EDIT_MENU]
+                    menu.update_slots_for_chain(chain_idx)
+                    self.game.menu_manager.open_menu(MenuNavigation.SKILL_CHAIN_EDIT_MENU)
                     return f"edit_chain_{chain_idx}"
                 elif action == "close":
-                    self.game.hide_menu(self.__class__.__name__.lower())
-                    return "back"
+                    self.game.menu_manager.close_menu(MenuNavigation.SKILL_CHAIN_MENU)
+                    return BasicAction.EXIT_MENU
         return ""
 
     def get_selected_action(self) -> str:

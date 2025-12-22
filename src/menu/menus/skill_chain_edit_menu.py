@@ -181,3 +181,14 @@ class SkillChainEditMenu(AbstractMenu):
         else:
             self.buttons[self.selected_index].is_selected = False
             self.marked_slot = None
+    
+    def update_slots_for_chain(self, chain_idx: int) -> None:
+        """Update the slots based on the specified chain index from the player's skill chains."""
+        self.chain_idx = chain_idx
+        player_comp = self.game.entity_manager.get_player_component() 
+        if player_comp:
+            self.slots = player_comp.skill_chain[chain_idx][:]
+            self.slots += [None] * (8 - len(self.slots))
+            self._update_buttons()
+        else:
+            print("SkillChainEditMenu: 警告！嘗試編輯技能鏈時找不到 Player Component。")
