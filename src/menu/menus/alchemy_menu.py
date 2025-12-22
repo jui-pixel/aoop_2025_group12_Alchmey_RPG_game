@@ -7,8 +7,6 @@ from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from src.menu.menu_config import (
     BasicAction,
     MenuNavigation,
-    AlchemyMenuAction,
-    
 )
 from typing import List, Dict
 from ...utils.elements import ELEMENTS, WEAKTABLE
@@ -27,7 +25,7 @@ class AlchemyMenu(AbstractMenu):
             Button(SCREEN_WIDTH // 2 - 100, 100, 200, 40, "Choose Element", pygame.Surface((200, 40)), "choose_element", pygame.font.SysFont(None, 36)),
             Button(SCREEN_WIDTH - 300, 100, 200, 40, "Choose Amplifiers", pygame.Surface((200, 40)), "choose_amplifier", pygame.font.SysFont(None, 36)),
             Button(SCREEN_WIDTH - 300, SCREEN_HEIGHT - 100, 200, 40, "Synthesize", pygame.Surface((200, 40)), "synthesize", pygame.font.SysFont(None, 36)),
-            Button(100, SCREEN_HEIGHT - 100, 200, 40, "Back", pygame.Surface((200, 40)), "back_to_lobby", pygame.font.SysFont(None, 36))
+            Button(100, SCREEN_HEIGHT - 100, 200, 40, "Back", pygame.Surface((200, 40)), "back", pygame.font.SysFont(None, 36))
         ]
         self.selected_index = 0
         self.active = False
@@ -120,8 +118,8 @@ class AlchemyMenu(AbstractMenu):
                     break
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                self.game.hide_menu('alchemy_menu')
-                return "back_to_lobby"
+                self.game.menu_manager.close_menu(MenuNavigation.ALCHMEY_MENU)
+                return BasicAction.EXIT_MENU
             if event.key == pygame.K_UP:
                 self.buttons[self.selected_index].is_selected = False
                 self.selected_index = (self.selected_index - 1) % len(self.buttons)
@@ -132,19 +130,19 @@ class AlchemyMenu(AbstractMenu):
                 self.buttons[self.selected_index].is_selected = True
             elif event.key == pygame.K_RETURN:
                 action = self.buttons[self.selected_index].action
-                if action == "back_to_lobby":
-                    self.game.hide_menu('alchemy_menu')
-                    return "back_to_lobby"
+                if action == "back":
+                    self.game.menu_manager.close_menu(MenuNavigation.ALCHMEY_MENU)
+                    return BasicAction.EXIT_MENU
                 elif action == "choose_main":
-                    self.game.show_menu('main_material_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.MAIN_MATERIAL_MENU)
                     return "choose_main"
                 elif action == "choose_element":
-                    self.game.show_menu('element_choose_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.ELEMENT_CHOOSE_MENU)
                     return "choose_element"
                 elif action == "choose_amplifier":
-                    amp_menu = self.game.menu_manager.menus['amplifier_choose_menu']
+                    amp_menu = self.game.menu_manager.menus[MenuNavigation.AMPLIFIER_CHOOSE_MENU]
                     amp_menu.update_amplifiers()
-                    self.game.show_menu('amplifier_choose_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.AMPLIFIER_CHOOSE_MENU)
                     return "choose_amplifier"
                 elif action == "synthesize":
                     if self.game.storage_manager.mana < 1:
@@ -153,25 +151,25 @@ class AlchemyMenu(AbstractMenu):
                     self.game.storage_manager.mana -= 1
                     if random.random() * 100 < self.success_rate:
                         self.message = "Synthesis Success! Enter name."
-                        self.game.show_menu('naming_menu')
+                        self.game.menu_manager.open_menu(MenuNavigation.NAMING_MENU)
                     else:
                         self.message = "Synthesis Failed"
                     return "synthesize"
         for button in self.buttons:
             active, action = button.handle_event(event)
             if active:
-                if action == "back_to_lobby":
-                    self.game.hide_menu('alchemy_menu')
-                    return "back_to_lobby"
+                if action == "back":
+                    self.game.menu_manager.close_menu(MenuNavigation.ALCHMEY_MENU)
+                    return BasicAction.EXIT_MENU
                 elif action == "choose_main":
-                    self.game.show_menu('main_material_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.MAIN_MATERIAL_MENU)
                     return "choose_main"
                 elif action == "choose_element":
-                    self.game.show_menu('element_choose_menu')
+                    self.game.menu_manager.open_menu(MenuNavigation.ELEMENT_CHOOSE_MENU)
                     return "choose_element"
                 elif action == "choose_amplifier":
-                    self.game.show_menu('amplifier_choose_menu')
-                    amp_menu = self.game.menu_manager.menus['amplifier_choose_menu']
+                    self.game.menu_manager.open_menu(MenuNavigation.AMPLIFIER_CHOOSE_MENU)
+                    amp_menu = self.game.menu_manager.menus[MenuNavigation.AMPLIFIER_CHOOSE_MENU]
                     amp_menu.update_amplifiers()
                     return "choose_amplifier"
                 elif action == "synthesize":
@@ -181,7 +179,7 @@ class AlchemyMenu(AbstractMenu):
                     self.game.storage_manager.mana -= 1
                     if random.random() * 100 < self.success_rate:
                         self.message = "Synthesis Success! Enter name."
-                        self.game.show_menu('naming_menu')
+                        self.game.menu_manager.open_menu(MenuNavigation.NAMING_MENU)
                     else:
                         self.message = "Synthesis Failed"
                     return "synthesize"

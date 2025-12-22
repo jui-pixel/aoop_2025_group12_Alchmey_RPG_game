@@ -14,11 +14,7 @@ from enum import Enum
 class BasicAction(str, Enum):
     """基本菜單動作 - 所有菜單通用"""
     # 通用控制動作
-    BACK = "BACK"
     EXIT_MENU = "EXIT_MENU"
-    CONFIRM = "CONFIRM"
-    CANCEL = "CANCEL"
-    CLOSE = "CLOSE"
     
     # 遊戲狀態動作
     ENTER_LOBBY = "enter_lobby"
