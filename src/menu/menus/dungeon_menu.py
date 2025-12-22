@@ -5,7 +5,10 @@ from src.menu.button import Button
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from typing import List, Dict, TYPE_CHECKING, Optional
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 # 由於我們需要引用 DungeonPortalNPC，這裡使用 TYPE_CHECKING 避免循環依賴
 if TYPE_CHECKING:
     from src.game import Game
@@ -39,7 +42,7 @@ class DungeonMenu(AbstractMenu):
         self.buttons.append(
             Button(
                 SCREEN_WIDTH // 2 - 150, 100 + len(dungeons) * 50, 300, 40,
-                "Back", pygame.Surface((300, 40)), "back_to_lobby",
+                "Back", pygame.Surface((300, 40)), "back",
                 pygame.font.SysFont(None, 36)
             )
         )
@@ -98,9 +101,9 @@ class DungeonMenu(AbstractMenu):
                 self.buttons[self.selected_index].is_selected = True
             elif event.key == pygame.K_RETURN:
                 action = self.buttons[self.selected_index].action
-                if action == "back_to_lobby":
-                    self.game.menu_manager.set_menu(None) # 返回時關閉菜單
-                    return "back_to_lobby"
+                if action == "back":
+                    self.game.menu_manager.close_all_menus() # 返回時關閉菜單
+                    return BasicAction.EXIT_MENU
                 if action.startswith("enter_"):
                     dungeon_name = action.split("_", 1)[1] # 處理多個下劃線的情況
                     return self._handle_enter_action(dungeon_name)
@@ -110,9 +113,9 @@ class DungeonMenu(AbstractMenu):
         for button in self.buttons:
             active, action = button.handle_event(event)
             if active:
-                if action == "back_to_lobby":
-                    self.game.menu_manager.set_menu(None) # 返回時關閉菜單
-                    return "back_to_lobby"
+                if action == "back":
+                    self.game.menu_manager.close_all_menus() # 返回時關閉菜單
+                    return BasicAction.EXIT_MENU
                 if action.startswith("enter_"):
                     dungeon_name = action.split("_", 1)[1]
                     return self._handle_enter_action(dungeon_name)
