@@ -3,7 +3,10 @@ from src.menu.abstract_menu import AbstractMenu
 from src.menu.button import Button
 import pygame
 from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 class NamingMenu(AbstractMenu):
     def __init__(self, game: 'Game', options=None):
         self.title = "Name Your Skill"
@@ -47,20 +50,20 @@ class NamingMenu(AbstractMenu):
                     break
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                self.game.hide_menu('naming_menu')
-                self.game.show_menu('alchemy_menu')
-                return "back_to_alchemy"
+                self.game.menu_manager.close_menu(MenuNavigation.NAMING_MENU)
+                self.game.menu_manager.open_menu(MenuNavigation.ALCHEMY_MENU)
+                return BasicAction.EXIT_MENU
             elif event.key == pygame.K_RETURN:
                 if self.skill_name:
-                    alchemy_menu = self.game.menu_manager.menus.get('alchemy_menu')
+                    alchemy_menu = self.game.menu_manager.menus.get(MenuNavigation.ALCHEMY_MENU)
                     if alchemy_menu:
                         skill_dict = alchemy_menu.create_skill_dict(self.skill_name)
                         if skill_dict:
                             self.game.storage_manager.add_skill_to_library(skill_dict)
                             self.game.storage_manager.apply_skills_to_player()
-                            self.game.hide_menu('naming_menu')
+                            self.game.menu_manager.close_menu(MenuNavigation.NAMING_MENU)
                             alchemy_menu.reset()
-                            return "back_to_lobby"
+                            return BasicAction.EXIT_MENU
                         else:
                             self.message = "Invalid skill parameters"
                     else:
@@ -77,19 +80,20 @@ class NamingMenu(AbstractMenu):
             active, action = button.handle_event(event)
             if active:
                 if action == "back_to_alchemy":
-                    self.game.hide_menu('naming_menu')
-                    self.game.show_menu('alchemy_menu')
-                    return "back_to_alchemy"
+                    self.game.menu_manager.close_menu(MenuNavigation.NAMING_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.ALCHEMY_MENU)
+                    return BasicAction.EXIT_MENU
                 elif action == "back_to_lobby" and self.skill_name:
-                    alchemy_menu = self.game.menu_manager.menus.get('alchemy_menu')
+                    alchemy_menu = self.game.menu_manager.menus.get(MenuNavigation.ALCHEMY_MENU)
                     if alchemy_menu:
                         skill_dict = alchemy_menu.create_skill_dict(self.skill_name)
                         if skill_dict:
                             self.game.storage_manager.add_skill_to_library(skill_dict)
                             self.game.storage_manager.apply_skills_to_player()
-                            self.game.hide_menu('naming_menu')
+                            self.game.menu_manager.close_menu(MenuNavigation.NAMING_MENU)
                             alchemy_menu.reset()
-                            return "back_to_lobby"
+                            self.game.menu_manager.close_all_menus()
+                            return BasicAction.EXIT_MENU
                         else:
                             self.message = "Invalid skill parameters"
                     else:
