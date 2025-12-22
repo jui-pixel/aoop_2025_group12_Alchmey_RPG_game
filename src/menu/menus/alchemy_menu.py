@@ -118,7 +118,7 @@ class AlchemyMenu(AbstractMenu):
                     break
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                self.game.menu_manager.close_menu(MenuNavigation.ALCHMEY_MENU)
+                self.game.menu_manager.close_menu(MenuNavigation.ALCHEMY_MENU)
                 return BasicAction.EXIT_MENU
             if event.key == pygame.K_UP:
                 self.buttons[self.selected_index].is_selected = False
