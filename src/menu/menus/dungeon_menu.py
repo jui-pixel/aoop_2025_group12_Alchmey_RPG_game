@@ -26,7 +26,8 @@ class DungeonMenu(AbstractMenu):
         self.dungeons = dungeons
         # 【新增】儲存 DungeonPortalNPC 門面實例
         self.npc_facade = npc_facade 
-        
+        if not dungeons:
+            dungeons = []
         self.buttons = [
             Button(
                 SCREEN_WIDTH // 2 - 150, 100 + i * 50, 300, 40,

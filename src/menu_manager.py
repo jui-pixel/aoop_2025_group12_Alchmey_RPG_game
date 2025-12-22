@@ -180,7 +180,7 @@ class MenuManager:
         這允許多個菜單同時顯示。
         """
         if self.active_menus:
-            for menu in self.active_menus:
+            for menu in reversed(self.active_menus):
                 menu.draw(self.screen)  # 繪製所有激活的菜單
             pygame.display.flip()  # 更新螢幕顯示
 

@@ -19,7 +19,7 @@ class AmplifierChooseMenu(AbstractMenu):
         self.capped = {'elebuff': 1, 'remove_element': 1, 'remove_counter': 1}  # Names with max 1
 
     def update_amplifiers(self):
-        alchemy_menu = self.game.menu_manager.menus[MenuNavigation.ALCHMEY_MENU]
+        alchemy_menu = self.game.menu_manager.menus[MenuNavigation.ALCHEMY_MENU]
         main = alchemy_menu.main_material
         if main == "missile":
             self.amplifier_names = ['damage_level',
@@ -54,7 +54,7 @@ class AmplifierChooseMenu(AbstractMenu):
         title_surface = self.font.render(self.title, True, (255, 255, 255))
         screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 50))
         self.rects = []
-        alchemy_menu = self.game.menu_manager.menus[MenuNavigation.ALCHMEY_MENU]
+        alchemy_menu = self.game.menu_manager.menus[MenuNavigation.ALCHEMY_MENU]
         for i, name in enumerate(self.amplifier_names):
             level = alchemy_menu.amplifier_levels.get(name, 0)
             text = f"{name.replace('_level', '').capitalize()}: {level}"

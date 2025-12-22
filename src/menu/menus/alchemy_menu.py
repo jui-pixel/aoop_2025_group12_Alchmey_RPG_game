@@ -9,6 +9,8 @@ from src.menu.menu_config import (
     MenuNavigation,
 )
 from typing import List, Dict
+
+from src.menu.menus.amplifier_choose_menu import AmplifierChooseMenu
 from ...utils.elements import ELEMENTS, WEAKTABLE
 
 class AlchemyMenu(AbstractMenu):
@@ -170,6 +172,8 @@ class AlchemyMenu(AbstractMenu):
                 elif action == "choose_amplifier":
                     self.game.menu_manager.open_menu(MenuNavigation.AMPLIFIER_CHOOSE_MENU)
                     amp_menu = self.game.menu_manager.menus[MenuNavigation.AMPLIFIER_CHOOSE_MENU]
+                    if not amp_menu:
+                        amp_menu = self.game.menu_manager.menus[MenuNavigation.AMPLIFIER_CHOOSE_MENU] = AmplifierChooseMenu(self.game, None)
                     amp_menu.update_amplifiers()
                     return "choose_amplifier"
                 elif action == "synthesize":
