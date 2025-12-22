@@ -108,6 +108,8 @@ class MenuManager:
                         npc_facade = None 
 
                     self.register_menu(menu_name, DungeonMenu(self.game, dungeons, npc_facade))
+            self.active_menus.append(self.menus[menu_name])
+            self.menus[menu_name].activate(True)
             return
 
         menu = self.menus[menu_name]
