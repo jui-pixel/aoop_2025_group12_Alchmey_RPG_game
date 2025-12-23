@@ -2,13 +2,7 @@
 import pygame
 import esper # 引入 esper 模組
 from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
-from srcdungeon_manager import DungeonManager
-from src.event_manager import EventManager
-from src.audio_manager import AudioManager
-from src.render_manager import RenderManager
-from src.storage_manager import StorageManager
-from src.entity_manager import EntityManager
-from src.menu_manager import MenuManager # 假設這裡已導入新版的 MenuManager
+import manager
 
 # 引入 ECS 系統（假設它們在 src.ecs.systems 中）
 from src.ecs.systems import (
@@ -16,25 +10,6 @@ from src.ecs.systems import (
     HealthSystem, BuffSystem, EnergySystem, AISystem
 )
 
-# 引入所有菜單類別
-from src.menu.menus.alchemy_menu import AlchemyMenu
-from src.menu.menus.amplifier_menu import AmplifierMenu
-from src.menu.menus.amplifier_stat_menu import AmplifierStatMenu
-from src.menu.menus.crystal_menu import CrystalMenu
-from src.menu.menus.dungeon_menu import DungeonMenu
-from src.menu.menus.element_menu import ElementMenu
-from src.menu.menus.main_menu import MainMenu
-from src.menu.menus.main_material_menu import MainMaterialMenu
-from src.menu.menus.element_choose_menu import ElementChooseMenu
-# 【補齊所有缺失的菜單類別】
-from src.menu.menus.stat_menu import StatMenu
-from src.menu.menus.amplifier_choose_menu import AmplifierChooseMenu
-from src.menu.menus.naming_menu import NamingMenu
-from src.menu.menus.skill_library_menu import SkillLibraryMenu
-from src.menu.menus.skill_chain_edit_menu import SkillChainEditMenu
-from src.menu.menus.skill_chain_menu import SkillChainMenu
-from src.menu.menus.setting_menu import SettingsMenu # 假設 setting_menu.py 定義了 SettingsMenu 類
-from src.menu.menus.win_menu import WinMenu
 class Game:
     """遊戲主類別，管理所有遊戲狀態和子系統。"""
     
@@ -48,13 +23,13 @@ class Game:
         self.time_scale = 1.0 # 時間流逝速度
         self.world = esper
         # 管理器初始化
-        self.event_manager = EventManager(self)
-        self.audio_manager = AudioManager(self)
-        self.dungeon_manager = DungeonManager(self)
-        self.entity_manager = EntityManager(self)
-        self.storage_manager = StorageManager(self)
-        self.render_manager = RenderManager(self)
-        self.menu_manager = MenuManager(self)
+        self.event_manager = manager.EventManager(self)
+        self.audio_manager = manager.AudioManager(self)
+        self.dungeon_manager = manager.DungeonManager(self)
+        self.entity_manager = manager.EntityManager(self)
+        self.storage_manager = manager.StorageManager(self)
+        self.render_manager = manager.RenderManager(self)
+        self.menu_manager = manager.MenuManager(self)
 
         # --- ECS 初始化 (全域模式) ---
         # 修正: 將 Game 實例附加到 esper 模組上，供系統取用

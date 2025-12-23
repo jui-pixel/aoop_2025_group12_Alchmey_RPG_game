@@ -1,11 +1,12 @@
 # src/menu_manager.py
-from src.menu.abstract_menu import AbstractMenu
 import pygame
 from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from typing import List, Optional, Union
 from src.menu.menu_config import (
     BasicAction,
 )
+import menu
+from src.menu.abstract_menu import AbstractMenu
 from src.menu.menus.alchemy_menu import AlchemyMenu
 from src.menu.menus.amplifier_menu import AmplifierMenu
 from src.menu.menus.amplifier_stat_menu import AmplifierStatMenu
