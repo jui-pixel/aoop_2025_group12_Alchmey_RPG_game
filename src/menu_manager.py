@@ -1,7 +1,7 @@
 # src/menu_manager.py
 from src.menu.abstract_menu import AbstractMenu
 import pygame
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from typing import List, Optional, Union
 from src.menu.menu_config import (
     BasicAction,

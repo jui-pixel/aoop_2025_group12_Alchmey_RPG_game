@@ -1,6 +1,6 @@
 import pygame
 from typing import List
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE, DARK_GRAY, PASSABLE_TILES, ROOM_FLOOR_COLORS, BLACK
+from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE, DARK_GRAY, PASSABLE_TILES, ROOM_FLOOR_COLORS, BLACK
 from src.utils.helpers import get_project_path
 import math
 from src.ecs.systems import RenderSystem

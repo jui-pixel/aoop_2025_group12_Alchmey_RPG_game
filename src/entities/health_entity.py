@@ -1,7 +1,7 @@
 # src/entities/health_entity.py
 from typing import *
 from .basic_entity import BasicEntity
-from ..config import *
+from ..core.config import *
 import pygame
 import math
 import random

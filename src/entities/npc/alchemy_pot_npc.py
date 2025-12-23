@@ -2,7 +2,7 @@
 
 import esper
 import pygame
-from src.config import TILE_SIZE 
+from src.core.config import TILE_SIZE 
 from src.ecs.components import (
     Position, Renderable, Health, Defense, Collider, Buffs, Tag, 
     NPCInteractComponent 
@@ -10,7 +10,7 @@ from src.ecs.components import (
 from typing import Optional, Dict, List, Tuple
 import math
 from src.buffs.element_buff import ELEMENTAL_BUFFS
-from src.config import *
+from src.core.config import *
 from src.menu.menu_config import (
     BasicAction,
     MenuNavigation,

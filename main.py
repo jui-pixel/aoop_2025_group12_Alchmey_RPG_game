@@ -1,7 +1,7 @@
 import pygame
 import asyncio
 from src.core.game import Game
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT
 
 async def main():
     pygame.init()

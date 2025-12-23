@@ -3,7 +3,7 @@ import os
 from typing import Dict
 import pygame
 from src.dungeon.config.dungeon_config import DungeonConfig
-from src.config import DARK_GRAY, GRAY
+from src.core.config import DARK_GRAY, GRAY
 
 def get_project_path(*subpaths):
     """Get the absolute path to the project root (roguelike_dungeon/) and join subpaths."""

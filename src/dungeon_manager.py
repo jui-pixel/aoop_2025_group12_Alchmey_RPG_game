@@ -2,7 +2,7 @@
 from typing import Tuple
 from .dungeon.dungeon import Dungeon
 from .dungeon.room import Room
-from .config import TILE_SIZE
+from .core.config import TILE_SIZE
 
 class DungeonManager:
     def __init__(self, game: 'Game'):

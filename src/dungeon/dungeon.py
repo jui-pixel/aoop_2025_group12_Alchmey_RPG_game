@@ -19,7 +19,7 @@ from .config.dungeon_config import (
 # --- 3. 導入 Pygame 相關常數 (假設來自頂層 src/config.py) ---
 try:
     # 這些常數用於繪圖方法中的屏幕尺寸和回退顏色
-    from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, GRAY, BLACK, DARK_GRAY 
+    from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT, GRAY, BLACK, DARK_GRAY 
 except ImportError:
     print("警告：無法導入 src.config 中的屏幕/顏色常量。使用默認值。")
     SCREEN_WIDTH, SCREEN_HEIGHT = 1400, 750

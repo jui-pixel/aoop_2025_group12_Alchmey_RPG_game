@@ -1,7 +1,7 @@
 # src/event_manager.py
 import pygame
 from typing import List, Dict
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from src.skills.abstract_skill import Skill
 import math
 from src.menu.menu_config import (

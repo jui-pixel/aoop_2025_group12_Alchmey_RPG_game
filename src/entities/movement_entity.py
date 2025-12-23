@@ -2,7 +2,7 @@
 from src.ecs.components import Velocity, Collider
 import math
 from .basic_entity import BasicEntity
-from src.config import TILE_SIZE, PASSABLE_TILES
+from src.core.config import TILE_SIZE, PASSABLE_TILES
 
 class MovementEntity(BasicEntity):
     def __init__(self, x: float = 0.0, y: float = 0.0, w: int = 32, h: int = 32,
@@ -59,7 +59,7 @@ class MovementEntity(BasicEntity):
 from src.ecs.components import Velocity, Collider
 import math
 from .basic_entity import BasicEntity
-from src.config import TILE_SIZE, PASSABLE_TILES
+from src.core.config import TILE_SIZE, PASSABLE_TILES
 
 class MovementEntity(BasicEntity):
     def __init__(self, x: float = 0.0, y: float = 0.0, w: int = 32, h: int = 32,

@@ -8,7 +8,7 @@ import random
 # 引入 ECS 組件
 import esper
 from src.ecs.components import Position, Velocity, Health, Combat, AI, Collider, Renderable
-from src.config import TILE_SIZE, RED, PASSABLE_TILES
+from src.core.config import TILE_SIZE, RED, PASSABLE_TILES
 from src.entities.bullet.expand_circle_bullet import create_expanding_circle_bullet
 from src.entities.bullet.bullet import create_standard_bullet_entity
 from src.buffs.element_buff import ELEMENTAL_BUFFS

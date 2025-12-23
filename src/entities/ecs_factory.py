@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from src.core.game import Game 
 
 # 假設 TILE_SIZE 在 src.config 模組中
-from src.config import TILE_SIZE 
+from src.core.config import TILE_SIZE 
 
 # 假設這些是您自定義的組件 (Components)
 from ..ecs.components import (

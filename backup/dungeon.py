@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import List, Tuple, Optional, Dict, Set
 import pygame
 import os
-from src.config import *
+from src.core.config import *
 from src.dungeon.room import Room, RoomType
 from src.dungeon.bridge import Bridge
 from src.dungeon.bsp_node import BSPNode

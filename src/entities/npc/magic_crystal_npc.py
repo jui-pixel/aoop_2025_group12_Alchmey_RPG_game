@@ -7,7 +7,7 @@ from typing import Optional, Dict, Tuple, List
 # 假設導入 AbstractNPCFacade
 from .base_npc_facade import AbstractNPCFacade
 from src.ecs.components import NPCInteractComponent, Health, Defense, Position 
-from src.config import *
+from src.core.config import *
 from src.menu.menu_config import (
     BasicAction,
     MenuNavigation,

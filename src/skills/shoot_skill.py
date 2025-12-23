@@ -4,7 +4,7 @@ import math
 # from ..entities.bullet.bullet import Bullet 
 from ..buffs.element_buff import ElementBuff, ELEMENTAL_BUFFS, apply_elemental_buff
 from .abstract_skill import Skill
-from ..config import TILE_SIZE
+from ..core.config import TILE_SIZE
 
 # 假設這是您的 ECS 實體工廠函數所在的路徑
 from ..entities.bullet.bullet import create_standard_bullet_entity 

@@ -3,7 +3,7 @@ from typing import Optional, Dict, Tuple, List
 from .abstract_skill import Skill
 from .shoot_skill import ShootingSkill
 from .buff_skill import BuffSkill
-from ..config import TILE_SIZE
+from ..core.config import TILE_SIZE
 
 
 

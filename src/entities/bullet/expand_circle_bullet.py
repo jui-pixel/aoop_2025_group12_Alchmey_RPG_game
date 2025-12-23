@@ -3,7 +3,7 @@ import pygame
 import math
 import os
 from typing import Tuple, Dict, List, TYPE_CHECKING
-from src.config import TILE_SIZE
+from src.core.config import TILE_SIZE
 from dataclasses import dataclass, field
 from src.ecs.components import Tag
 from src.buffs.element_buff import ELEMENTAL_BUFFS

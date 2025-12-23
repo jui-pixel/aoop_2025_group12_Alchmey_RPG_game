@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, TYPE_CHECKING, Tuple, Callable
-from ..config import TILE_SIZE
+from ..core.config import TILE_SIZE
 
 if TYPE_CHECKING:
     from ..skills.skill import Skill 

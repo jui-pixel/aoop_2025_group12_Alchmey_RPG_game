@@ -9,7 +9,7 @@ from src.menu.menu_config import (
     get_menu_config
 )
 import pygame
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from typing import Optional
 
 

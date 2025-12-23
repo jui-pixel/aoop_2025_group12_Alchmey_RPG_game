@@ -1,7 +1,7 @@
 # src/storage_manager.py
 from typing import List, Dict, Tuple, Optional
 import json
-from .config import TILE_SIZE
+from .core.config import TILE_SIZE
 from .skills.shoot_skill import ShootingSkill
 from .skills.buff_skill import BuffSkill
 from .skills.abstract_skill import Skill

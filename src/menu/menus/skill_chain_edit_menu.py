@@ -2,7 +2,7 @@
 from src.menu.abstract_menu import AbstractMenu
 from src.menu.button import Button
 import pygame
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from math import ceil
 from typing import List, Optional
 from src.skills.skill import create_skill_from_dict

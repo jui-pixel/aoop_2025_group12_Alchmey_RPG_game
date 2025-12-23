@@ -3,7 +3,7 @@ import pygame
 import math
 from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider, PlayerComponent, Tag
 from src.ecs.ai import EnemyContext
-from src.config import TILE_SIZE, PASSABLE_TILES, SCREEN_WIDTH, SCREEN_HEIGHT
+from src.core.config import TILE_SIZE, PASSABLE_TILES, SCREEN_WIDTH, SCREEN_HEIGHT
 from src.entities.ecs_factory import create_damage_text_entity
 
 class MovementSystem(esper.Processor):

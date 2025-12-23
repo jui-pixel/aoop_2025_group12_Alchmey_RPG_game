@@ -5,7 +5,7 @@
 """
 from typing import List, Set, Tuple
 from ..room import Room
-from src.config import PASSABLE_TILES
+from src.core.config import PASSABLE_TILES
 
 class TileManager:
     """

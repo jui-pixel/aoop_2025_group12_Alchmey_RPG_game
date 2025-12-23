@@ -14,7 +14,7 @@ from src.entities.ecs_factory import (
 from src.entities.player.player import Player 
 # 引入 ECS 組件 (用於清理和位置操作)
 from src.ecs.components import Position, NPCInteractComponent, PlayerComponent
-from src.config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE
+from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE
 
 class EntityManager:
     """
