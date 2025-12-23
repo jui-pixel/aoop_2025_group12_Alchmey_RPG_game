@@ -20,6 +20,7 @@ from .menus.skill_chain_menu import SkillChainMenu
 from .menus.skill_library_menu import SkillLibraryMenu
 from .menus.stat_menu import StatMenu
 from .menus.win_menu import WinMenu
+from .menus.death_menu import DeathMenu
 
 from .menu_config import MenuNavigation, BasicAction
 # 3. 定義公開接口，方便使用 from module import *
@@ -43,6 +44,7 @@ __all__ = [
     'SkillLibraryMenu',
     'StatMenu',
     'WinMenu',
+    'DeathMenu',
     'MenuNavigation',
     'BasicAction',
 ]

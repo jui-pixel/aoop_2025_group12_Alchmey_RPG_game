@@ -30,6 +30,7 @@ class MenuNavigation(str, Enum):
     MAIN_MENU = "main_menu"
     SETTINGS_MENU = "settings_menu"
     WIN_MENU = "win_menu"
+    DEATH_MENU = "death_menu"
     # NPC 交互菜單
     CRYSTAL_MENU = "crystal_menu"
     ALCHEMY_MENU = "alchemy_menu"
@@ -172,6 +173,12 @@ class WinMenuAction(str, Enum):
     REPLAY = "replay"
 
 
+class DeathMenuAction(str, Enum):
+    """死亡菜單專屬動作"""
+    RETURN_TO_LOBBY = "return_to_lobby"
+    RETRY_LEVEL = "retry_level"
+
+
 
 # ============================================================================
 # 菜單結果數據類
@@ -295,6 +302,13 @@ MENU_CONFIGS = {
         name='settings_menu',
         title='Settings',
         closable=True,
+        modal=True
+    ),
+
+    'death_menu': MenuConfig(
+        name='death_menu',
+        title='Game Over',
+        closable=False,
         modal=True
     ),
 }
@@ -518,6 +532,8 @@ MENU_ACTION_CLASSES = {
     'skill_chain_edit_menu': SkillChainEditMenuAction,
     'skill_library_menu': SkillLibraryMenuAction,
     'settings_menu': SettingsMenuAction,
+
+    'death_menu': DeathMenuAction,
 }
 
 

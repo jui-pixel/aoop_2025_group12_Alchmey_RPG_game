@@ -24,6 +24,7 @@ from src.menu.menus.skill_chain_edit_menu import SkillChainEditMenu
 from src.menu.menus.skill_chain_menu import SkillChainMenu
 from src.menu.menus.settings_menu import SettingsMenu
 from src.menu.menus.win_menu import WinMenu
+from src.menu.menus.death_menu import DeathMenu
 class MenuManager:
     def __init__(self, game):
         """初始化菜單管理器，負責管理遊戲中的各個菜單。
@@ -72,35 +73,37 @@ class MenuManager:
         if menu_name not in self.menus or self.menus[menu_name] is None:
             print(f"MenuManager: 菜單 {menu_name} 尚未註冊或未實例化。")
             if menu_name == "alchemy_menu":
-                self.register_menu(menu_name, menu.AlchemyMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.AlchemyMenu(self.game, data))
             elif menu_name == "amplifier_menu":
-                self.register_menu(menu_name, menu.AmplifierMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.AmplifierMenu(self.game, data))
             elif menu_name == 'amplifier_stat_menu':
-                self.register_menu(menu_name, menu.AmplifierStatMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.AmplifierStatMenu(self.game, data))
             elif menu_name == 'crystal_menu':
-                self.register_menu(menu_name, menu.CrystalMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.CrystalMenu(self.game, data))
             elif menu_name == 'element_menu':
-                self.register_menu(menu_name, menu.ElementMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.ElementMenu(self.game, data))
             elif menu_name == 'main_material_menu':
-                self.register_menu(menu_name, menu.MainMaterialMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.MainMaterialMenu(self.game, data))
             elif menu_name == 'element_choose_menu':
-                self.register_menu(menu_name, menu.ElementChooseMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.ElementChooseMenu(self.game, data))
             elif menu_name == 'stat_menu':
-                self.register_menu(menu_name, menu.StatMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.StatMenu(self.game, data))
             elif menu_name == 'amplifier_choose_menu':
-                self.register_menu(menu_name, menu.AmplifierChooseMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.AmplifierChooseMenu(self.game, data))
             elif menu_name == 'naming_menu':
-                self.register_menu(menu_name, menu.NamingMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.NamingMenu(self.game, data))
             elif menu_name == 'skill_library_menu':
-                self.register_menu(menu_name, menu.SkillLibraryMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.SkillLibraryMenu(self.game, data))
             elif menu_name == 'settings_menu':
-                self.register_menu(menu_name, menu.SettingsMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.SettingsMenu(self.game, data))
             elif menu_name == 'skill_chain_menu':
-                self.register_menu(menu_name, menu.SkillChainMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.SkillChainMenu(self.game, data))
             elif menu_name == 'skill_chain_edit_menu':
-                self.register_menu(menu_name, menu.SkillChainEditMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.SkillChainEditMenu(self.game, data))
             elif menu_name == 'win_menu':
-                self.register_menu(menu_name, menu.WinMenu(self.game, data))
+                self.register_menu(menu_name, src.menu.WinMenu(self.game, data))
+            elif menu_name == 'death_menu':
+                self.register_menu(menu_name, src.menu.DeathMenu(self.game, data))
             elif menu_name == 'dungeon_menu':
                     # 【修正點】解包 data 並將其傳遞給 DungeonMenu
                     dungeons = data.get('dungeons', []) if isinstance(data, dict) else data 
@@ -110,7 +113,7 @@ class MenuManager:
                         dungeons = data 
                         npc_facade = None 
 
-                    self.register_menu(menu_name, DungeonMenu(self.game, dungeons, npc_facade))
+                    self.register_menu(menu_name, src.menu.DungeonMenu(self.game, dungeons, npc_facade))
             self.active_menus.append(self.menus[menu_name])
             self.menus[menu_name].activate(True)
             return

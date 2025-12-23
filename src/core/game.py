@@ -73,6 +73,7 @@ class Game:
         self.menu_manager.register_menu('naming_menu', None)             # 新增
         self.menu_manager.register_menu('settings_menu', None)          # 使用 settings_menu.py 中假設的 SettingsMenu 類
         self.menu_manager.register_menu('win_menu', None)
+        self.menu_manager.register_menu('death_menu', None)  
         self.menu_manager.open_menu('main_menu') # 顯示主菜單
 
     def start_game(self) -> None:
@@ -281,3 +282,9 @@ class Game:
             self.render_manager.draw_playing() # 繪製遊戲進行畫面
         
         pygame.display.flip()
+    
+    def on_player_death(self) -> None:
+        """處理玩家死亡邏輯，顯示死亡菜單並重置遊戲狀態。"""
+        print("Game: 玩家已死亡，顯示死亡菜單")
+        self.menu_manager.open_menu('death_menu') # 顯示死亡菜單
+        # 其他死亡處理邏輯（如重置遊戲等）可在此添加

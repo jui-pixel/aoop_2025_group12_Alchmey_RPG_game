@@ -20,6 +20,7 @@ class MovementSystem(esper.Processor):
             # Get Collider if exists, else default
             collider =  esper.try_component(ent, Collider)
             pass_wall = collider.pass_wall if collider else False
+            destroy_on_collision = collider.destroy_on_collision if collider else False
             w = collider.w if collider else 32
             h = collider.h if collider else 32
             
@@ -39,6 +40,10 @@ class MovementSystem(esper.Processor):
                         pos.x = new_x
                         pos.y = new_y
                     else:
+                        if destroy_on_collision:
+                            # Mark entity for deletion (to be handled by a cleanup system)
+                             esper.delete_entity(ent)
+                             continue
                         # Sliding logic
                         tile_x_curr = int(pos.x // TILE_SIZE)
                         tile_y_new = int(new_y // TILE_SIZE)
@@ -234,8 +239,7 @@ class HealthSystem(esper.Processor):
                 health.current_hp = max(0, remain_hp)
         
         killed = health.current_hp <= 0
-        
-        # Create damage text
+
         self._create_damage_text(entity, final_damage)
         
         return killed, final_damage
@@ -315,8 +319,11 @@ class HealthSystem(esper.Processor):
     def _handle_death(self, entity, game):
         """Handle entity death."""
         print(f"Entity {entity} died!")
-        # Option: Mark for deletion (to be handled by a cleanup system)
-        #  esper.delete_entity(entity)  # Careful: don't delete during iteration
+        if esper.has_component(entity, PlayerComponent):
+            if game:
+                game.on_player_death()
+        else:
+            esper.delete_entity(entity)
 
 class BuffSystem(esper.Processor):
     def __init__(self):
