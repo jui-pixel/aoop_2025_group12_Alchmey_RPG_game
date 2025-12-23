@@ -470,7 +470,13 @@ def create_dummy_entity(
         element="untyped",
         invulnerable=False
     ))
-
+    world.add_component(npc_entity, Combat(
+        damage=0,
+        atk_element="untyped",
+        collision_cooldown=0.0
+    ))
+    
+    
     # 5. 增益效果 (Buffs)
     world.add_component(npc_entity, Buffs())
 
@@ -490,7 +496,7 @@ def create_damage_text_entity(
 
     # 1. 位置組件
     world.add_component(damage_text_entity, Position(x=x, y=y))
-
+    world.add_component(damage_text_entity, Velocity(x=0.0, y=-30.0)) # 向上移動
     # 2. 渲染組件
     font = pygame.font.SysFont('Arial', 24)
     text_surface = font.render(str(damage), True, color)
