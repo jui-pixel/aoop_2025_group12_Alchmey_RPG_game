@@ -2,7 +2,7 @@
 import pygame
 import esper # 引入 esper 模組
 from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
-from src.dungeon_manager import DungeonManager
+from srcdungeon_manager import DungeonManager
 from src.event_manager import EventManager
 from src.audio_manager import AudioManager
 from src.render_manager import RenderManager

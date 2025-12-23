@@ -1,10 +1,10 @@
 # src/storage_manager.py
 from typing import List, Dict, Tuple, Optional
 import json
-from .core.config import TILE_SIZE
-from .skills.shoot_skill import ShootingSkill
-from .skills.buff_skill import BuffSkill
-from .skills.abstract_skill import Skill
+from src.core.config import TILE_SIZE
+from src.skills.shoot_skill import ShootingSkill
+from src.skills.buff_skill import BuffSkill
+from src.skills.abstract_skill import Skill
 class StorageManager:
     def __init__(self, game: 'Game'):
         """Initialize the storage manager to manage game data (stats, skills, elements, amplifiers).

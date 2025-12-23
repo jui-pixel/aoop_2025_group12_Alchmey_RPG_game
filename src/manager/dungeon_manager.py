@@ -1,8 +1,8 @@
 # src/dungeon_manager.py
 from typing import Tuple
-from .dungeon.dungeon import Dungeon
-from .dungeon.room import Room
-from .core.config import TILE_SIZE
+from src.dungeon.dungeon import Dungeon
+from src.dungeon.room import Room
+from src.core.config import TILE_SIZE
 
 class DungeonManager:
     def __init__(self, game: 'Game'):
