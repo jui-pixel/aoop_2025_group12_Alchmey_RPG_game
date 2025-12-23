@@ -16,7 +16,7 @@ from src.config import TILE_SIZE
 # 假設這些是您自定義的組件 (Components)
 from ..ecs.components import (
     Position, Velocity, Renderable, Collider, Health, Defense, Combat, Buffs, AI, Tag, 
-    NPCInteractComponent, DungeonPortalComponent, PlayerComponent,
+    NPCInteractComponent, DungeonPortalComponent, PlayerComponent, Lifetime
 )
 
 # 假設這些是您自定義的 AI 行為和行為樹節點
@@ -475,3 +475,35 @@ def create_dummy_entity(
     world.add_component(npc_entity, Buffs())
 
     return npc_entity
+
+def create_damage_text_entity(
+    world: esper,
+    x: float = 0.0,
+    y: float = 0.0,
+    damage: int = 0,
+    color: tuple = (255, 0, 0),
+    duration: float = 1.0,
+) -> int:
+    """創建一個顯示傷害數字的實體。"""
+    
+    damage_text_entity = world.create_entity()
+
+    # 1. 位置組件
+    world.add_component(damage_text_entity, Position(x=x, y=y))
+
+    # 2. 渲染組件
+    font = pygame.font.SysFont('Arial', 24)
+    text_surface = font.render(str(damage), True, color)
+    world.add_component(damage_text_entity, Renderable(
+        image=text_surface,
+        shape="text",
+        w=text_surface.get_width(),
+        h=text_surface.get_height(),
+        color=color,
+        layer=2 
+    ))
+
+    # 3. 壽命組件 (用於控制顯示時間)
+    world.add_component(damage_text_entity, Lifetime(max_lifetime=duration))
+
+    return damage_text_entity

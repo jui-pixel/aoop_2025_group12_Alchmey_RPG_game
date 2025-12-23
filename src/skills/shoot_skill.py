@@ -79,7 +79,7 @@ class ShootingSkill(Skill):
             start_pos=start_pos,
             w=self.bullet_size,
             h=self.bullet_size,
-            tag="player_bullet", # 修正 tag 為 'player_bullet' 以避免友傷
+            tag="player", # 修正 tag 為 'player' 以避免友傷
             direction=direction,
             
             # ProjectileState & Movement

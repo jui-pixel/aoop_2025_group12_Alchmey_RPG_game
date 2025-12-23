@@ -254,3 +254,17 @@ class DungeonPortalComponent:
         default_factory=lambda: [{'name': 'Test Dungeon', 'level': 1, 'dungeon_id': 1}]
     )
     portal_effect_active: bool = False
+
+
+@dataclass
+class Lifetime:
+    """
+    通用的生命週期組件。
+    用於追蹤實體的剩餘壽命，適用於各種需要壽命管理的實體。
+    """
+    max_lifetime: float = 5.0     # 總壽命
+    current_lifetime: float = field(init=False)
+
+    def __post_init__(self):
+        """初始化後，當前壽命等於最大壽命。"""
+        self.current_lifetime = self.max_lifetime
