@@ -3,18 +3,18 @@
     "defense_level": 14,
     "movement_level": 24,
     "health_level": 14,
-    "mana": 18763508,
+    "mana": 18763507,
     "awakened_elements": [
-        "metal",
-        "dark",
         "earth",
         "light",
+        "wood",
+        "metal",
         "thunder",
-        "wind",
         "water",
+        "wind",
         "ice",
-        "fire",
-        "wood"
+        "dark",
+        "fire"
     ],
     "amplifiers": {},
     "skills_library": [
@@ -55,6 +55,13 @@
                 "speed": 30,
                 "duration": 100
             }
+        },
+        {
+            "name": "123457",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "untyped",
+            "params": {}
         }
     ]
 }
