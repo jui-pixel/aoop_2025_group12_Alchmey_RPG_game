@@ -140,7 +140,7 @@ class InputSystem(esper.Processor):
         keys = pygame.key.get_pressed()
         
         for ent, (inp, vel) in  esper.get_components(Input, Velocity):
-            if  esper.has_component(ent, Player):
+            if  esper.has_component(ent, PlayerComponent):
                 # Reset velocity intent
                 vel.x = 0
                 vel.y = 0

@@ -22,7 +22,7 @@ from src.menu.menus.skill_library_menu import SkillLibraryMenu
 from src.menu.menus.skill_chain_edit_menu import SkillChainEditMenu
 from src.menu.menus.skill_chain_menu import SkillChainMenu
 from src.menu.menus.setting_menu import SettingsMenu
-
+from src.menu.menus.win_menu import WinMenu
 class MenuManager:
     def __init__(self, game):
         """初始化菜單管理器，負責管理遊戲中的各個菜單。
@@ -98,6 +98,8 @@ class MenuManager:
                 self.register_menu(menu_name, SkillChainMenu(self.game, data))
             elif menu_name == 'skill_chain_edit_menu':
                 self.register_menu(menu_name, SkillChainEditMenu(self.game, data))
+            elif menu_name == 'win_menu':
+                self.register_menu(menu_name, WinMenu(self.game, data))
             elif menu_name == 'dungeon_menu':
                     # 【修正點】解包 data 並將其傳遞給 DungeonMenu
                     dungeons = data.get('dungeons', []) if isinstance(data, dict) else data 

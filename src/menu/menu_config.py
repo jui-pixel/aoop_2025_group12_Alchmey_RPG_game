@@ -167,6 +167,15 @@ class SettingsMenuAction(str, Enum):
     BACK = "back"
 
 
+class WinMenuAction(str, Enum):
+    """勝利菜單專屬動作"""
+    RETURN_TO_LOBBY = "return_to_lobby"
+    VIEW_REWARDS = "view_rewards"
+    NEXT_LEVEL = "next_level"
+    REPLAY = "replay"
+
+
+
 # ============================================================================
 # 菜單結果數據類
 # ============================================================================

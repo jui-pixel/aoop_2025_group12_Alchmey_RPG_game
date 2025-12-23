@@ -34,7 +34,7 @@ from src.menu.menus.skill_library_menu import SkillLibraryMenu
 from src.menu.menus.skill_chain_edit_menu import SkillChainEditMenu
 from src.menu.menus.skill_chain_menu import SkillChainMenu
 from src.menu.menus.setting_menu import SettingsMenu # 假設 setting_menu.py 定義了 SettingsMenu 類
-
+from src.menu.menus.win_menu import WinMenu
 class Game:
     """遊戲主類別，管理所有遊戲狀態和子系統。"""
     
@@ -98,7 +98,7 @@ class Game:
         self.menu_manager.register_menu('main_material_menu', None) 
         self.menu_manager.register_menu('naming_menu', None)             # 新增
         self.menu_manager.register_menu('settings_menu', None)          # 使用 settings_menu.py 中假設的 SettingsMenu 類
-        
+        self.menu_manager.register_menu('win_menu', None)
         self.menu_manager.open_menu('main_menu') # 顯示主菜單
 
     def start_game(self) -> None:
