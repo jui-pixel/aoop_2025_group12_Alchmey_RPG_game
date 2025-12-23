@@ -49,6 +49,7 @@ class DungeonPortalNPC(AbstractNPCFacade): # <--- 繼承抽象基類
 
     def start_interaction(self) -> None:
         """Show dungeon selection menu via MenuManager."""
+        
         interact_comp = self._get_interact_comp()
         interact_comp.is_interacting = True
         
@@ -72,6 +73,7 @@ class DungeonPortalNPC(AbstractNPCFacade): # <--- 繼承抽象基類
 
     def enter_dungeon(self, dungeon_name: str) -> bool:
         """Switch to the selected dungeon room, initialize dungeon, and place entities."""
+        
         portal_comp = self._get_portal_comp()
         
         for dungeon in portal_comp.available_dungeons:

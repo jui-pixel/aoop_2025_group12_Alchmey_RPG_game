@@ -119,7 +119,19 @@ class MenuManager:
             return
 
         menu = self.menus[menu_name]
-        
+        if menu_name == 'dungeon_menu':
+            # 【修正點】解包 data 並將其傳遞給 DungeonMenu
+            dungeons = data.get('dungeons', []) if isinstance(data, dict) else data 
+            npc_facade = data.get('npc_facade') if isinstance(data, dict) else None
+            
+            if not isinstance(dungeons, list):
+                dungeons = data 
+                npc_facade = None 
+
+            self.register_menu(menu_name, src.menu.DungeonMenu(self.game, dungeons, npc_facade), update=True)
+            print(f"MenuManager: 已重新註冊地牢菜單 {menu_name}，實例：{self.menus[menu_name].__class__.__name__ if self.menus[menu_name] else 'None'}")
+            menu = self.menus[menu_name]
+
         # 檢查菜單是否已經在激活列表中
         if menu in self.active_menus:
             print(f"MenuManager: 菜單 {menu_name} 已經打開，不重複添加。")

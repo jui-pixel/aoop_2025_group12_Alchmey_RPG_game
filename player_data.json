@@ -3,18 +3,18 @@
     "defense_level": 16,
     "movement_level": 28,
     "health_level": 18,
-    "mana": 18762218,
+    "mana": 18762217,
     "awakened_elements": [
-        "water",
-        "metal",
+        "thunder",
         "earth",
-        "ice",
-        "wood",
-        "dark",
-        "light",
-        "wind",
         "fire",
-        "thunder"
+        "metal",
+        "light",
+        "wood",
+        "wind",
+        "water",
+        "dark",
+        "ice"
     ],
     "amplifiers": {},
     "skills_library": [
@@ -228,6 +228,17 @@
                 "damage": 1,
                 "explosion": 1,
                 "speed": 1
+            }
+        },
+        {
+            "name": "abc",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 2,
+                "speed": 8,
+                "duration": 2
             }
         }
     ]

@@ -358,7 +358,8 @@ def create_dungeon_portal_npc(
     # 【新增 Facade 初始化邏輯】
     if game:
         # 這會調用 DungeonPortalNPC.__init__，將 start_interaction 方法連結到 NPCInteractComponent 上
-        DungeonPortalNPC(game, npc_entity) 
+        DungeonPortalNPC(game, npc_entity)
+        print(f"DungeonPortalNPC created with entity ID: {npc_entity}")
     # ---------------------------------
 
     return npc_entity

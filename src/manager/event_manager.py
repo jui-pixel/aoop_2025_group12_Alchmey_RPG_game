@@ -335,7 +335,7 @@ class EventManager:
             if nearest_npc_id:
                 # 觸發互動，假設 Interactable 組件包含 start_interaction() 方法
                 nearest_npc_comp.start_interaction() 
-                print(f"EventManager: Interacting with {nearest_npc_tag}")
+                print(f"EventManager: Interacting with {nearest_npc_tag}, Entity ID: {nearest_npc_id}")
                 return True
         else:
             # 如果沒有抽象化的方法，我們無法安全地進行 ECS 查詢，

@@ -160,16 +160,16 @@ class EntityManager:
                 
                 elif tile_type == 'Monster_spawn':
                     # 創建敵人實體 (使用工廠函數)
-                    create_enemy1_entity(self.world, x=entity_x, y=entity_y) 
-                    
+                    enemy_id = create_enemy1_entity(self.world, x=entity_x, y=entity_y) 
+                    print(f"EntityManager: 創建敵人實體於瓦片 ({x}, {y})，像素座標 ({entity_x}, {entity_y}), 實體ID: {enemy_id}")   
                 elif tile_type == 'End_room_portal':
                     # 創建地牢傳送門實體 (使用工廠函數)
-                    create_dungeon_portal_npc(
+                    npc_id = create_dungeon_portal_npc(
                         self.world, x=entity_x, y=entity_y,
                         available_dungeons=[{'name': 'Test Dungeon', 'level': 1, 'room_id': 1}],
                         game=self.game
                     )
-                    
+                    print(f"EntityManager: 創建地牢傳送門實體於瓦片 ({x}, {y})，像素座標 ({entity_x}, {entity_y}), 實體ID: {npc_id}")
                         
                 
 
