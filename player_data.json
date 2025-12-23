@@ -3,12 +3,18 @@
     "defense_level": 14,
     "movement_level": 24,
     "health_level": 14,
-    "mana": 18763514,
+    "mana": 18763508,
     "awakened_elements": [
-        "wind",
-        "ice",
+        "metal",
+        "dark",
+        "earth",
         "light",
-        "water"
+        "thunder",
+        "wind",
+        "water",
+        "ice",
+        "fire",
+        "wood"
     ],
     "amplifiers": {},
     "skills_library": [
