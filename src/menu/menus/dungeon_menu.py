@@ -11,7 +11,7 @@ from src.menu.menu_config import (
 )
 # 由於我們需要引用 DungeonPortalNPC，這裡使用 TYPE_CHECKING 避免循環依賴
 if TYPE_CHECKING:
-    from src.game import Game
+    from src.core.game import Game
     from src.entities.npc.dungeon_portal_npc import DungeonPortalNPC # 假設此為 Facade
 
 class DungeonMenu(AbstractMenu):

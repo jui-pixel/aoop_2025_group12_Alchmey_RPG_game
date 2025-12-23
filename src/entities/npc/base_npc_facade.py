@@ -16,7 +16,7 @@ except ImportError:
     
 # 為了避免循環導入和提高性能，可以使用 TYPE_CHECKING
 if TYPE_CHECKING:
-    from src.game import Game # 假設您的主遊戲類為 Game
+    from src.core.game import Game # 假設您的主遊戲類為 Game
 
 # 抽象 NPC 門面類 (Abstract NPC Facade)
 class AbstractNPCFacade(ABC):

@@ -8,7 +8,7 @@ import math
 from typing import List, Dict, Optional, TYPE_CHECKING
 # 類型檢查：假設 Game 類在 src.game 模組中
 if TYPE_CHECKING:
-    from src.game import Game 
+    from src.core.game import Game 
 
 # 假設 TILE_SIZE 在 src.config 模組中
 from src.config import TILE_SIZE 
