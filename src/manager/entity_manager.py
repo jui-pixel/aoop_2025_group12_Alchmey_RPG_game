@@ -67,21 +67,22 @@ class EntityManager:
         used_tiles = set()
         
         # 1. 初始化玩家
-        if not self.player:
-            player_tiles = self.get_valid_tiles(room, spawn_map['player'])
-            player_x, player_y, player_tile = 0.0, 0.0, None
+        
+        player_tiles = self.get_valid_tiles(room, spawn_map['player'])
+        player_x, player_y, player_tile = 0.0, 0.0, None
 
-            if player_tiles:
-                player_tile = player_tiles[0] 
-            elif fallback_tiles:
-                player_tile = random.choice(fallback_tiles)
+        if player_tiles:
+            player_tile = player_tiles[0] 
+        elif fallback_tiles:
+            player_tile = random.choice(fallback_tiles)
+        
+        if player_tile:
+            player_x, player_y = self.tile_to_pixel(*player_tile)
+            used_tiles.add(player_tile)
+        else:
+            player_x, player_y = self.game.dungeon_manager.get_room_center(room)
             
-            if player_tile:
-                player_x, player_y = self.tile_to_pixel(*player_tile)
-                used_tiles.add(player_tile)
-            else:
-                player_x, player_y = self.game.dungeon_manager.get_room_center(room)
-                
+        if not self.player:
             # 使用 ECS Factory 創建玩家實體，並儲存 Facade
             player_ecs_id = create_player_entity(self.world, x=player_x, y=player_y) 
             self.player = Player(self.game, player_ecs_id)
@@ -90,6 +91,7 @@ class EntityManager:
             print(f"EntityManager: 初始化玩家實體 ID: {player_ecs_id}，像素座標 ({player_x}, {player_y})")
         else:
             print("EntityManager: 玩家實體已存在，跳過創建。")
+        self.refresh_player(x=player_x, y=player_y)
             
         # 2. 初始化 NPC (使用工廠函數)
         npc_configs: List[Tuple[callable, str]] = [
@@ -242,3 +244,20 @@ class EntityManager:
         獲取所有實體的 ID 列表。
         """
         return list(self.world._entities)
+
+    def refresh_player(self, x: float, y: float) -> None:
+        """
+        刷新玩家的數值。
+        """
+        buff_comp = self.player._get_buffs_comp()
+        buff_comp.active_buffs.clear()
+        buff_comp.modifiers.clear()
+        health_comp = self.player._get_health_comp()
+        health_comp.max_hp = health_comp.base_max_hp
+        health_comp.current_hp = health_comp.max_hp
+        health_comp.max_shield = 0
+        pos_comp = self.player._get_position_comp()
+        pos_comp.x = x
+        pos_comp.y = y
+        print("EntityManager: 玩家數值已刷新至最大值。")
+        
