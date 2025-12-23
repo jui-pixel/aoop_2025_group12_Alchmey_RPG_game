@@ -2,6 +2,8 @@
 from src.menu.abstract_menu import AbstractMenu
 from src.menu.button import Button
 import pygame
+import math
+import random
 from typing import List, Dict, Tuple
 from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from src.menu.menu_config import (
@@ -10,177 +12,236 @@ from src.menu.menu_config import (
 )
 
 class AmplifierStatMenu(AbstractMenu):
+    """增幅器詳細屬性/效果查看菜單 - 優化版"""
+    
     def __init__(self, game: 'Game', options: Dict = None):
-        """Initialize the amplifier effect menu for viewing effect descriptions.
-
-        Args:
-            game: The main game instance for accessing storage manager and menu management.
-            options: Dict containing 'type' for the amplifier type (default: 'magic_missile').
-        """
         self.game = game
-        self.amplifier_type = 'magic_missile'  # Default type
-        self.title = "Magic Missile Effects"  # Default title
-        self.effect_mapping = self._get_effect_mapping(self.amplifier_type)
-        self.buttons = self._create_buttons()
-        self.selected_index = 0
+        self.amplifier_type = 'magic_missile'
+        self.title = "Effect Details"
         self.active = False
-        self.font = pygame.font.SysFont(None, 48)
-        self.message_font = pygame.font.SysFont(None, 36)
+        
+        # 字體
+        self.title_font = pygame.font.SysFont(None, 64)
+        self.header_font = pygame.font.SysFont(None, 40)
+        self.text_font = pygame.font.SysFont(None, 28)
+        self.desc_font = pygame.font.SysFont(None, 32)
+        
+        # 視覺效果
+        self.animation_time = 0
+        self.particles = []
+        
+        # 數據與緩存
+        self.effect_mapping = []
+        self.buttons = []
         self.selected_description = None
-        # Apply initial options if provided
+        
+        # 初始化
         if options and 'type' in options:
             self.update_type(options['type'])
-        self.buttons[self.selected_index].is_selected = True
+        else:
+            self.update_type(self.amplifier_type)
+            
+        self.selected_index = 0
+        if self.buttons:
+            self.buttons[self.selected_index].is_selected = True
 
     def _get_effect_mapping(self, amplifier_type: str) -> List[Tuple[str, str, str]]:
-        """Get the effect mapping for the given amplifier type."""
+        """獲取增幅器效果數據映射"""
         mapping = {
             "magic_missile": [
-                ("Increase Damage", "damage_level", "Increases missile damage by 10 per level"),
-                ("Pierce", "penetration_level", "Allows missile to hit one additional enemy per level"),
-                ("Elemental Buff", "elebuff_level", "Enhances elemental damage by 5% (max level 1)"),
-                ("Explosion", "explosion_level", "Adds explosion with radius 50 per level"),
-                ("Increase Speed", "speed_level", "Increases missile speed by 50 units per level")
+                ("Damage Boost", "damage_level", "Increases missile damage by 10 per level."),
+                ("Pierce", "penetration_level", "Missiles can pierce through additional enemies."),
+                ("Elemental Flux", "elebuff_level", "Enhances elemental damage output significantly."),
+                ("Explosion", "explosion_level", "Missiles explode on impact, dealing area damage."),
+                ("Velocity", "speed_level", "Increases missile travel speed.")
             ],
             "magic_shield": [
-                ("Element Resistance", "element_resistance_level", "Reduces elemental damage taken by 10% per level"),
-                ("Remove Element", "remove_element_level", "Grants chance to negate elemental effects (max level 1)"),
-                ("Counter Resistance", "counter_element_resistance_level", "Reflects 10% of elemental damage (max level 1)"),
-                ("Remove Counter", "remove_counter_level", "Grants chance to negate counterattacks (max level 1)"),
-                ("Increase Duration", "duration_level", "Extends shield duration by 1 second per level"),
-                ("Increase Strength", "shield_level", "Increases shield health by 20 per level")
+                ("Elemental Res.", "element_resistance_level", "Reduces incoming elemental damage."),
+                ("Purification", "remove_element_level", "Chance to cleanse elemental status effects."),
+                ("Reflection", "counter_element_resistance_level", "Reflects a portion of elemental damage."),
+                ("Ward", "remove_counter_level", "Chance to negate enemy counterattacks."),
+                ("Duration", "duration_level", "Extends the shield's active duration."),
+                ("Fortitude", "shield_level", "Increases the shield's base health points.")
             ],
             "magic_step": [
-                ("Reduce Cooldown", "avoid_level", "Reduces step cooldown by 0.5 seconds per level"),
-                ("Increase Speed", "speed_level", "Increases movement speed by 20 units per level"),
-                ("Dash Distance", "duration_level", "Extends dash distance by 10 units per level")
+                ("Agility", "avoid_level", "Reduces the cooldown of the step skill."),
+                ("Haste", "speed_level", "Increases movement speed after stepping."),
+                ("Dash Range", "duration_level", "Extends the distance covered by the step.")
             ]
         }
         return mapping.get(amplifier_type, [])
 
-    def _create_buttons(self) -> List[Button]:
-        """Create buttons based on current effect_mapping."""
-        buttons = [
-            Button(
-                SCREEN_WIDTH // 2 - 150, 100 + i * 50, 300, 40,
+    def _init_buttons(self):
+        """初始化按鈕列表"""
+        self.buttons = []
+        
+        start_y = 180
+        btn_width = 300
+        btn_height = 50
+        gap = 15
+        center_x = SCREEN_WIDTH // 2
+        
+        # 效果按鈕
+        for i, (effect_name, _, description) in enumerate(self.effect_mapping):
+            y = start_y + i * (btn_height + gap)
+            btn = Button(
+                center_x - btn_width // 2, y, btn_width, btn_height,
                 effect_name,
-                pygame.Surface((300, 40)), f"view_{effect_name.lower().replace(' ', '_')}",
-                pygame.font.SysFont(None, 36)
-            ) for i, (effect_name, _, description) in enumerate(self.effect_mapping)
-        ]
-        buttons.append(
-            Button(
-                SCREEN_WIDTH // 2 - 150, 100 + len(self.effect_mapping) * 50, 300, 40,
-                "Back", pygame.Surface((300, 40)), "back",
-                pygame.font.SysFont(None, 36)
+                self._create_button_surface(btn_width, btn_height),
+                f"view_{effect_name.lower().replace(' ', '_')}", # Action ID
+                self.header_font
             )
+            # 存儲描述以便快速訪問，避免再次查找
+            btn.description = description 
+            self.buttons.append(btn)
+            
+        # 返回按鈕
+        back_y = SCREEN_HEIGHT - 80
+        back_btn = Button(
+            center_x - btn_width // 2, back_y, btn_width, btn_height,
+            "Back",
+            self._create_button_surface(btn_width, btn_height, (200, 100, 100)),
+            "back",
+            self.header_font
         )
-        return buttons
+        self.buttons.append(back_btn)
+
+    def _create_button_surface(self, width, height, color=(60, 60, 90)):
+        """創建按鈕表面"""
+        surface = pygame.Surface((width, height))
+        surface.fill(color)
+        pygame.draw.rect(surface, (150, 150, 200), (0, 0, width, height), 2)
+        return surface
 
     def update_type(self, amplifier_type: str) -> None:
-        """Update the menu to display effects for a new amplifier type.
-
-        Args:
-            amplifier_type: The new amplifier type (e.g., 'magic_shield').
-        """
+        """更新顯示的增幅器類型"""
         self.amplifier_type = amplifier_type
-        self.title = f"{amplifier_type.replace('_', ' ').title()} Effects"
+        # 格式化標題: magic_missile -> Magic Missile
+        display_name = amplifier_type.replace('_', ' ').title()
+        self.title = f"{display_name} Stats"
+        
         self.effect_mapping = self._get_effect_mapping(amplifier_type)
-        self.buttons = self._create_buttons()
+        self._init_buttons()
         self.selected_index = 0
         self.selected_description = None
+        
         if self.buttons:
             self.buttons[self.selected_index].is_selected = True
-        print(f"AmplifierStatMenu: Updated to type '{amplifier_type}'")
+            # 默認選中第一個並顯示描述
+            self._update_description(0)
+
+    def _update_description(self, index):
+        """更新當前選中的描述"""
+        if 0 <= index < len(self.buttons):
+            btn = self.buttons[index]
+            if hasattr(btn, 'description'):
+                self.selected_description = btn.description
+            else:
+                self.selected_description = None
 
     def draw(self, screen: pygame.Surface) -> None:
-        """Draw the amplifier effect menu, including title, buttons, and selected effect description."""
         if not self.active:
             return
+            
+        self.animation_time += 0.05
+        
+        # 1. 背景
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.set_alpha(200)
-        overlay.fill((0, 0, 0))
+        overlay.fill((10, 20, 30))
+        overlay.set_alpha(240)
         screen.blit(overlay, (0, 0))
-        title_surface = self.font.render(self.title, True, (255, 255, 255))
-        screen.blit(title_surface, (SCREEN_WIDTH // 2 - title_surface.get_width() // 2, 50))
+        
+        # 2. 標題
+        title_surf = self.title_font.render(self.title, True, (200, 200, 255))
+        title_rect = title_surf.get_rect(center=(SCREEN_WIDTH // 2, 60))
+        screen.blit(title_surf, title_rect)
+        
+        # 3. 描述區域 (底部)
+        desc_box_y = SCREEN_HEIGHT - 200
+        desc_box_height = 100
+        desc_box_width = 600
+        desc_rect = pygame.Rect((SCREEN_WIDTH - desc_box_width)//2, desc_box_y, desc_box_width, desc_box_height)
+        
+        # 描述框背景
+        pygame.draw.rect(screen, (30, 30, 50), desc_rect, border_radius=10)
+        pygame.draw.rect(screen, (100, 100, 150), desc_rect, 2, border_radius=10)
+        
+        if self.selected_description:
+            # 簡單的自動換行（這裡假設描述不長，直接居中顯示）
+            desc_surf = self.desc_font.render(self.selected_description, True, (220, 220, 220))
+            desc_text_rect = desc_surf.get_rect(center=desc_rect.center)
+            screen.blit(desc_surf, desc_text_rect)
+        else:
+            hint_surf = self.text_font.render("Select an effect to view details", True, (100, 100, 100))
+            screen.blit(hint_surf, hint_surf.get_rect(center=desc_rect.center))
+
+        # 4. 按鈕
         for button in self.buttons:
             button.draw(screen)
-        if self.selected_description:
-            desc_surface = self.message_font.render(self.selected_description, True, (255, 255, 255))
-            screen.blit(desc_surface, (SCREEN_WIDTH // 2 - desc_surface.get_width() // 2, SCREEN_HEIGHT - 150))
 
     def handle_event(self, event: pygame.event.Event) -> str:
-        """Handle keyboard and mouse events to view effect descriptions or return.
-
-        Returns:
-            str: The triggered action name.
-        """
         if not self.active:
             return ""
-        if event.type in [pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN]:
-            self.selected_description = None
+            
+        # 鼠標
         if event.type == pygame.MOUSEMOTION:
             for i, button in enumerate(self.buttons):
                 if button.rect.collidepoint(event.pos):
-                    self.buttons[self.selected_index].is_selected = False
-                    self.selected_index = i
-                    self.buttons[self.selected_index].is_selected = True
+                    if self.selected_index != i:
+                        self.buttons[self.selected_index].is_selected = False
+                        self.selected_index = i
+                        self.buttons[self.selected_index].is_selected = True
+                        self._update_description(i)
                     break
+                    
+        # 鍵盤
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 self.buttons[self.selected_index].is_selected = False
                 self.selected_index = (self.selected_index - 1) % len(self.buttons)
                 self.buttons[self.selected_index].is_selected = True
+                self._update_description(self.selected_index)
             elif event.key == pygame.K_DOWN:
                 self.buttons[self.selected_index].is_selected = False
                 self.selected_index = (self.selected_index + 1) % len(self.buttons)
                 self.buttons[self.selected_index].is_selected = True
+                self._update_description(self.selected_index)
             elif event.key == pygame.K_RETURN:
-                action = self.buttons[self.selected_index].action
-                if action == "back":
-                    self.game.menu_manager.close_menu(MenuNavigation.AMPLIFIER_STAT_MENU)
-                    self.game.menu_manager.open_menu(MenuNavigation.AMPLIFIER_MENU)
-                    return BasicAction.EXIT_MENU
-                elif action.startswith("view_"):
-                    effect = "_".join(action.split("_")[1:])  # Join all parts after 'view_'
-                    for effect_name, _, description in self.effect_mapping:
-                        if effect_name.lower().replace(' ', '_') == effect:
-                            self.selected_description = description
-                            break
-                    return action
+                return self._process_action(self.buttons[self.selected_index].action)
+                
+        # 按鈕點擊
         for button in self.buttons:
             active, action = button.handle_event(event)
             if active:
-                if action == "back":
-                    self.game.menu_manager.close_menu(MenuNavigation.AMPLIFIER_STAT_MENU)
-                    self.game.menu_manager.open_menu(MenuNavigation.AMPLIFIER_MENU)
-                    return BasicAction.EXIT_MENU
-                elif action.startswith("view_"):
-                    effect = "_".join(action.split("_")[1:])  # Join all parts after 'view_'
-                    for effect_name, _, description in self.effect_mapping:
-                        if effect_name.lower().replace(' ', '_') == effect:
-                            self.selected_description = description
-                            break
-                    return action
+                return self._process_action(action)
+                
+        return ""
+        
+    def _process_action(self, action: str) -> str:
+        if action == "back":
+            self.game.menu_manager.close_menu(MenuNavigation.AMPLIFIER_STAT_MENU)
+            self.game.menu_manager.open_menu(MenuNavigation.AMPLIFIER_MENU)
+            return BasicAction.EXIT_MENU
+        elif action.startswith("view_"):
+            # 已經通過懸停/選中顯示了描述，這裡只是可以觸發返回或其他邏輯
+            # 在當前邏輯中，查看詳情不需要額外操作，因為描述已經實時顯示
+            pass
+            
         return ""
 
     def get_selected_action(self) -> str:
-        """Get the currently selected button action.
-
-        Returns:
-            str: The current selected action name.
-        """
         return self.buttons[self.selected_index].action if self.active else ""
 
     def activate(self, active: bool) -> None:
-        """Activate or deactivate the menu.
-
-        Args:
-            active: Whether to activate the menu.
-        """
         self.active = active
         if active:
-            self.buttons[self.selected_index].is_selected = True
+            if 0 <= self.selected_index < len(self.buttons):
+                self.buttons[self.selected_index].is_selected = True
+                self._update_description(self.selected_index)
+            self.animation_time = 0
+            # 每次激活不一定需要重新初始化按鈕，除非類型改變
+            # 但這裡保持簡單，假設 update_type 已經在打開前被調用
         else:
-            self.buttons[self.selected_index].is_selected = False
-            self.selected_description = None
+            if 0 <= self.selected_index < len(self.buttons):
+                self.buttons[self.selected_index].is_selected = False
+            self.selected_description = None 
