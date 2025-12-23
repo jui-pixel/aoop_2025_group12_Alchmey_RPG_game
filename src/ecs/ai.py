@@ -7,7 +7,7 @@ import pygame
 import random
 # 引入 ECS 組件
 import esper
-from src.ecs.components import Position, Velocity, Health, Combat, AI, Collider, Renderable
+from src.ecs.components import PlayerComponent, Position, Tag, Velocity, Health, Combat, AI, Collider, Renderable
 from src.core.config import TILE_SIZE, RED, PASSABLE_TILES
 from src.entities.bullet.expand_circle_bullet import create_expanding_circle_bullet
 from src.entities.bullet.bullet import create_standard_bullet_entity
@@ -25,7 +25,13 @@ class EnemyContext:
     def _get_comp(self, component_type):
         """安全地獲取組件，若無則報錯（ECS 實體應有此組件）"""
         return self.world.component_for_entity(self.ecs_entity, component_type)
-
+    
+    @property
+    def cause_death(self) -> bool:
+        return self._get_comp(Combat).cause_death
+    @property
+    def atk_element(self) -> str:
+        return self._get_comp(Combat).atk_element
     @property
     def x(self) -> float: return self._get_comp(Position).x
     @property
@@ -39,11 +45,31 @@ class EnemyContext:
     @property
     def can_attack(self) -> bool: return self._get_comp(Combat).can_attack
     @property
-    def tag(self) -> str: return self._get_comp(Combat).tag
+    def tag(self) -> str: return self._get_comp(Tag).tag
     @property
     def vision_radius(self) -> int: return self._get_comp(AI).vision_radius
     @property
     def current_action(self) -> str: return self._get_comp(AI).current_action
+    @property
+    def damage(self) -> int: return self._get_comp(Combat).damage
+    @property
+    def buffs(self) -> List[str]: return self._get_comp(Combat).buffs
+    @property
+    def explosion_range(self) -> int: return self._get_comp(Combat).explosion_range
+    @property
+    def explosion_damage(self) -> int: return self._get_comp(Combat).explosion_damage
+    @property
+    def explosion_element(self) -> str: return self._get_comp(Combat).explosion_element
+    @property
+    def explosion_buffs(self) -> List[str]: return self._get_comp(Combat).explosion_buffs
+    @property
+    def max_penetration_count(self) -> int: return self._get_comp(Combat).max_penetration_count
+    @property
+    def max_hp_percentage_damage(self) -> float: return self._get_comp(Combat).max_hp_percentage_damage
+    @property
+    def current_hp_percentage_damage(self) -> float: return self._get_comp(Combat).current_hp_percentage_damage
+    @property
+    def lose_hp_percentage_damage(self) -> float: return self._get_comp(Combat).lose_hp_percentage_damage
 
     def set_current_action(self, action_id: str):
         self._get_comp(AI).current_action = action_id
@@ -311,10 +337,11 @@ class AttackAction(Action):
     def update(self, context: 'EnemyContext', dt: float, current_time: float) -> bool:
         if not context.can_attack or not context.player:
             return False
-            
+        player_ecs_id = context.world.get_component(PlayerComponent)[0][0]
+        player = context.world.component_for_entity(player_ecs_id, Position)
         # 計算玩家方向
-        dx = context.player_pos.x - context.x
-        dy = context.player_pos.y - context.y
+        dx = player.x - context.x
+        dy = player.y - context.y
         distance_sq = dx**2 + dy**2
         
         # 檢查距離（使用平方比較優化）
@@ -346,15 +373,16 @@ class AttackAction(Action):
             explosion_damage=self.explosion_damage,
             explosion_element=self.explosion_element,
             explosion_buffs=self.explosion_buffs,
-            max_hp_percentage_damage=self.max_hp_percentage_damage,
-            current_hp_percentage_damage=self.current_hp_percentage_damage,
-            lose_hp_percentage_damage=self.lose_hp_percentage_damage,
+            percentage_damage={
+                'max_hp': self.max_hp_percentage_damage,
+                'current_hp': self.current_hp_percentage_damage,
+                'lose_hp': self.lose_hp_percentage_damage
+            },
             cause_death=self.cause_death,
             pass_wall=self.pass_wall
         )
         
-        # 回傳 True 表示此動作執行完畢 (Fire and Forget)
-        return True
+        return False
 
 # ... WaitAction, PatrolAction 類似調整 ...
 
@@ -455,24 +483,23 @@ class DodgeAction(Action):
         
         closest_bullet = None
         min_distance = float('inf')
-        # ⚠️ 仍然依賴舊的 entity_manager.bullet_group
-        bullets = list(context.game.entity_manager.bullet_group)[:self.max_bullets_to_check] 
-        
+
+        bullets = [bullet for bullet in context.world.get_components(Position,Tag) if bullet[1][1].tag == "player"]
+        bullets = bullets[:self.max_bullets_to_check]
         # [省略了內部複雜的威脅計算和移動方向選擇邏輯]
         # 由於邏輯與原文件相同，且僅替換了實體訪問方式，這裡保留結構：
         
         for bullet in bullets:
-            if bullet.tag != "player": continue
-            dx = bullet.x - context.x
-            dy = bullet.y - context.y
+            dx = bullet[1][0].x - context.x
+            dy = bullet[1][0].y - context.y
             distance = math.sqrt(dx**2 + dy**2)
             if distance < min_distance:
                 min_distance = distance
                 closest_bullet = bullet
                 
         if closest_bullet and min_distance < self.close_bullet_threshold:
-            dx = closest_bullet.x - context.x
-            dy = closest_bullet.y - context.y
+            dx = closest_bullet[1][0].x - context.x
+            dy = closest_bullet[1][0].y - context.y
             distance = max(min_distance, 0.1)
             threat_dir = (-dx / distance, -dy / distance) 
             move_direction = threat_dir
@@ -553,10 +580,39 @@ class MeleeAttackAction(Action):
         context.set_current_action(self.action_id)
     
     def update(self, context: 'EnemyContext', dt: float, current_time: float) -> bool:
-        if not context.player or context.player.invulnerable:
+        player_ecs_id = context.world.get_component(PlayerComponent)[0][0]
+        player_pos = context.world.component_for_entity(player_ecs_id, Position)
+        dx = player_pos.x - context.x
+        dy = player_pos.y - context.y
+        if dx**2 + dy**2 > (TILE_SIZE * 1.5) ** 2:
             return False
-            
-        # 簡化為直接應用傷害（通過 Facade），避免舊的 collision 邏輯
-        context.apply_melee_damage(self.damage)
+        return False
+        bullet_entity = create_standard_bullet_entity(
+            world=context.world,
+            start_pos=(player_pos.x, player_pos.y),
+            w=TILE_SIZE*0.02,
+            h=TILE_SIZE*0.02,
+            tag=context.tag,
+            direction=(0,0),
+            max_speed=0.0,
+            lifetime=0.2,
+            damage=context.damage,
+            atk_element=context.atk_element,
+            damage_to_element={},
+            max_penetration_count=context.max_penetration_count,
+            collision_cooldown=0.1,
+            buffs=context.buffs,
+            explosion_range=context.explosion_range,
+            explosion_damage=context.explosion_damage,
+            explosion_element=context.explosion_element,
+            explosion_buffs=context.explosion_buffs,
+            percentage_damage={
+                'max_hp': context.max_hp_percentage_damage,
+                'current_hp': context.current_hp_percentage_damage,
+                'lose_hp': context.lose_hp_percentage_damage
+            },
+            cause_death=context.cause_death,
+            pass_wall=True
+        )
         
         return False
