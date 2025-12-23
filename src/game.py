@@ -44,6 +44,7 @@ class Game:
         self.clock = clock
         self.running = True
         self.current_time = 0.0
+        self.dt = 0.0
         self.time_scale = 1.0 # 時間流逝速度
         self.world = esper
         # 管理器初始化
@@ -54,8 +55,6 @@ class Game:
         self.storage_manager = StorageManager(self)
         self.render_manager = RenderManager(self)
         self.menu_manager = MenuManager(self)
-        # 刪除 self.menu_stack 屬性，因為 MenuManager 現在負責堆棧管理
-        # self.menu_stack = [] # <-- 已移除
 
         # --- ECS 初始化 (全域模式) ---
         # 修正: 將 Game 實例附加到 esper 模組上，供系統取用
@@ -63,7 +62,7 @@ class Game:
         
         # 註冊 ECS 系統 (使用全域註冊)
         self.world.add_processor(InputSystem())
-        self.world.add_processor(AISystem(self)) # AISystem 需要 game 實例
+        self.world.add_processor(AISystem(self))
 
         self.world.add_processor(MovementSystem())
         self.world.add_processor(CombatSystem())
@@ -239,7 +238,7 @@ class Game:
         """
         if not self.running:
             return False
-
+        self.dt = dt
         self.current_time += dt * self.time_scale # 更新遊戲時間
 
         # 處理 Pygame 事件
@@ -263,7 +262,7 @@ class Game:
             # 這裡傳遞 screen 和 camera_offset 是因為 RenderSystem 需要它們
             esper.process(dt,
                           screen=self.screen,
-                          camera_offset=self.render_manager.camera_offset)
+                          camera_offset=self.render_manager.camera_offset, current_time=self.current_time, game=self)
             
             # 攝影機更新 (RenderManager 應該處理)
             self.render_manager.update_camera(dt)

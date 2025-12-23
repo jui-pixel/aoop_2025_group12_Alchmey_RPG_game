@@ -5,6 +5,7 @@ from .components import Position, Velocity, Renderable, Input, Health, Defense, 
 from src.ecs.ai import EnemyContext
 from src.config import TILE_SIZE, PASSABLE_TILES, SCREEN_WIDTH, SCREEN_HEIGHT
 from src.entities.ecs_factory import create_damage_text_entity
+
 class MovementSystem(esper.Processor):
     def process(self, *args, **kwargs):
         dt = args[0] if args else 0.0
@@ -763,143 +764,140 @@ class CombatSystem(esper.Processor):
                                     buff_copy = copy.deepcopy(buff)
                                     target_buffs.active_buffs.append(buff_copy)
 
-class AISystem(esper.Processor):
-    def process(self, *args, **kwargs):
-        
-        game = getattr( esper, 'game', None)
-        if not game:
-            return
-        
-        current_time = game.current_time if hasattr(game, 'current_time') else 0
-        
-        for ent, (ai, pos, vel) in  esper.get_components(AI, Position, Velocity):
-            if not ai.behavior_tree:
-                continue
+# class AISystem(esper.Processor):
+#     def process(self, *args, **kwargs):
+#         print("AISystem: Processing AI behavior trees...")
+#         dt = args[0] if args else 0.0
+#         current_time = args[3] if len(args) > 2 else 0
+#         game = args[4] if len(args) > 4 else None
+#         for ent, (ai, pos, vel) in  esper.get_components(AI, Position, Velocity):
+#             if not ai.behavior_tree:
+#                 continue
             
-            # Create entity wrapper for behavior tree
-            wrapper = AIEntityWrapper(ent,  esper, game, ai)
+#             # Create entity wrapper for behavior tree
+#             context = EnemyContext(esper, ent, game, ai)
             
-            # Execute behavior tree with wrapper
-            try:
-                ai.behavior_tree.execute(wrapper, dt, current_time)
-            except Exception as e:
-                print(f"Error executing behavior tree for entity {ent}: {e}")
+#             # Execute behavior tree with wrapper
+#             try:
+#                 ai.behavior_tree.execute(context, dt, current_time)
+#             except Exception as e:
+#                 print(f"Error executing behavior tree for entity {ent}: {e}")
 
-class AIEntityWrapper(EntityWrapper):
-    """Extended EntityWrapper specifically for AI behavior trees."""
-    def __init__(self, ecs_entity, world, game, ai_component):
-        super().__init__(ecs_entity, world, game)
-        self.ai_component = ai_component
+# class AIEntityWrapper(EntityWrapper):
+#     """Extended EntityWrapper specifically for AI behavior trees."""
+#     def __init__(self, ecs_entity, world, game, ai_component):
+#         super().__init__(ecs_entity, world, game)
+#         self.ai_component = ai_component
     
-    # AI-specific properties
-    @property
-    def action_list(self):
-        """Get current action list from AI component."""
-        return self.ai_component.action_list if self.ai_component.action_list else []
+#     # AI-specific properties
+#     @property
+#     def action_list(self):
+#         """Get current action list from AI component."""
+#         return self.ai_component.action_list if self.ai_component.action_list else []
     
-    @action_list.setter
-    def action_list(self, value):
-        """Set action list in AI component."""
-        self.ai_component.action_list = value
+#     @action_list.setter
+#     def action_list(self, value):
+#         """Set action list in AI component."""
+#         self.ai_component.action_list = value
     
-    @property
-    def current_action(self):
-        """Get current action from AI component."""
-        return self.ai_component.current_action
+#     @property
+#     def current_action(self):
+#         """Get current action from AI component."""
+#         return self.ai_component.current_action
     
-    @current_action.setter
-    def current_action(self, value):
-        """Set current action in AI component."""
-        self.ai_component.current_action = value
+#     @current_action.setter
+#     def current_action(self, value):
+#         """Set current action in AI component."""
+#         self.ai_component.current_action = value
     
-    @property
-    def actions(self):
-        """Get actions dictionary from AI component."""
-        return self.ai_component.actions if self.ai_component.actions else {}
+#     @property
+#     def actions(self):
+#         """Get actions dictionary from AI component."""
+#         return self.ai_component.actions if self.ai_component.actions else {}
     
-    @property
-    def behavior_tree(self):
-        """Get behavior tree from AI component."""
-        return self.ai_component.behavior_tree
+#     @property
+#     def behavior_tree(self):
+#         """Get behavior tree from AI component."""
+#         return self.ai_component.behavior_tree
     
-    # Movement properties
-    @property
-    def speed(self):
-        """Get speed from Velocity component."""
-        if  esper.has_component(self.ecs_entity, Velocity):
-            return  esper.component_for_entity(self.ecs_entity, Velocity).speed
-        return 100.0
+#     # Movement properties
+#     @property
+#     def speed(self):
+#         """Get speed from Velocity component."""
+#         if  esper.has_component(self.ecs_entity, Velocity):
+#             return  esper.component_for_entity(self.ecs_entity, Velocity).speed
+#         return 100.0
     
-    @speed.setter
-    def speed(self, value):
-        """Set speed in Velocity component."""
-        if  esper.has_component(self.ecs_entity, Velocity):
-             esper.component_for_entity(self.ecs_entity, Velocity).speed = value
+#     @speed.setter
+#     def speed(self, value):
+#         """Set speed in Velocity component."""
+#         if  esper.has_component(self.ecs_entity, Velocity):
+#              esper.component_for_entity(self.ecs_entity, Velocity).speed = value
     
-    @property
-    def max_speed(self):
-        """Get max speed (same as speed for now)."""
-        return self.speed
+#     @property
+#     def max_speed(self):
+#         """Get max speed (same as speed for now)."""
+#         return self.speed
     
-    # Combat properties
-    @property
-    def can_attack(self):
-        """Get can_attack from Combat component."""
-        if  esper.has_component(self.ecs_entity, Combat):
-            return  esper.component_for_entity(self.ecs_entity, Combat).can_attack
-        return False
+#     # Combat properties
+#     @property
+#     def can_attack(self):
+#         """Get can_attack from Combat component."""
+#         if  esper.has_component(self.ecs_entity, Combat):
+#             return  esper.component_for_entity(self.ecs_entity, Combat).can_attack
+#         return False
     
-    @can_attack.setter
-    def can_attack(self, value):
-        """Set can_attack in Combat component."""
-        if  esper.has_component(self.ecs_entity, Combat):
-             esper.component_for_entity(self.ecs_entity, Combat).can_attack = value
+#     @can_attack.setter
+#     def can_attack(self, value):
+#         """Set can_attack in Combat component."""
+#         if  esper.has_component(self.ecs_entity, Combat):
+#              esper.component_for_entity(self.ecs_entity, Combat).can_attack = value
     
-    @property
-    def vision_radius(self):
-        """Get vision radius (stored in AI component or default)."""
-        # Vision radius could be stored in AI component or a separate component
-        # For now, return a default value
-        return 10  # tiles
+#     @property
+#     def vision_radius(self):
+#         """Get vision radius (stored in AI component or default)."""
+#         # Vision radius could be stored in AI component or a separate component
+#         # For now, return a default value
+#         return 10  # tiles
     
-    # Health properties
-    @property
-    def is_alive(self):
-        """Check if entity is alive."""
-        if  esper.has_component(self.ecs_entity, Health):
-            health =  esper.component_for_entity(self.ecs_entity, Health)
-            return health.current_hp > 0
-        return True
+#     # Health properties
+#     @property
+#     def is_alive(self):
+#         """Check if entity is alive."""
+#         if  esper.has_component(self.ecs_entity, Health):
+#             health =  esper.component_for_entity(self.ecs_entity, Health)
+#             return health.current_hp > 0
+#         return True
     
-    def is_alive(self):
-        """Method version of is_alive for compatibility."""
-        if  esper.has_component(self.ecs_entity, Health):
-            health =  esper.component_for_entity(self.ecs_entity, Health)
-            return health.current_hp > 0
-        return True
+#     def is_alive(self):
+#         """Method version of is_alive for compatibility."""
+#         if  esper.has_component(self.ecs_entity, Health):
+#             health =  esper.component_for_entity(self.ecs_entity, Health)
+#             return health.current_hp > 0
+#         return True
     
-    # Movement method
-    def move(self, dx, dy, dt):
-        """Move the entity by setting velocity."""
-        if  esper.has_component(self.ecs_entity, Velocity):
-            vel =  esper.component_for_entity(self.ecs_entity, Velocity)
-            # Normalize if needed
-            magnitude = math.sqrt(dx*dx + dy*dy)
-            if magnitude > 0:
-                vel.x = (dx / magnitude) * vel.speed
-                vel.y = (dy / magnitude) * vel.speed
-            else:
-                vel.x = 0
-                vel.y = 0
+#     # Movement method
+#     def move(self, dx, dy, dt):
+#         """Move the entity by setting velocity."""
+#         if  esper.has_component(self.ecs_entity, Velocity):
+#             vel =  esper.component_for_entity(self.ecs_entity, Velocity)
+#             # Normalize if needed
+#             magnitude = math.sqrt(dx*dx + dy*dy)
+#             if magnitude > 0:
+#                 vel.x = (dx / magnitude) * vel.speed
+#                 vel.y = (dy / magnitude) * vel.speed
+#             else:
+#                 vel.x = 0
+#                 vel.y = 0
     
-    # Tag property for team identification
-    @property
-    def tag(self):
-        """Get tag (enemy/player). For AI entities, assume 'enemy'."""
-        # Could be stored in a Tag component if we add one
-        if  esper.has_component(self.ecs_entity, Input):
-            return "player"
-        return "enemy"
+#     # Tag property for team identification
+#     @property
+#     def tag(self):
+#         """Get tag (enemy/player). For AI entities, assume 'enemy'."""
+#         # Could be stored in a Tag component if we add one
+#         if  esper.has_component(self.ecs_entity, Input):
+#             return "player"
+#         return "enemy"
 
 class EnergySystem(esper.Processor):
     def process(self, dt: float, *args, **kwargs) -> None:
@@ -921,11 +919,11 @@ class AISystem(esper.Processor):
     def process(self, *args, **kwargs):
         dt = args[0]
         current_time = self.game.current_time
-
+        print("AISystem: Processing AI behavior trees...")
         for ent, (pos, ai_comp) in esper.get_components(Position, AI):
+            print(f"AISystem: Executing behavior tree for entity {ent}")
             # 創建 Context Facade
             context = EnemyContext(esper, ent, self.game, ai_comp)
-            
             # 執行行為樹
             ai_comp.behavior_tree.execute(context, dt, current_time)
 

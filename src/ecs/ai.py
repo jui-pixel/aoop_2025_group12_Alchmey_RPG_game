@@ -67,11 +67,14 @@ class EnemyContext:
     def is_alive(self) -> bool:
         return self.current_hp > 0
     
-    # 簡化：不實現 MeleeAttackAction 複雜的 collision 邏輯，僅發送傷害事件
-    def apply_melee_damage(self, damage: int):
-        if self.player and not self.player.invulnerable:
-            # 這是 ECS 實體對非 ECS 實體的攻擊，在 PlayerFacade 中應有受傷方法
-            self.player.take_damage(damage)
+    def get_entities_with_tag(self, tag: str) -> List[Any]:
+        """通過遊戲實例訪問 entity_manager，獲取具有特定標籤的實體列表。"""
+        return [e for e in self.game.entity_manager.get_all_entities() if getattr(e, 'tag', None) == tag]
+    # # 簡化：不實現 MeleeAttackAction 複雜的 collision 邏輯，僅發送傷害事件
+    # def apply_melee_damage(self, damage: int):
+    #     if self.player and not self.player.invulnerable:
+    #         # 這是 ECS 實體對非 ECS 實體的攻擊，在 PlayerFacade 中應有受傷方法
+    #         self.player.take_damage(damage)
 
 
 # --- 行為樹節點 (BehaviorNode) ---
@@ -239,36 +242,93 @@ class ChaseAction(Action):
         return True
 
 class AttackAction(Action):
-    # ... (邏輯使用 context.game.entity_manager.bullet_group 進行子彈生成) ...
-    def __init__(self, action_id: str, damage: int = 5, bullet_speed: float = 400.0, 
-                 bullet_size: int = 5, effects: List[Any] = None, tag: str = ""):
+    def __init__(self, 
+                 action_id: str, 
+                 # 基礎物理屬性
+                 damage: int = 5, 
+                 bullet_speed: float = 400.0, 
+                 bullet_size: int = 8,
+                 lifetime: float = 2.0,
+                 tag: str = "enemy_projectile",
+                 
+                 # 元素與相剋
+                 atk_element: str = "none",
+                 damage_to_element: dict = None,
+                 
+                 # 穿透與碰撞
+                 max_penetration_count: int = 1,
+                 pass_wall: bool = False,
+                 
+                 # 狀態效果 (Buffs)
+                 buffs: List[Any] = None,
+                 
+                 # 爆炸屬性 (AOE)
+                 explosion_range: float = 0.0,
+                 explosion_damage: int = 0,
+                 explosion_element: str = "none",
+                 explosion_buffs: List[Any] = None,
+                 
+                 # 百分比傷害屬性
+                 max_hp_percentage_damage: float = 0.0,
+                 current_hp_percentage_damage: float = 0.0,
+                 lose_hp_percentage_damage: float = 0.0,
+                 cause_death: bool = True):
+        
         super().__init__(action_id, duration=0.0)
+        
+        # --- 基礎屬性 ---
+        self.tag = tag
         self.damage = damage
         self.bullet_speed = bullet_speed
         self.bullet_size = bullet_size
-        self.effects = effects or [ELEMENTAL_BUFFS['fire']]
-        self.tag = tag
-    
+        self.lifetime = lifetime
+        self.pass_wall = pass_wall
+        
+        # --- 戰鬥核心屬性 ---
+        self.atk_element = atk_element
+        self.damage_to_element = damage_to_element or {}
+        self.buffs = buffs or []
+        
+        # --- 穿透屬性 ---
+        self.max_penetration_count = max_penetration_count
+        
+        # --- 爆炸屬性 ---
+        self.explosion_range = explosion_range
+        self.explosion_damage = explosion_damage
+        self.explosion_element = explosion_element
+        self.explosion_buffs = explosion_buffs or []
+        
+        # --- 特殊傷害類型 ---
+        self.max_hp_percentage_damage = max_hp_percentage_damage
+        self.current_hp_percentage_damage = current_hp_percentage_damage
+        self.lose_hp_percentage_damage = lose_hp_percentage_damage
+        self.cause_death = cause_death
+
     def start(self, context: 'EnemyContext', current_time: float) -> None:
         context.set_current_action(self.action_id)
-    
+        print(f"Action Started: {self.action_id} by Entity {context.ecs_entity}")
+
     def update(self, context: 'EnemyContext', dt: float, current_time: float) -> bool:
         if not context.can_attack or not context.player:
             return False
             
-        dx = context.player.x - context.x
-        dy = context.player.y - context.y
-        distance = math.sqrt(dx**2 + dy**2)
+        # 計算玩家方向
+        dx = context.player_pos.x - context.x
+        dy = context.player_pos.y - context.y
+        distance_sq = dx**2 + dy**2
         
-        # 檢查距離，避免過遠或重疊時發射
-        if distance > context.vision_radius * TILE_SIZE or distance == 0:
+        # 檢查距離（使用平方比較優化）
+        vision_range = (context.vision_radius * 32) ** 2
+        if distance_sq > vision_range or distance_sq == 0:
             return False
             
+        distance = math.sqrt(distance_sq)
         direction = (dx / distance, dy / distance)
         
-        # ⚠️ 重構點：使用 ECS 創建子彈實體
+        # ⚠️ 使用 ECS 創建子彈實體
+        # 這裡的參數現在都能從 self 中正確獲取
         bullet_entity = create_standard_bullet_entity(
-            world=context.world, # 傳入 esper.World 實例
+            world=context.world,
             start_pos=(context.x, context.y),
             w=self.bullet_size,
             h=self.bullet_size,
@@ -280,20 +340,21 @@ class AttackAction(Action):
             atk_element=self.atk_element,
             damage_to_element=self.damage_to_element,
             max_penetration_count=self.max_penetration_count,
-            collision_cooldown=0.1, # 假設默認冷卻時間
+            collision_cooldown=0.1,
             buffs=self.buffs,
             explosion_range=self.explosion_range,
             explosion_damage=self.explosion_damage,
             explosion_element=self.explosion_element,
             explosion_buffs=self.explosion_buffs,
-            percentage_damage=self.percentage_damage,
+            max_hp_percentage_damage=self.max_hp_percentage_damage,
+            current_hp_percentage_damage=self.current_hp_percentage_damage,
+            lose_hp_percentage_damage=self.lose_hp_percentage_damage,
+            cause_death=self.cause_death,
             pass_wall=self.pass_wall
         )
         
-        # 由於子彈現在是 ECS 實體，它會自動被 MovementSystem 和 CollisionSystem 處理，
-        # 無需再添加到舊的 entity_manager.bullet_group。
-        
-        return False
+        # 回傳 True 表示此動作執行完畢 (Fire and Forget)
+        return True
 
 # ... WaitAction, PatrolAction 類似調整 ...
 
@@ -478,7 +539,6 @@ class SpecialAttackAction(Action):
             lifetime=self.hide_time + self.expansion_duration + 0.5, # 總壽命 = 隱藏時間 + 擴張時間 + 緩衝
             hide_time=self.hide_time,  # 延遲出現/擴張
             atk_element=self.atk_element,
-            explosion_damage_multiplier=1.0 # 由於已經是高傷害，爆炸倍率可設定為 1.0
         )
         
         # 動作在子彈被創造後即完成

@@ -168,7 +168,7 @@ def create_enemy1_entity(
         
         # Check for nearby player bullets
         bullet_nearby = False
-        for bullet in context.game.entity_manager.bullet_group:
+        for bullet in context.get_entities_with_tag("player"):
             if bullet.tag != "player": continue
             if math.hypot(bullet.x - context.x, bullet.y - context.y) < 3 * TILE_SIZE:
                 bullet_nearby = True
@@ -192,7 +192,6 @@ def create_enemy1_entity(
     # 執行動作列表，並在列表為空時重新填充
     perform_action_sequence = Sequence([
         PerformNextAction(actions),
-        refill_node,
     ])
     
     # 根節點
@@ -200,7 +199,8 @@ def create_enemy1_entity(
         # Emergency check: if not alive, should be removed by HealthSystem
         # ConditionNode(lambda e, t: not e.is_alive(), PlaceholderAction(action_id='die'), # Assuming PlaceholderAction exists
         # Main combat/patrol loop
-        perform_action_sequence
+        perform_action_sequence,
+        refill_node
     ])
     
     # 3. 附加組件
@@ -209,7 +209,6 @@ def create_enemy1_entity(
     world.add_component(enemy, Position(x=x, y=y))
     world.add_component(enemy, Velocity(speed=max_speed, x=0.0, y=0.0))
     world.add_component(enemy, Collider(w=w, h=h))
-    world.add_component(enemy, Tag(tag=tag))
     
     # 健康與戰鬥
     world.add_component(enemy, Health(max_hp=base_max_hp, current_hp=base_max_hp))

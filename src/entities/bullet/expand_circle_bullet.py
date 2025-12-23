@@ -6,7 +6,7 @@ from typing import Tuple, Dict, List, TYPE_CHECKING
 from src.config import TILE_SIZE
 from dataclasses import dataclass, field
 from src.ecs.components import Tag
-
+from src.buffs.element_buff import ELEMENTAL_BUFFS
 # 假設這是您的組件導入路徑
 from src.ecs.components import (
     Position, Velocity, Combat, Renderable, Collider, 
@@ -57,7 +57,7 @@ def create_expanding_circle_bullet(
     lifetime: float = 5.0,
     hide_time: float = 0.0,
     wait_time: float = 0.0,
-    # ... 其他 Combat 相關參數
+    atk_element: str = "untyped",
 ) -> int:
     """
     創建一個 ECS 實體，作為 ExpandingCircleBullet。
@@ -94,11 +94,13 @@ def create_expanding_circle_bullet(
 
     # 3. 戰鬥屬性 (Combat)
     world.add_component(bullet_entity, Combat(
-        damage=damage,
+        damage=0.0,  # 直接碰撞不造成傷害
+        can_attack=True,
         explosion_range=outer_radius, # 爆炸範圍通常是其最終大小
-        explosion_damage=damage * 2,  # 假設爆炸傷害是基礎傷害的兩倍
-        # ... 其他 Combat 參數 (atk_element, buffs, percentage_damage)
-        collision_cooldown=0.2,
+        explosion_damage=damage,
+        explosion_element=atk_element,
+        explosion_buffs=[ELEMENTAL_BUFFS.get(atk_element)] if atk_element in ELEMENTAL_BUFFS else [],
+        collision_cooldown=1.0, # 擴張子彈碰撞冷卻較長
         max_penetration_count=-1, # -1 表示無限穿透 (直到擴張完成)
     ))
 

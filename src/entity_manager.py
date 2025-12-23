@@ -230,3 +230,9 @@ class EntityManager:
                 print("EntityManager: 玩家實體缺少 Position 組件。")
                 return None
         return None
+    
+    def get_all_entities(self) -> List[int]:
+        """
+        獲取所有實體的 ID 列表。
+        """
+        return list(self.world._entities)
