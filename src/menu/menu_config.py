@@ -16,9 +16,6 @@ class BasicAction(str, Enum):
     # 通用控制動作
     EXIT_MENU = "EXIT_MENU"
     
-    # 遊戲狀態動作
-    ENTER_LOBBY = "enter_lobby"
-    EXIT_GAME = "exit"
     PAUSE_GAME = "pause_game"
     RESUME_GAME = "resume_game"
 

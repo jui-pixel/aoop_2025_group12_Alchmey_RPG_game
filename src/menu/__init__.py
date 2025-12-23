@@ -14,13 +14,14 @@ from .menus.element_menu import ElementMenu
 from .menus.main_material_menu import MainMaterialMenu
 from .menus.main_menu import MainMenu
 from .menus.naming_menu import NamingMenu
-from .menus.setting_menu import SettingMenu
+from .menus.settings_menu import SettingsMenu
 from .menus.skill_chain_edit_menu import SkillChainEditMenu
 from .menus.skill_chain_menu import SkillChainMenu
 from .menus.skill_library_menu import SkillLibraryMenu
 from .menus.stat_menu import StatMenu
 from .menus.win_menu import WinMenu
 
+from .menu_config import MenuNavigation, BasicAction
 # 3. 定義公開接口，方便使用 from module import *
 __all__ = [
     'AbstractMenu',
@@ -36,10 +37,12 @@ __all__ = [
     'MainMaterialMenu',
     'MainMenu',
     'NamingMenu',
-    'SettingMenu',
+    'SettingsMenu',
     'SkillChainEditMenu',
     'SkillChainMenu',
     'SkillLibraryMenu',
     'StatMenu',
-    'WinMenu'
+    'WinMenu',
+    'MenuNavigation',
+    'BasicAction',
 ]

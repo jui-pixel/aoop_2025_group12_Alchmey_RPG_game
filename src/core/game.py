@@ -2,14 +2,14 @@
 import pygame
 import esper # 引入 esper 模組
 from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
-import manager
+import src.manager
 
 # 引入 ECS 系統（假設它們在 src.ecs.systems 中）
 from src.ecs.systems import (
     InputSystem, MovementSystem, CombatSystem, RenderSystem, 
     HealthSystem, BuffSystem, EnergySystem, AISystem
 )
-
+from src.menu.menus.main_menu import MainMenu
 class Game:
     """遊戲主類別，管理所有遊戲狀態和子系統。"""
     
@@ -23,13 +23,13 @@ class Game:
         self.time_scale = 1.0 # 時間流逝速度
         self.world = esper
         # 管理器初始化
-        self.event_manager = manager.EventManager(self)
-        self.audio_manager = manager.AudioManager(self)
-        self.dungeon_manager = manager.DungeonManager(self)
-        self.entity_manager = manager.EntityManager(self)
-        self.storage_manager = manager.StorageManager(self)
-        self.render_manager = manager.RenderManager(self)
-        self.menu_manager = manager.MenuManager(self)
+        self.event_manager = src.manager.EventManager(self)
+        self.audio_manager = src.manager.AudioManager(self)
+        self.dungeon_manager = src.manager.DungeonManager(self)
+        self.entity_manager = src.manager.EntityManager(self)
+        self.storage_manager = src.manager.StorageManager(self)
+        self.render_manager = src.manager.RenderManager(self)
+        self.menu_manager = src.manager.MenuManager(self)
 
         # --- ECS 初始化 (全域模式) ---
         # 修正: 將 Game 實例附加到 esper 模組上，供系統取用
