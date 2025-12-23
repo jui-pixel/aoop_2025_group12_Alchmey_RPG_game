@@ -250,11 +250,24 @@ class AlchemyMenu(AbstractMenu):
         screen.blit(elem_label, (left_label_x, base_y + 80))
         
         # 根據元素類型改變顏色
+        # 元素顏色映射
         elem_colors = {
-            'fire': (255, 100, 100), 'water': (100, 200, 255), 
-            'earth': (150, 100, 50), 'wind': (150, 255, 150),
-            'light': (255, 255, 200), 'dark': (100, 0, 100),
-            'untyped': (200, 200, 200)
+            # --- 八卦屬性 (Octagram Elements) ---
+            'metal':   (210, 210, 220), # 金：銀灰色/白金
+            'water':   (80, 180, 255),  # 水：天空藍
+            'wood':    (60, 170, 60),   # 木：森林綠
+            'fire':    (255, 100, 80),  # 火：橙紅色
+            'earth':   (160, 120, 80),  # 土：棕褐色
+            'wind':    (150, 255, 180), # 風：薄荷綠
+            'thunder': (255, 235, 0),   # 雷：亮黃色
+            'ice':     (200, 245, 255), # 冰：極淺藍/霜色
+
+            # --- 特殊屬性 (Special Elements) ---
+            'light':   (255, 255, 200), # 光 (日)：淡米黃
+            'dark':    (120, 50, 150),  # 暗 (月)：深紫色
+            
+            # --- 無屬性 ---
+            'untyped':    (150, 150, 150)  # 無：中灰色
         }
         elem_color = elem_colors.get(self.element, (200, 200, 200))
         elem_val = self.header_font.render(self.element.capitalize(), True, elem_color)
