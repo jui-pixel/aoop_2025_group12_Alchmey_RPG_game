@@ -141,22 +141,41 @@ class RenderManager:
         self.screen.blit(minimap_surface, self.minimap_offset)
 
     def _draw_fog(self) -> None:
-        """繪製視野迷霧。"""
+        """繪製視野迷霧 (優化版：僅繪製視口範圍內的區塊)。"""
         dungeon = self.game.dungeon_manager.get_dungeon()
         self.fog_surface.fill(BLACK)
 
-        for y in range(dungeon.grid_height):
-            for x in range(dungeon.grid_width):
-                screen_x = x * TILE_SIZE - self.camera_offset[0]
-                screen_y = y * TILE_SIZE - self.camera_offset[1]
+        # 計算視口範圍 (轉換為 Tile 座標)
+        start_x = max(0, int(self.camera_offset[0] // TILE_SIZE))
+        start_y = max(0, int(self.camera_offset[1] // TILE_SIZE))
+        end_x = min(dungeon.grid_width, int((self.camera_offset[0] + SCREEN_WIDTH) // TILE_SIZE) + 1)
+        end_y = min(dungeon.grid_height, int((self.camera_offset[1] + SCREEN_HEIGHT) // TILE_SIZE) + 1)
+
+        player_tile = self.last_player_pos
+        vision_r_sq = self.last_vision_radius ** 2 if self.last_vision_radius else 25
+
+        for y in range(start_y, end_y):
+            for x in range(start_x, end_x):
+                # 僅處理已探索的區域
                 if self.fog_map[y][x]:
-                    if (x, y) == self.last_player_pos or math.sqrt((x - self.last_player_pos[0]) ** 2 + (y - self.last_player_pos[1]) ** 2) <= self.last_vision_radius:
+                    screen_x = x * TILE_SIZE - self.camera_offset[0]
+                    screen_y = y * TILE_SIZE - self.camera_offset[1]
+                    
+                    # 檢查是否在視野內 (使用平方距離避免開根號，提升效能)
+                    is_visible = False
+                    if player_tile:
+                        dist_sq = (x - player_tile[0]) ** 2 + (y - player_tile[1]) ** 2
+                        if dist_sq <= vision_r_sq:
+                            is_visible = True
+                    
+                    if is_visible:
+                        # 視野內：完全透明 (顯示遊戲世界)
                         self.fog_surface.fill((0, 0, 0, 0), (screen_x, screen_y, TILE_SIZE, TILE_SIZE))
                     else:
-                        self.fog_surface.fill((0, 0, 0, 128), (screen_x, screen_y, TILE_SIZE, TILE_SIZE))
+                        # 已探索但視野外：半透明昏暗 (迷霧)
+                        self.fog_surface.fill((0, 0, 0, 180), (screen_x, screen_y, TILE_SIZE, TILE_SIZE))
 
         self.screen.blit(self.fog_surface, (0, 0))
-        print("RenderManager: 繪製迷霧")
 
     def update_camera(self, dt: float) -> None:
         """更新攝影機位置，使其跟隨玩家。"""
