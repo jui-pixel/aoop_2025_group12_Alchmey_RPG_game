@@ -252,10 +252,10 @@ class Game:
 
         # 根據遊戲狀態更新邏輯
         state = self.event_manager.state
-        if state == "menu" and self.menu_manager.active_menus:
+        if self.menu_manager.active_menus:
             # 菜單模式：只更新菜單
             self.menu_manager.update_current_menus(dt)
-        elif state in ["lobby", "playing", "skill_selection"]:
+        else:
             # 遊戲模式：更新 ECS 系統和攝影機
             
             # --- ECS 更新 ---
@@ -268,8 +268,8 @@ class Game:
             # 攝影機更新 (RenderManager 應該處理)
             self.render_manager.update_camera(dt)
             
-        elif state == "win":
-            pass # 勝利狀態，等待用戶輸入或過場動畫
+        # elif state == "win":
+        #     pass # 勝利狀態，等待用戶輸入或過場動畫
 
         return self.running
     
@@ -288,17 +288,22 @@ class Game:
         """根據當前遊戲狀態繪製畫面。"""
         self.screen.fill((0, 0, 0)) # 清空畫面
         
-        state = self.event_manager.state
-        # print(f"Game: 繪製狀態 {state}") # 避免在主循環中頻繁打印
-        if not self.menu_manager.active_menus:
-            self.event_manager.state = "playing" # 無活動菜單時返回遊戲狀態
-        if state == "menu":
+        # state = self.event_manager.state
+        # # print(f"Game: 繪製狀態 {state}") # 避免在主循環中頻繁打印
+        # if not self.menu_manager.active_menus:
+        #     self.event_manager.state = "playing" # 無活動菜單時返回遊戲狀態
+        # if state == "menu":
+        #     self.render_manager.draw_menu() # 繪製菜單
+        # elif state == "lobby":
+        #     self.render_manager.draw_lobby() # 繪製大廳
+        # elif state == "playing":
+        #     self.render_manager.draw_playing() # 繪製遊戲進行畫面
+        # elif state == "win":
+        #     self.render_manager.draw_win() # 繪製勝利畫面
+        
+        if self.menu_manager.active_menus:
             self.render_manager.draw_menu() # 繪製菜單
-        elif state == "lobby":
-            self.render_manager.draw_lobby() # 繪製大廳
-        elif state == "playing":
+        else:
             self.render_manager.draw_playing() # 繪製遊戲進行畫面
-        elif state == "win":
-            self.render_manager.draw_win() # 繪製勝利畫面
         
         pygame.display.flip()
