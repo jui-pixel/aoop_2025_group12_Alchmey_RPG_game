@@ -520,7 +520,7 @@ class EntityWrapper:
     def take_damage(self, **kwargs):
         """Delegate to HealthSystem."""
         if self.game:
-            health_system = self.game.ecs_world.get_processor(HealthSystem)
+            health_system = esper.get_processor(HealthSystem)
             if health_system:
                 return health_system.take_damage(self.ecs_entity, **kwargs)
         return False, 0
