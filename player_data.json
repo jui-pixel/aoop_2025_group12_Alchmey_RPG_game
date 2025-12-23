@@ -57,6 +57,160 @@
             }
         },
         {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
+            "name": "move1",
+            "type": "buff",
+            "sub_type": "step",
+            "element": "untyped",
+            "params": {
+                "avoid": 100,
+                "speed": 30,
+                "duration": 100
+            }
+        },
+        {
             "name": "123457",
             "type": "shooting",
             "sub_type": null,
