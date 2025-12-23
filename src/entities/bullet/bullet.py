@@ -59,6 +59,7 @@ def create_standard_bullet_entity(
         w=w, 
         h=h, 
         pass_wall=pass_wall,
+        destroy_on_collision=True,
         collision_group="projectile" 
     ))
 

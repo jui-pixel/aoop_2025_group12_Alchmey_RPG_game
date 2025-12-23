@@ -519,7 +519,7 @@ class DodgeAction(Action):
             new_y = context.y + move_direction[1] * context.speed * speed_multiplier * dt
             
             # 檢查是否可通行
-            if dungeon and dungeon.get_tile_at((new_x, new_y)) in PASSABLE_TILES:
+            if dungeon and dungeon.is_passable(new_x, new_y):
                 context.move(move_direction[0], move_direction[1], dt * speed_multiplier)
             else:
                 self.chosen_dodge_direction = (0.0, 0.0)

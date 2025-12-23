@@ -208,6 +208,7 @@ class Collider:
     w: int = 32
     h: int = 32
     pass_wall: bool = False
+    destroy_on_collision: bool = False
     collision_group: str = "default"
     collision_mask: Optional[List[str]] = None
 
