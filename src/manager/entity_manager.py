@@ -67,26 +67,29 @@ class EntityManager:
         used_tiles = set()
         
         # 1. 初始化玩家
-        player_tiles = self.get_valid_tiles(room, spawn_map['player'])
-        player_x, player_y, player_tile = 0.0, 0.0, None
+        if not self.player:
+            player_tiles = self.get_valid_tiles(room, spawn_map['player'])
+            player_x, player_y, player_tile = 0.0, 0.0, None
 
-        if player_tiles:
-            player_tile = player_tiles[0] 
-        elif fallback_tiles:
-            player_tile = random.choice(fallback_tiles)
-        
-        if player_tile:
-            player_x, player_y = self.tile_to_pixel(*player_tile)
-            used_tiles.add(player_tile)
-        else:
-            player_x, player_y = self.game.dungeon_manager.get_room_center(room)
+            if player_tiles:
+                player_tile = player_tiles[0] 
+            elif fallback_tiles:
+                player_tile = random.choice(fallback_tiles)
             
-        # 使用 ECS Factory 創建玩家實體，並儲存 Facade
-        player_ecs_id = create_player_entity(self.world, x=player_x, y=player_y) 
-        self.player = Player(self.game, player_ecs_id)
-        
-        self.game.storage_manager.apply_all_to_player() 
-        print(f"EntityManager: 初始化玩家實體 ID: {player_ecs_id}，像素座標 ({player_x}, {player_y})")
+            if player_tile:
+                player_x, player_y = self.tile_to_pixel(*player_tile)
+                used_tiles.add(player_tile)
+            else:
+                player_x, player_y = self.game.dungeon_manager.get_room_center(room)
+                
+            # 使用 ECS Factory 創建玩家實體，並儲存 Facade
+            player_ecs_id = create_player_entity(self.world, x=player_x, y=player_y) 
+            self.player = Player(self.game, player_ecs_id)
+            
+            self.game.storage_manager.apply_all_to_player() 
+            print(f"EntityManager: 初始化玩家實體 ID: {player_ecs_id}，像素座標 ({player_x}, {player_y})")
+        else:
+            print("EntityManager: 玩家實體已存在，跳過創建。")
             
         # 2. 初始化 NPC (使用工廠函數)
         npc_configs: List[Tuple[callable, str]] = [
@@ -138,7 +141,22 @@ class EntityManager:
                 tile_type = dungeon.dungeon_tiles[y][x]
                 entity_x, entity_y = self.tile_to_pixel(x, y)
                 
-                if tile_type == 'Monster_spawn':
+                if tile_type == 'Player_spawn':
+                    if self.player:
+                        # 移動玩家實體的位置組件 (使用 Facade)
+                        pos_comp = self.world.component_for_entity(self.player.ecs_entity, Position)
+                        pos_comp.x, pos_comp.y = entity_x, entity_y
+                        print(f"EntityManager: 在瓦片 ({x}, {y}) 重定位玩家，像素座標 ({entity_x}, {entity_y}), 實體ID: {self.player.ecs_entity}")
+                    else:
+                        # 創建新玩家 (防禦性編程)
+                        player_ecs_id = create_player_entity(self.world, x=entity_x, y=entity_y) 
+                        self.player = Player(self.game, player_ecs_id)
+                        print(f"EntityManager: 創建新玩家實體 ID: {player_ecs_id}，像素座標 ({entity_x}, {entity_y})")
+                        
+                    self.game.storage_manager.apply_all_to_player() 
+                    self.game.render_manager.camera_offset = [entity_x - SCREEN_WIDTH // 2, entity_y - SCREEN_HEIGHT // 2] 
+                
+                elif tile_type == 'Monster_spawn':
                     # 創建敵人實體 (使用工廠函數)
                     create_enemy1_entity(self.world, x=entity_x, y=entity_y) 
                     
@@ -151,19 +169,7 @@ class EntityManager:
                     )
                     
                         
-                elif tile_type == 'Player_spawn':
-                    if self.player:
-                        # 移動玩家實體的位置組件 (使用 Facade)
-                        pos_comp = self.world.component_for_entity(self.player.ecs_entity, Position)
-                        pos_comp.x, pos_comp.y = entity_x, entity_y
-                        print(f"EntityManager: 在瓦片 ({x}, {y}) 重定位玩家，像素座標 ({entity_x}, {entity_y})")
-                    else:
-                        # 創建新玩家 (防禦性編程)
-                        player_ecs_id = create_player_entity(self.world, x=entity_x, y=entity_y) 
-                        self.player = Player(self.game, player_ecs_id)
-                        
-                    self.game.storage_manager.apply_all_to_player() 
-                    self.game.render_manager.camera_offset = [entity_x - SCREEN_WIDTH // 2, entity_y - SCREEN_HEIGHT // 2] 
+                
 
         self.game.render_manager.reset_minimap() 
         self.game.render_manager.reset_fog() 
