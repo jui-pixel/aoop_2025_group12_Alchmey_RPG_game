@@ -141,8 +141,8 @@ class AlchemyMenu(AbstractMenu):
         elif self.main_material == "step":
             stat_level = self.game.storage_manager.movement_level
             
-        max_cost = stat_level ** 2
-        used_cost = sum(self.amplifier_levels.values())
+        max_cost = int(stat_level ** 2 + 5)
+        used_cost = sum(level ** 2 for level in self.amplifier_levels.values()) 
         
         # 基礎成功率公式
         base_rate = (max_cost - used_cost) * 10 + 10

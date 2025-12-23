@@ -3,7 +3,7 @@
     "defense_level": 14,
     "movement_level": 24,
     "health_level": 14,
-    "mana": 18763516,
+    "mana": 18763515,
     "awakened_elements": [
         "water",
         "ice",
@@ -116,6 +116,19 @@
                 "penetration": 7,
                 "elebuff": 1,
                 "speed": 3
+            }
+        },
+        {
+            "name": "1234",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "untyped",
+            "params": {
+                "damage": 18,
+                "penetration": 4,
+                "elebuff": 1,
+                "explosion": 1,
+                "speed": 1
             }
         }
     ]
