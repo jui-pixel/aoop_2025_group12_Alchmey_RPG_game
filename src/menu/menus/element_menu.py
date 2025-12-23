@@ -12,7 +12,7 @@ from src.menu.menu_config import (
 )
 
 class ElementMenu(AbstractMenu):
-    """元素覺醒菜單 - 八芒星佈局優化版"""
+    """元素覺醒菜單 - 八芒星佈局優化版 (含特效)"""
     
     def __init__(self, game: 'Game', options: List[Dict] = None):
         self.game = game
@@ -30,6 +30,7 @@ class ElementMenu(AbstractMenu):
         self.radius = 220
         self.animation_time = 0
         self.particles = []
+        self.awakening_effects = [] # 覺醒特效列表
         self.message = None
         self.msg_timer = 0
         
@@ -79,6 +80,7 @@ class ElementMenu(AbstractMenu):
             )
             # 存儲額外信息以便繪製標籤
             btn.element_name = elem
+            btn.base_color = color # 儲存基礎顏色用於特效
             self.buttons.append(btn)
             
         # 2. 日月 (光/暗) - 放置在左上和右上角
@@ -87,26 +89,30 @@ class ElementMenu(AbstractMenu):
         
         # Light (Sun)
         is_light_unlocked = "light" in awakened
+        light_color = (255, 255, 200)
         sun_btn = Button(
             int(sun_pos[0] - 40), int(sun_pos[1] - 40), 80, 80,
             "",
-            self._create_celestial_surface(80, (255, 255, 200), is_light_unlocked, "sun"),
+            self._create_celestial_surface(80, light_color, is_light_unlocked, "sun"),
             "awaken_light",
             self.label_font
         )
         sun_btn.element_name = "light"
+        sun_btn.base_color = light_color
         self.buttons.append(sun_btn)
         
         # Dark (Moon)
         is_dark_unlocked = "dark" in awakened
+        dark_color = (150, 50, 200)
         moon_btn = Button(
             int(moon_pos[0] - 40), int(moon_pos[1] - 40), 80, 80,
             "",
-            self._create_celestial_surface(80, (100, 50, 150), is_dark_unlocked, "moon"),
+            self._create_celestial_surface(80, dark_color, is_dark_unlocked, "moon"),
             "awaken_dark",
             self.label_font
         )
         moon_btn.element_name = "dark"
+        moon_btn.base_color = dark_color
         self.buttons.append(moon_btn)
         
         # 3. 返回按鈕
@@ -122,16 +128,16 @@ class ElementMenu(AbstractMenu):
 
     def _get_element_color(self, elem, unlocked):
         base_colors = {
-            "metal": (192, 192, 192),
-            "wood": (50, 200, 50),
-            "water": (50, 100, 255),
-            "fire": (255, 50, 50),
-            "earth": (139, 69, 19),
+            "metal": (200, 200, 210),
+            "wood": (50, 255, 50),
+            "water": (50, 150, 255),
+            "fire": (255, 80, 50),
+            "earth": (160, 100, 50),
             "wind": (150, 255, 200),
             "thunder": (255, 255, 50),
             "ice": (100, 255, 255),
             "light": (255, 255, 200),
-            "dark": (100, 0, 100)
+            "dark": (120, 0, 150)
         }
         color = base_colors.get(elem, (150, 150, 150))
         if not unlocked:
@@ -145,6 +151,9 @@ class ElementMenu(AbstractMenu):
         if unlocked:
             pygame.draw.circle(s, (255, 255, 255), (size//2, size//2), size//2, 2)
             pygame.draw.circle(s, color, (size//2, size//2), size//2 - 4)
+            # 內部高光
+            pygame.draw.circle(s, (min(255, color[0]+50), min(255, color[1]+50), min(255, color[2]+50), 100), 
+                             (size//2 - 5, size//2 - 5), size//4)
         else:
             pygame.draw.circle(s, (100, 100, 100), (size//2, size//2), size//2, 1)
             pygame.draw.circle(s, color, (size//2, size//2), size//2 - 2)
@@ -161,11 +170,11 @@ class ElementMenu(AbstractMenu):
                 for i in range(8):
                     ang = i * math.pi / 4
                     ex, ey = center[0] + math.cos(ang)*size/2, center[1] + math.sin(ang)*size/2
-                    pygame.draw.line(s, color, center, (ex, ey), 2)
+                    pygame.draw.line(s, color, center, (ex, ey), 3)
             else: # moon
                 pygame.draw.circle(s, color, center, size//2 - 2)
                 # 陰影造成月牙效果
-                pygame.draw.circle(s, (0, 0, 0, 100), (center[0]+10, center[1]-5), size//2 - 5)
+                pygame.draw.circle(s, (0, 0, 0, 150), (center[0]+12, center[1]-6), size//2 - 6)
         else:
             pygame.draw.circle(s, (50, 50, 50), center, size//2 - 2, 1)
             pygame.draw.circle(s, (color[0]//4, color[1]//4, color[2]//4), center, size//2 - 4)
@@ -189,6 +198,34 @@ class ElementMenu(AbstractMenu):
                 'speed': random.uniform(0.1, 0.5)
             })
 
+    def _trigger_awakening_effect(self, x, y, color):
+        """觸發覺醒特效"""
+        # 1. 爆發粒子
+        for _ in range(40):
+            vx = random.uniform(-4, 4)
+            vy = random.uniform(-4, 4)
+            self.awakening_effects.append({
+                'type': 'spark',
+                'x': x, 'y': y,
+                'vx': vx, 'vy': vy,
+                'life': 60,
+                'max_life': 60,
+                'color': (min(255, color[0]+100), min(255, color[1]+100), min(255, color[2]+100)),
+                'size': random.randint(2, 6)
+            })
+        
+        # 2. 擴散光環
+        self.awakening_effects.append({
+            'type': 'shockwave',
+            'x': x, 'y': y,
+            'radius': 10,
+            'max_radius': 150,
+            'width': 5,
+            'color': color,
+            'life': 40,
+            'max_life': 40
+        })
+
     def draw(self, screen: pygame.Surface) -> None:
         if not self.active:
             return
@@ -208,10 +245,7 @@ class ElementMenu(AbstractMenu):
             if p['x'] < 0: p['x'] = SCREEN_WIDTH
             
         # 3. 繪製魔法陣 (八芒星線條)
-        # 兩個正方形交錯
-        # Square 1: 0-2-4-6-0
         sq1_indices = [0, 2, 4, 6, 0]
-        # Square 2: 1-3-5-7-1
         sq2_indices = [1, 3, 5, 7, 1]
         
         points = self.star_points
@@ -236,34 +270,113 @@ class ElementMenu(AbstractMenu):
         cost_text = self.label_font.render(f"Cost: {self.awaken_cost}", True, (150, 150, 150))
         screen.blit(cost_text, cost_text.get_rect(center=(self.center_x, self.center_y + 30)))
         
-        # 6. 按鈕與標籤
+        # 6. 按鈕、標籤與已覺醒特效
         for button in self.buttons:
+            # 繪製已覺醒的特殊表現 (光環/魔法陣)
+            if hasattr(button, 'element_name') and button.element_name in self.game.storage_manager.awakened_elements:
+                self._draw_awakened_aura(screen, button)
+                
             button.draw(screen)
             
             # 繪製選中光圈
             if button.is_selected:
-                glow_rect = button.rect.inflate(10, 10)
+                glow_rect = button.rect.inflate(14, 14)
                 pygame.draw.ellipse(screen, (255, 255, 255), glow_rect, 2)
+                # 額外光暈
+                s = pygame.Surface((glow_rect.width+20, glow_rect.height+20), pygame.SRCALPHA)
+                pygame.draw.ellipse(s, (255, 255, 255, 50), (10, 10, glow_rect.width, glow_rect.height), 4)
+                screen.blit(s, (glow_rect.x-10, glow_rect.y-10))
             
-            # 繪製標籤 (如果是元素按鈕)
+            # 繪製標籤
             if hasattr(button, 'element_name'):
                 name_text = button.element_name.capitalize()
                 unlocked = button.element_name in self.game.storage_manager.awakened_elements
                 color = (255, 255, 255) if unlocked else (100, 100, 100)
                 
                 label = self.label_font.render(name_text, True, color)
-                # 位置調整：在按鈕下方或上方，視位置而定
-                label_rect = label.get_rect(center=(button.rect.centerx, button.rect.bottom + 15))
+                label_rect = label.get_rect(center=(button.rect.centerx, button.rect.bottom + 20))
                 screen.blit(label, label_rect)
 
-        # 7. 消息提示
+        # 7. 繪製覺醒特效
+        self._update_and_draw_effects(screen)
+
+        # 8. 消息提示
         if self.message:
             self.msg_timer -= 1
             if self.msg_timer > 0:
-                msg_surf = self.msg_font.render(self.message, True, (255, 100, 100))
-                screen.blit(msg_surf, msg_surf.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT - 150)))
+                # 浮動效果
+                y_offset = math.sin(self.animation_time * 5) * 5
+                msg_surf = self.msg_font.render(self.message, True, (255, 200, 100))
+                screen.blit(msg_surf, msg_surf.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT - 130 + y_offset)))
             else:
                 self.message = None
+                
+    def _draw_awakened_aura(self, screen, button):
+        """繪製已覺醒元素的周圍光環"""
+        center = button.rect.center
+        radius = button.rect.width // 2 + 5
+        color = button.base_color if hasattr(button, 'base_color') else (255, 255, 255)
+        
+        # 1. 旋轉的魔法圈 (虛線)
+        angle_offset = self.animation_time * 2
+        num_segments = 8
+        for i in range(num_segments):
+            start_angle = angle_offset + i * (math.pi * 2 / num_segments)
+            end_angle = start_angle + (math.pi / num_segments)
+            
+            start_pos = (center[0] + math.cos(start_angle) * (radius + 5), 
+                         center[1] + math.sin(start_angle) * (radius + 5))
+            end_pos = (center[0] + math.cos(end_angle) * (radius + 5), 
+                       center[1] + math.sin(end_angle) * (radius + 5))
+            
+            # 顏色帶透明度
+            line_color = (*color, 150)
+            pygame.draw.line(screen, line_color, start_pos, end_pos, 2)
+
+        # 2. 呼吸光暈
+        pulse = (math.sin(self.animation_time * 3) + 1) * 0.5 # 0 to 1
+        glow_radius = radius + 2 + pulse * 5
+        
+        s = pygame.Surface((glow_radius*2.5, glow_radius*2.5), pygame.SRCALPHA)
+        pygame.draw.circle(s, (*color, int(50 + pulse * 50)), (glow_radius*1.25, glow_radius*1.25), glow_radius)
+        screen.blit(s, (center[0] - glow_radius*1.25, center[1] - glow_radius*1.25))
+
+    def _update_and_draw_effects(self, screen):
+        """更新並繪製所有覺醒特效"""
+        alive_effects = []
+        for p in self.awakening_effects:
+            p['life'] -= 1
+            if p['life'] <= 0:
+                continue
+                
+            alive_effects.append(p)
+            progress = 1 - (p['life'] / p.get('max_life', 60))
+            
+            if p['type'] == 'spark':
+                # 移動
+                p['x'] += p['vx']
+                p['y'] += p['vy']
+                p['vy'] += 0.1 # 重力
+                
+                # 繪製
+                alpha = int(255 * (1 - progress))
+                color = (*p['color'], alpha)
+                s = pygame.Surface((p['size']*2, p['size']*2), pygame.SRCALPHA)
+                pygame.draw.circle(s, color, (p['size'], p['size']), p['size'])
+                screen.blit(s, (int(p['x']), int(p['y'])))
+                
+            elif p['type'] == 'shockwave':
+                # 擴散
+                current_radius = p['radius'] + (p['max_radius'] - p['radius']) * progress
+                width = max(1, int(p['width'] * (1 - progress)))
+                alpha = int(255 * (1 - progress))
+                
+                s = pygame.Surface((current_radius*2.2, current_radius*2.2), pygame.SRCALPHA)
+                center_s = (current_radius*1.1, current_radius*1.1)
+                pygame.draw.circle(s, (*p['color'], alpha), center_s, int(current_radius), width)
+                screen.blit(s, (p['x'] - current_radius*1.1, p['y'] - current_radius*1.1))
+                
+        self.awakening_effects = alive_effects
 
     def handle_event(self, event: pygame.event.Event) -> str:
         if not self.active:
@@ -279,7 +392,6 @@ class ElementMenu(AbstractMenu):
                     break
         
         if event.type == pygame.KEYDOWN:
-            # 簡單的方向鍵導航可能比較混亂，這裡使用簡單的索引切換
             if event.key in [pygame.K_LEFT, pygame.K_UP]:
                 self.buttons[self.selected_index].is_selected = False
                 self.selected_index = (self.selected_index - 1) % len(self.buttons)
@@ -307,6 +419,16 @@ class ElementMenu(AbstractMenu):
             elem = action.split("_")[1]
             success, reason = self._awaken_element(elem)
             if success:
+                # 播放音效或特效
+                btn_index = self.selected_index # 假設當前選中的就是這個
+                for btn in self.buttons:
+                    if btn.action == action:
+                        self._trigger_awakening_effect(
+                            btn.rect.centerx, btn.rect.centery, 
+                            btn.base_color if hasattr(btn, 'base_color') else (255, 255, 255)
+                        )
+                        break
+                        
                 # 重新初始化按鈕以更新狀態
                 self._init_buttons()
                 # 恢復選中索引
@@ -323,7 +445,6 @@ class ElementMenu(AbstractMenu):
         return ""
 
     def _awaken_element(self, element: str) -> Tuple[bool, str]:
-        """覺醒元素"""
         return self.game.storage_manager.awaken_element(element, cost=self.awaken_cost)
 
     def get_selected_action(self) -> str:
@@ -332,8 +453,9 @@ class ElementMenu(AbstractMenu):
     def activate(self, active: bool) -> None:
         self.active = active
         if active:
-            self._init_buttons() # 刷新狀態
+            self._init_buttons()
             if 0 <= self.selected_index < len(self.buttons):
                 self.buttons[self.selected_index].is_selected = True
             self.animation_time = 0
             self.message = None
+            self.awakening_effects = []

@@ -43,17 +43,26 @@ class ElementChooseMenu(AbstractMenu):
         
         # 元素顏色映射
         elem_colors = {
-            'fire': (255, 100, 80), 
-            'water': (80, 180, 255), 
-            'earth': (160, 120, 80), 
-            'wind': (150, 255, 180),
-            'light': (255, 255, 200), 
-            'dark': (120, 50, 150),
-            'none': (150, 150, 150)
+            # --- 八卦屬性 (Octagram Elements) ---
+            'metal':   (210, 210, 220), # 金：銀灰色/白金
+            'water':   (80, 180, 255),  # 水：天空藍
+            'wood':    (60, 170, 60),   # 木：森林綠
+            'fire':    (255, 100, 80),  # 火：橙紅色
+            'earth':   (160, 120, 80),  # 土：棕褐色
+            'wind':    (150, 255, 180), # 風：薄荷綠
+            'thunder': (255, 235, 0),   # 雷：亮黃色
+            'ice':     (200, 245, 255), # 冰：極淺藍/霜色
+
+            # --- 特殊屬性 (Special Elements) ---
+            'light':   (255, 255, 200), # 光 (日)：淡米黃
+            'dark':    (120, 50, 150),  # 暗 (月)：深紫色
+            
+            # --- 無屬性 ---
+            'untyped':    (150, 150, 150)  # 無：中灰色
         }
         
         # 構建選項列表
-        options = ["none"] + awakened
+        options = ["untyped"] + awakened
         
         # 佈局計算
         btn_width = 300
@@ -66,7 +75,7 @@ class ElementChooseMenu(AbstractMenu):
         # 生成元素按鈕
         for i, elem in enumerate(options):
             y = start_y + i * (btn_height + gap)
-            text = "No Element" if elem == "none" else elem.capitalize()
+            text = "No Element" if elem == "untyped" else elem.capitalize()
             color = elem_colors.get(elem, (150, 150, 150))
             
             btn = Button(
