@@ -4,9 +4,13 @@ from src.menu.button import Button
 import pygame
 from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT
 from typing import List, Dict
-
+from src.menu.menu_config import (
+    BasicAction,
+    MenuNavigation,
+)
 class SettingsMenu(AbstractMenu):
     def __init__(self, game: 'Game', dungeons: List[Dict]):
+        self.game = game
         self.title = "Settings"
         self.buttons = [
             Button(
@@ -60,11 +64,21 @@ class SettingsMenu(AbstractMenu):
             elif event.key == pygame.K_RETURN:
                 action = self.buttons[self.selected_index].action
                 print(f"SettingsMenu: Enter pressed, action: {action}")
+                if action == "toggle_sound":
+                    pass
+                if action == "back":
+                    self.game.menu_manager.close_menu(MenuNavigation.SETTINGS_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.MAIN_MENU)
                 return action
         for button in self.buttons:
             active, action = button.handle_event(event)
             if active:
                 print(f"SettingsMenu: Button clicked, action: {action}")
+                if action == "toggle_sound":
+                    pass
+                if action == "back":
+                    self.game.menu_manager.close_menu(MenuNavigation.SETTINGS_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.MAIN_MENU)
                 return action
         return ""
 
