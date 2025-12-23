@@ -195,6 +195,8 @@ class WinMenu(AbstractMenu):
         """處理動作"""
         if action == "return_to_lobby":
             # 關閉勝利菜單並返回大廳
+            self.game.menu_manager.close_menu(MenuNavigation.WIN_MENU)
+            self.game.start_game()
             return create_menu_result(
                 action="return_to_lobby",
                 success=True,

@@ -32,7 +32,7 @@ class MenuNavigation(str, Enum):
     # 主要菜單
     MAIN_MENU = "main_menu"
     SETTINGS_MENU = "settings_menu"
-    
+    WIN_MENU = "win_menu"
     # NPC 交互菜單
     CRYSTAL_MENU = "crystal_menu"
     ALCHEMY_MENU = "alchemy_menu"

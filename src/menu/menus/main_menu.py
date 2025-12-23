@@ -20,7 +20,8 @@ class MainMenu(AbstractMenu):
             ) for i, (text, action) in enumerate([
                 ("Enter Lobby", "enter_lobby"),
                 ("Settings", "show_setting"),
-                ("Exit", "exit")
+                ("Exit", "exit"),
+                ("Win Screen", "show_win")
             ])
         ]
         self.selected_index = 0
@@ -72,6 +73,14 @@ class MainMenu(AbstractMenu):
                     self.game.menu_manager.close_menu(MenuNavigation.MAIN_MENU)
                     self.game.start_game()
                     return BasicAction.EXIT_MENU
+                if action == "show_setting":
+                    self.game.menu_manager.close_menu(MenuNavigation.MAIN_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.SETTINGS_MENU)
+                    return BasicAction.EXIT_MENU
+                if action == "show_win":
+                    self.game.menu_manager.close_menu(MenuNavigation.MAIN_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.WIN_MENU)
+                    return BasicAction.EXIT_MENU
                 return action
         for button in self.buttons:
             active, action = button.handle_event(event)
@@ -84,6 +93,13 @@ class MainMenu(AbstractMenu):
                     self.game.menu_manager.close_menu(MenuNavigation.MAIN_MENU)
                     self.game.start_game()
                     return BasicAction.EXIT_MENU
+                if action == "show_setting":
+                    self.game.menu_manager.close_menu(MenuNavigation.MAIN_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.SETTINGS_MENU)
+                    return BasicAction.EXIT_MENU
+                if action == "show_win":
+                    self.game.menu_manager.close_menu(MenuNavigation.MAIN_MENU)
+                    self.game.menu_manager.open_menu(MenuNavigation.WIN_MENU)
                 return action
         return ""
 
