@@ -257,48 +257,152 @@ class RenderManager:
         pygame.display.flip()
 
     def _draw_ui(self) -> None:
-        """Draw the UI elements: HP, Shield, Energy as progress bars; Mana and Current Skill Chain as text."""
+        """繪製地牢主題的 UI 元素：HP、護盾、能量、技能鏈和法力值"""
         if not self.game.entity_manager.player:
             return
         player = self.game.entity_manager.player
-        font = FontManager.get_font("Silver.ttf", 24)
+        font = FontManager.get_font("Silver.ttf", 20)
+        font_small = FontManager.get_font("Silver.ttf", 16)
 
-        # Progress bar settings
-        bar_width = 150
-        bar_height = 20
-        bar_spacing = 10
-        x_offset = 10
-        y_offset = 10
+        # UI 主題配色（地牢風格：深色、石質感）
+        bg_dark = (25, 20, 15)  # 深棕黑色背景
+        frame_outer = (80, 70, 60)  # 外框石頭色
+        frame_inner = (50, 45, 40)  # 內框陰影色
+        frame_highlight = (120, 110, 95)  # 高光色
+        
+        # 條狀框架設定
+        bar_width = 180
+        bar_height = 24
+        bar_spacing = 8
+        x_offset = 15
+        y_offset = 15
+        
+        # 繪製主 UI 面板背景（左上角）
+        panel_width = bar_width + 180
+        panel_height = (bar_height + bar_spacing) * 4 + 20
+        self._draw_stone_panel(x_offset - 8, y_offset - 8, panel_width, panel_height)
 
-        # HP Bar (Red)
+        # HP 條（紅色，帶血液感）
         hp_ratio = player.current_hp / max(player.max_hp, 1)
-        pygame.draw.rect(self.screen, DARK_GRAY, (x_offset, y_offset, bar_width, bar_height))  # Background
-        pygame.draw.rect(self.screen, (255, 0, 0), (x_offset, y_offset, bar_width * hp_ratio, bar_height))  # Fill
-        hp_text = font.render(f"HP: {player.current_hp}/{player.max_hp}", True, (255, 255, 255))
-        self.screen.blit(hp_text, (x_offset + bar_width + 10, y_offset))
+        self._draw_dungeon_bar(
+            x_offset, y_offset, bar_width, bar_height,
+            hp_ratio, 
+            bar_color=(180, 30, 30),  # 深紅色
+            bar_glow=(255, 60, 60),   # 高光紅
+            label="生命",
+            value_text=f"{player.current_hp}/{player.max_hp}",
+            font=font, font_small=font_small
+        )
 
-        # Shield Bar (Blue)
+        # 護盾條（藍色，帶魔法感）
         y_offset += bar_height + bar_spacing
         shield_ratio = player.current_shield / max(player.max_shield, 1)
-        pygame.draw.rect(self.screen, DARK_GRAY, (x_offset, y_offset, bar_width, bar_height))
-        pygame.draw.rect(self.screen, (0, 0, 255), (x_offset, y_offset, bar_width * shield_ratio, bar_height))
-        shield_text = font.render(f"Shield: {player.current_shield}/{player.max_shield}", True, (255, 255, 255))
-        self.screen.blit(shield_text, (x_offset + bar_width + 10, y_offset))
+        self._draw_dungeon_bar(
+            x_offset, y_offset, bar_width, bar_height,
+            shield_ratio,
+            bar_color=(30, 80, 150),  # 深藍
+            bar_glow=(60, 140, 255),  # 亮藍
+            label="護盾",
+            value_text=f"{player.current_shield}/{player.max_shield}",
+            font=font, font_small=font_small
+        )
 
-        # Energy Bar (Green)
+        # 能量條（綠色，帶自然感）
         y_offset += bar_height + bar_spacing
         energy_ratio = player.energy / max(player.max_energy, 1)
-        pygame.draw.rect(self.screen, DARK_GRAY, (x_offset, y_offset, bar_width, bar_height))
-        pygame.draw.rect(self.screen, (0, 255, 0), (x_offset, y_offset, bar_width * energy_ratio, bar_height))
-        energy_text = font.render(f"Energy: {int(player.energy)}/{int(player.max_energy)}", True, (255, 255, 255))
-        self.screen.blit(energy_text, (x_offset + bar_width + 10, y_offset))
+        self._draw_dungeon_bar(
+            x_offset, y_offset, bar_width, bar_height,
+            energy_ratio,
+            bar_color=(40, 120, 40),  # 深綠
+            bar_glow=(80, 200, 80),   # 亮綠
+            label="能量",
+            value_text=f"{int(player.energy)}/{int(player.max_energy)}",
+            font=font, font_small=font_small
+        )
 
-        # Current Skill Chain (Text only)
+        # 技能鏈顯示（文字加裝飾）
         y_offset += bar_height + bar_spacing
         chain_idx = player.current_skill_chain_idx + 1
-        chain_text = font.render(f"Current Chain: {chain_idx}", True, (255, 255, 255))
-        self.screen.blit(chain_text, (x_offset, y_offset))
+        chain_label = font_small.render("連擊鏈:", True, (200, 180, 150))
+        chain_value = font.render(f"#{chain_idx}", True, (255, 220, 120))
+        self.screen.blit(chain_label, (x_offset, y_offset + 2))
+        self.screen.blit(chain_value, (x_offset + 80, y_offset))
 
-        # Mana (Right top, Text only)
-        mana_text = font.render(f"Mana: {self.game.storage_manager.mana}", True, (255, 255, 255))
-        self.screen.blit(mana_text, (SCREEN_WIDTH - mana_text.get_width() - 10, 10))
+        # 法力值顯示（右上角，帶金幣風格）
+        mana_panel_width = 160
+        mana_panel_height = 50
+        mana_x = SCREEN_WIDTH - mana_panel_width - 15
+        mana_y = 15
+        self._draw_stone_panel(mana_x, mana_y, mana_panel_width, mana_panel_height)
+        
+        mana_label = font_small.render("法力", True, (200, 180, 150))
+        mana_value = font.render(f"{self.game.storage_manager.mana}", True, (255, 215, 0))  # 金色
+        self.screen.blit(mana_label, (mana_x + 15, mana_y + 8))
+        self.screen.blit(mana_value, (mana_x + 15, mana_y + 26))
+
+    def _draw_stone_panel(self, x: int, y: int, width: int, height: int) -> None:
+        """繪製石質面板背景"""
+        # 主背景
+        pygame.draw.rect(self.screen, (25, 20, 15), (x, y, width, height))
+        
+        # 外框（淺色高光）
+        pygame.draw.rect(self.screen, (90, 80, 70), (x, y, width, height), 2)
+        
+        # 內陰影（深色）
+        pygame.draw.rect(self.screen, (15, 12, 10), (x + 2, y + 2, width - 4, height - 4), 1)
+        
+        # 角落裝飾
+        corner_size = 6
+        corner_color = (60, 55, 50)
+        # 左上
+        pygame.draw.rect(self.screen, corner_color, (x, y, corner_size, corner_size))
+        # 右上
+        pygame.draw.rect(self.screen, corner_color, (x + width - corner_size, y, corner_size, corner_size))
+        # 左下
+        pygame.draw.rect(self.screen, corner_color, (x, y + height - corner_size, corner_size, corner_size))
+        # 右下
+        pygame.draw.rect(self.screen, corner_color, (x + width - corner_size, y + height - corner_size, corner_size, corner_size))
+
+    def _draw_dungeon_bar(self, x: int, y: int, width: int, height: int, 
+                          ratio: float, bar_color: tuple, bar_glow: tuple,
+                          label: str, value_text: str, font, font_small) -> None:
+        """繪製地牢風格的進度條"""
+        # 外框（深色凹陷）
+        pygame.draw.rect(self.screen, (15, 12, 10), (x - 2, y - 2, width + 4, height + 4))
+        
+        # 背景（深灰）
+        pygame.draw.rect(self.screen, (40, 35, 30), (x, y, width, height))
+        
+        # 進度條本體
+        fill_width = int(width * ratio)
+        if fill_width > 0:
+            # 底色（深色）
+            pygame.draw.rect(self.screen, bar_color, (x, y, fill_width, height))
+            
+            # 漸層高光（上半部分）
+            glow_height = height // 3
+            glow_surface = pygame.Surface((fill_width, glow_height), pygame.SRCALPHA)
+            for i in range(glow_height):
+                alpha = int(100 * (1 - i / glow_height))
+                color = (*bar_glow, alpha)
+                pygame.draw.line(glow_surface, color, (0, i), (fill_width, i))
+            self.screen.blit(glow_surface, (x, y))
+            
+            # 底部陰影
+            shadow_height = height // 4
+            shadow_surface = pygame.Surface((fill_width, shadow_height), pygame.SRCALPHA)
+            for i in range(shadow_height):
+                alpha = int(60 * (i / shadow_height))
+                pygame.draw.line(shadow_surface, (0, 0, 0, alpha), (0, i), (fill_width, i))
+            self.screen.blit(shadow_surface, (x, y + height - shadow_height))
+        
+        # 內框高光
+        pygame.draw.rect(self.screen, (80, 70, 60), (x, y, width, height), 1)
+        
+        # 標籤文字（左側）
+        label_surf = font_small.render(label, True, (200, 180, 150))
+        self.screen.blit(label_surf, (x + 6, y + (height - label_surf.get_height()) // 2))
+        
+        # 數值文字（右側）
+        value_surf = font_small.render(value_text, True, (255, 255, 255))
+        self.screen.blit(value_surf, (x + width - value_surf.get_width() - 6, y + (height - value_surf.get_height()) // 2))
