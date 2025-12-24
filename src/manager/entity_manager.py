@@ -117,23 +117,37 @@ class EntityManager:
                 
                 # 處理需要額外參數的 Dungeon Portal
                 if npc_key == 'dungeon_portal_npc':
-                    # 獲取當前地牢配置的傳送門數據
+                    # 獲取當前地牢配置 (此時是大廳配置)
                     dungeon_config = self.game.dungeon_manager.current_dungeon_config
-                    portal_data = dungeon_config.get('portal') if dungeon_config else None
-                    print(f"EntityManager: Dungeon Portal NPC portal_data: {portal_data}")
+                    portal_data = dungeon_config.get('portal', {}) if dungeon_config else {}
+                    
+                    # 檢查是否有 available_dungeons 列表 (大廳模式)
+                    raw_available = portal_data.get('available_dungeons', [])
                     available_dungeons = []
-                    if portal_data:
-                        available_dungeons = [{
-                            'name': portal_data.get('name', 'Unknown Portal'),
-                            'level': 1,
-                            'dungeon_id': portal_data.get('target_dungeon_id', 1)
-                        }]
+                    
+                    if raw_available:
+                        # 從 JSON ID 列表轉換為詳細數據
+                        for d_id in raw_available:
+                            d_info = self.game.dungeon_manager.dungeon_flow.get("dungeons", {}).get(str(d_id))
+                            if d_info:
+                                available_dungeons.append({
+                                    'name': d_info.get('name', f'Dungeon {d_id}'),
+                                    'level': 1,
+                                    'dungeon_id': d_id
+                                })
                     else:
-                        # 默認回退
-                        available_dungeons = [{'name': 'Return to Start', 'level': 1, 'dungeon_id': 1}]
-                        
-                    # 創建地牢傳送門實體 (使用工廠函數)
-                    npc_id = create_dungeon_portal_npc(
+                        # 嘗試單一目標模式 (非大廳模式的回退，雖然這裡是大廳初始化)
+                        target_id = portal_data.get('target_dungeon_id')
+                        if target_id:
+                             d_info = self.game.dungeon_manager.dungeon_flow.get("dungeons", {}).get(str(target_id))
+                             name = d_info.get('name', 'Unknown') if d_info else 'Unknown'
+                             available_dungeons.append({'name': name, 'level': 1, 'dungeon_id': target_id})
+                    
+                    if not available_dungeons:
+                         # 默認回退
+                         available_dungeons = [{'name': 'Test Dungeon', 'level': 1, 'dungeon_id': 1}]
+
+                    npc_entity_id = factory_func(
                         self.world, x=npc_x, y=npc_y,
                         available_dungeons=available_dungeons,
                         game=self.game
@@ -153,7 +167,9 @@ class EntityManager:
         """初始化地牢房間的 ECS 實體，使用工廠函數生成並重定位玩家。"""
         self.clear_entities() 
         dungeon = self.game.dungeon_manager.dungeon
-        
+        assert dungeon is not None, "EntityManager: Dungeon 未初始化，無法生成實體。"
+        assert dungeon.dungeon_tiles is not None, "EntityManager: Dungeon 瓦片數據缺失，無法生成實體。"
+        print("EntityManager: 開始初始化地牢實體...")
         for y in range(int(dungeon.grid_height)):
             for x in range(int(dungeon.grid_width)):
                 tile_type = dungeon.dungeon_tiles[y][x]

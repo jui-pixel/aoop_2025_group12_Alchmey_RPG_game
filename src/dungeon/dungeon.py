@@ -66,6 +66,11 @@ class Dungeon:
         print("Dungeon: 啟動 DungeonBuilder 進行地牢生成...")
         self.builder = DungeonBuilder(self.config)  # 使用當前配置初始化 Builder
         self.builder.initialize_dungeon(dungeon_id)
+        
+        # 確保更新本地的網格尺寸，以匹配新的配置
+        self.grid_width = self.config.grid_width
+        self.grid_height = self.config.grid_height
+        
         self.dungeon_tiles = self.builder.tile_manager.grid
         print("Dungeon: 生成完成，地牢數據已準備就緒。")
 

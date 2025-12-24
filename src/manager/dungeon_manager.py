@@ -26,7 +26,7 @@ class DungeonManager:
         from src.utils.helpers import get_project_path
         
         try:
-            path = get_project_path("src", "assets", "config", "dungeon_flow.json")
+            path = get_project_path("dungeon", "config", "dungeon_flow.json")
             if not os.path.exists(path):
                 print(f"DungeonManager: Config file not found at {path}")
                 return {}
@@ -67,6 +67,22 @@ class DungeonManager:
 
         調用地牢的 initialize_lobby 方法來設置大廳房間。
         """
+        # 1. 從 JSON 獲取大廳配置
+        lobby_data = self.dungeon_flow.get("lobby", {})
+        
+        # 為了讓 EntityManager 能讀取到 Portal 配置，我們構造一個偽造的 dungeon_config
+        # 這裡主要是為了傳遞 portal_npc 的數據
+        self.current_dungeon_config = {
+            "name": "Lobby",
+            "portal": {
+                # 大廳傳送門可能有多個目標，這取決於 JSON 結構
+                # 如果 JSON 中是 "portal_npc": { "available_dungeons": [...] }
+                # 我們需要調整 EntityManager 來支持這種結構，或者在這裡適配
+                "available_dungeons": lobby_data.get("portal_npc", {}).get("available_dungeons", [])
+            }
+        }
+        print(f"DungeonManager: Initializing Lobby with config: {self.current_dungeon_config}")
+
         self.dungeon.initialize_lobby()
         self.current_room_id = 0  # 將當前房間設置為大廳
 
