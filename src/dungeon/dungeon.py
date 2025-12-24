@@ -64,6 +64,13 @@ class Dungeon:
     def initialize_dungeon(self, dungeon_id: int) -> None:
         """地牢生成入口。委派給 DungeonBuilder 執行整個生成流程。"""
         print("Dungeon: 啟動 DungeonBuilder 進行地牢生成...")
+        
+        # 清空舊的地牢瓦片，防止切換時看到之前的地牢
+        self.dungeon_tiles = [['Outside' for _ in range(self.config.grid_width)] 
+                               for _ in range(self.config.grid_height)]
+        self.rooms = []  # 清空房間列表
+        self.bridges = []  # 清空走廊列表
+        
         self.builder = DungeonBuilder(self.config)  # 使用當前配置初始化 Builder
         self.builder.initialize_dungeon(dungeon_id)
         
@@ -79,10 +86,14 @@ class Dungeon:
         僅初始化一個大廳房間的地牢 (常用於遊戲起始點)。
         注意：此方法調用 DungeonBuilder 的內部方法，體現 Dungeon 作為門面。
         """
+        # 清空舊的地牢瓦片，防止切換時看到之前的地牢
+        self.dungeon_tiles = [['Outside' for _ in range(self.config.grid_width)] 
+                               for _ in range(self.config.grid_height)]
+        self.rooms = []  # 清空房間列表
+        self.bridges = []  # 清空走廊列表
+        
         # 1. 重設狀態，並使用 Builder 的網格初始化方法
         self.builder._initialize_grid()
-        self.rooms = []
-        self.bridges = []
         self.next_room_id = 0
         
         # 2. 從 Config 中獲取大廳尺寸

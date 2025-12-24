@@ -161,6 +161,10 @@ class EntityManager:
             else:
                 print(f"EntityManager: 無有效瓦片可供 {npc_key}，跳過")
 
+        # 重置小地圖和迷霧 (與 initialize_dungeon_entities 保持一致)
+        self.game.render_manager.reset_minimap()
+        self.game.render_manager.reset_fog()
+
         print(f"EntityManager: 總共創建了 {len(self.world._entities)} 個實體。")
 
 
