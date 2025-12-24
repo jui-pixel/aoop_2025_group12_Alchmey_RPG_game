@@ -6,7 +6,7 @@
 from typing import List, Set, Tuple
 from ..room import Room
 from src.core.config import PASSABLE_TILES
-
+from copy import deepcopy
 class TileManager:
     """
     瓦片管理器
@@ -26,7 +26,7 @@ class TileManager:
         """
         self.width = width
         self.height = height
-        self.grid = [[default_tile for _ in range(width)] for _ in range(height)]
+        self.grid = deepcopy([[default_tile for _ in range(width)] for _ in range(height)])
     
     def place_room(self, room: Room) -> None:
         """
@@ -359,3 +359,12 @@ class TileManager:
 
         # 將新瓦片陣列應用回地牢
         self.grid = new_grid
+
+    def reset(self, default_tile: str = 'Outside') -> None:
+        """
+        重置瓦片網格為默認瓦片
+        
+        Args:
+            default_tile: 默認瓦片類型
+        """
+        self.grid = deepcopy([[default_tile for _ in range(self.width)] for _ in range(self.height)])

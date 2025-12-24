@@ -46,7 +46,7 @@ class DungeonManager:
         
         if dungeon_data:
             print(f"DungeonManager: Initializing Dungeon {dungeon_id} ({dungeon_data.get('name')})")
-            
+            self.dungeon.reset()  # 重置地牢狀態
             # 應用配置到 DungeonConfig
             config_data = dungeon_data.get("config", {})
             self.dungeon.config.grid_width = config_data.get("grid_width", 120)

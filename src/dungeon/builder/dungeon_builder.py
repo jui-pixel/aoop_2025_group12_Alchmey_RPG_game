@@ -3,6 +3,7 @@
 地牢構建器模塊
 協調所有組件生成完整地牢
 """
+from copy import deepcopy
 import math
 from typing import List, Tuple
 from ..config.dungeon_config import DungeonConfig
@@ -324,8 +325,8 @@ class DungeonBuilder:
         Returns:
             初始化的瓦片網格
         """
-        return [['Outside' for _ in range(self.config.grid_width)]
-                for _ in range(self.config.grid_height)]
+        return deepcopy([['Outside' for _ in range(self.config.grid_width)]
+                for _ in range(self.config.grid_height)])
 
     def _apply_special_rooms(self, rooms: List[Room]) -> None:
         """

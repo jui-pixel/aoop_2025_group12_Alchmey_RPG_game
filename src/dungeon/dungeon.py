@@ -3,7 +3,7 @@ from typing import List, Tuple, Optional, Dict
 from dataclasses import dataclass
 import pygame 
 import os # 用於路徑操作 (雖然主要在 ResourceLoader 中使用)
-
+from copy import deepcopy
 # --- 1. 導入數據結構 ---
 from .room import Room 
 from .bridge import Bridge 
@@ -66,11 +66,11 @@ class Dungeon:
         print("Dungeon: 啟動 DungeonBuilder 進行地牢生成...")
         
         # 清空舊的地牢瓦片，防止切換時看到之前的地牢
-        self.dungeon_tiles = [['Outside' for _ in range(self.config.grid_width)] 
-                               for _ in range(self.config.grid_height)]
+        self.dungeon_tiles = deepcopy([['Outside' for _ in range(self.config.grid_width)] 
+                               for _ in range(self.config.grid_height)])
         self.rooms = []  # 清空房間列表
         self.bridges = []  # 清空走廊列表
-        
+        self.builder.tile_manager.reset(default_tile='Outside')
         self.builder = DungeonBuilder(self.config)  # 使用當前配置初始化 Builder
         self.builder.initialize_dungeon(dungeon_id)
         
@@ -87,11 +87,11 @@ class Dungeon:
         注意：此方法調用 DungeonBuilder 的內部方法，體現 Dungeon 作為門面。
         """
         # 清空舊的地牢瓦片，防止切換時看到之前的地牢
-        self.dungeon_tiles = [['Outside' for _ in range(self.config.grid_width)] 
-                               for _ in range(self.config.grid_height)]
+        self.dungeon_tiles = deepcopy([['Outside' for _ in range(self.config.grid_width)] 
+                               for _ in range(self.config.grid_height)])
         self.rooms = []  # 清空房間列表
         self.bridges = []  # 清空走廊列表
-        
+        self.builder.tile_manager.reset(default_tile='Outside')
         # 1. 重設狀態，並使用 Builder 的網格初始化方法
         self.builder._initialize_grid()
         self.next_room_id = 0
@@ -237,3 +237,14 @@ class Dungeon:
         except StopIteration:
             print("警告：未找到起始房間 (RoomType.START)！回傳 (0, 0)。")
             return 0, 0
+    
+    def reset(self) -> None:
+        """
+        重置地牢狀態以準備重新生成。
+        """
+        print("Dungeon: 重置地牢狀態...")
+        self.dungeon_tiles = deepcopy([['Outside' for _ in range(self.config.grid_width)] 
+                               for _ in range(self.config.grid_height)])
+        self.rooms = []  # 清空房間列表
+        self.bridges = []  # 清空走廊列表
+        self.builder.tile_manager.reset(default_tile='Outside')
