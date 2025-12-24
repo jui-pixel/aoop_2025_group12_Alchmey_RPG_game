@@ -75,7 +75,8 @@ def load_background_tileset(config: DungeonConfig, get_project_path) -> Dict[str
         'Trap_room_floor': 'Tileset_1_1.png',
         'Reward_room_floor': 'Tileset_1_1.png',
         'NPC_room_floor': 'Tileset_1_1.png',
-
+        'Boss_room_floor': 'Tileset_1_1.png',
+        'Final_room_floor': 'Tileset_1_1.png',
         # 環境與結構瓦片
         'Outside': 'Tileset_0_3.png',
         'Bridge_floor': 'Tileset_1_1.png',
@@ -88,6 +89,8 @@ def load_background_tileset(config: DungeonConfig, get_project_path) -> Dict[str
         'Trap_spawn': 'Tileset_1_1.png',
         'Reward_spawn': 'Tileset_1_1.png',
         'NPC_spawn': 'Tileset_1_1.png',
+        'Boss_spawn': 'Tileset_1_1.png',
+        'Final_NPC_spawn': 'Tileset_1_1.png',
         
         # 大廳 NPC/物件
         'Magic_crystal_NPC_spawn': 'Tileset_1_1.png',
