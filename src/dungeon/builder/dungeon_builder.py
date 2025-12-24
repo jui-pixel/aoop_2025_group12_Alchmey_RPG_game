@@ -64,12 +64,53 @@ class DungeonBuilder:
         
         # 2. 在 BSP 樹中放置房間
         print("\n[2/10] 放置房間...")
-        rooms = self.room_placer.place_rooms_in_bsp(bsp_tree)
+        
+        # Check if this is a special-room-only dungeon (boss or final only)
+        special_config = self.config.special_rooms
+        is_boss_only = special_config.get("boss_room", {}).get("enabled", False)
+        is_final_only = special_config.get("final_room", {}).get("enabled", False)
+        
+        if (is_boss_only or is_final_only) and self.config.monster_room_ratio == 0.0:
+            # Special room only - create it directly instead of using BSP
+            print("  Detected special-room-only dungeon, creating room directly...")
+            rooms = []
+            
+            if is_boss_only:
+                boss_conf = special_config["boss_room"]
+                w, h = boss_conf.get("room_size", [15, 15])
+            elif is_final_only:
+                final_conf = special_config["final_room"]
+                w, h = final_conf.get("room_size", [20, 20])
+            
+            # Center the room in the grid
+            x = max(2, (self.config.grid_width - w) // 2)
+            y = max(2, (self.config.grid_height - h) // 2)
+            
+            # Create START room (will be converted later)
+            room = Room(
+                id=1,
+                x=x,
+                y=y,
+                width=w,
+                height=h,
+                room_type=RoomType.START,  # Temporary, will be converted
+                tiles=None
+            )
+            rooms.append(room)
+            print(f"  ✓ Created special room at ({x}, {y}) with size {w}x{h}")
+        else:
+            # Normal BSP generation
+            rooms = self.room_placer.place_rooms_in_bsp(bsp_tree)
+            
         print(f"  ✓ 生成 {len(rooms)} 個房間")
         
         # 3. 分配房間類型
         print("\n[3/10] 分配房間類型...")
         self.room_type_assigner.assign_types(rooms)
+        
+        # [新增] 應用特殊房間配置 (Boss/Final)
+        self._apply_special_rooms(rooms)
+        
         type_counts = self.room_type_assigner.get_room_type_counts(rooms)
         print(f"  ✓ 房間類型分布: {type_counts}")
         
@@ -285,3 +326,60 @@ class DungeonBuilder:
         """
         return [['Outside' for _ in range(self.config.grid_width)]
                 for _ in range(self.config.grid_height)]
+
+    def _apply_special_rooms(self, rooms: List[Room]) -> None:
+        """
+        應用特殊房間配置 (Boss, Final)，通常會覆蓋 END 房間。
+        """
+        special_config = self.config.special_rooms
+        if not special_config:
+            return
+
+        # 嘗試找到 END 房間或 START 房間 (for special-only dungeons)
+        target_room = next((r for r in rooms if r.room_type == RoomType.END), None)
+        
+        if not target_room:
+            # For special-only dungeons, convert START room
+            target_room = next((r for r in rooms if r.room_type == RoomType.START), None)
+        
+        # 如果沒有 END 房間 (生成失敗或邏輯變更)，使用最後一個房間
+        if not target_room and rooms:
+            target_room = rooms[-1]
+            
+        if not target_room:
+            return
+
+        # 優先級：Final > Boss (如果同時啟用，這裡的邏輯會讓後面的覆蓋前面的? No, let's use elif)
+        
+        # 檢查 Boss Room
+        boss_conf = special_config.get("boss_room", {})
+        if boss_conf.get("enabled", False):
+            print(f"DungeonBuilder: Converting Room {target_room.id} to BOSS Room")
+            target_room.room_type = RoomType.BOSS
+            
+            # 調整尺寸 (保持中心點不變)
+            size = boss_conf.get("room_size")
+            if size:
+                w, h = size
+                cx = target_room.x + target_room.width / 2
+                cy = target_room.y + target_room.height / 2
+                target_room.width = w
+                target_room.height = h
+                target_room.x = max(0, cx - w / 2) # 防止越界
+                target_room.y = max(0, cy - h / 2)
+                
+        # 檢查 Final Room
+        final_conf = special_config.get("final_room", {})
+        if final_conf.get("enabled", False):
+            print(f"DungeonBuilder: Converting Room {target_room.id} to FINAL Room")
+            target_room.room_type = RoomType.FINAL
+            
+            size = final_conf.get("room_size")
+            if size:
+                w, h = size
+                cx = target_room.x + target_room.width / 2
+                cy = target_room.y + target_room.height / 2
+                target_room.width = w
+                target_room.height = h
+                target_room.x = max(0, cx - w / 2)
+                target_room.y = max(0, cy - h / 2)

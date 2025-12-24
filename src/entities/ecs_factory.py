@@ -513,3 +513,71 @@ def create_damage_text_entity(
     world.add_component(damage_text_entity, Lifetime(max_lifetime=duration))
 
     return damage_text_entity
+
+def create_boss_entity(
+    world: esper, x: float = 0.0, y: float = 0.0, game: 'Game' = None, 
+    boss_id: str = "boss_dark_king"
+) -> int:
+    """創建 Boss 實體"""
+    # 簡單起見，基於 enemy1 但更強大
+    print(f"Creating Boss {boss_id} at {x}, {y}")
+    boss = create_enemy1_entity(
+        world, x, y, game, tag="boss",
+        base_max_hp=5000,
+        damage=50,
+        w=TILE_SIZE * 2, h=TILE_SIZE * 2, # 2x2 大小
+        defense=50
+    )
+    # 可能添加 Boss 組件以便系統識別
+    return boss
+
+def create_win_npc_entity(
+    world: esper,
+    x: float = 0.0, 
+    y: float = 0.0, 
+    w: int = 64, 
+    h: int = 64, 
+    game: 'Game' = None
+) -> int:
+    """創建與 WinMenu 關聯的 Final NPC"""
+    
+    npc_entity = world.create_entity()
+
+    # 1. 核心
+    world.add_component(npc_entity, Tag(tag="win_npc"))
+    world.add_component(npc_entity, Position(x=x, y=y))
+    
+    # 2. 視覺 (金色?)
+    world.add_component(npc_entity, Renderable(
+        image=None,
+        shape="rect",
+        w=w,
+        h=h,
+        color=(255, 215, 0), # 金色
+        layer=0 
+    ))
+
+    # 3. 碰撞器
+    world.add_component(npc_entity, Collider(w=w, h=h, pass_wall=False, collision_group="npc"))
+    world.add_component(npc_entity, Health(max_hp=999999, current_hp=999999))
+    world.add_component(npc_entity, Defense(defense=100, element="untyped", invulnerable=True))
+    world.add_component(npc_entity, Buffs())
+
+    # 4. 交互
+    world.add_component(npc_entity, NPCInteractComponent(interaction_range=80.0))
+    
+    # Facade 初始化 - 這裡需要一個 Facade 類來打開 WinMenu
+    # 由於我們還沒創建 WinNPC Facade，我們可以暫時借用 DungeonPortalNPC 的邏輯，或者直接在這裡注入 lambda ?
+    # 為了架構正確性，我們稍後應該創建 src/entities/npc/win_npc.py
+    # 暫時解決：在 EntityManager 中手動綁定 interaction 或者在這裡創建一個臨時的交互邏輯
+    
+    # 如果 WinMenu 已存在，我們可以讓它打開 WinMenu
+    if game:
+        def open_win_menu():
+            print("Win NPC Interacted -> Opening Win Menu")
+            game.menu_manager.open_menu("win_menu") # 假設 MenuManager 有這個 key
+            
+        interact_comp = world.component_for_entity(npc_entity, NPCInteractComponent)
+        interact_comp.start_interaction = open_win_menu
+
+    return npc_entity

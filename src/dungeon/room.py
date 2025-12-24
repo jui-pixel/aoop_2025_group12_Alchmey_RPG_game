@@ -134,6 +134,40 @@ class Room:
                 self.tiles[row][col] = 'Reward_spawn'
             print(f"Reward Room (ID: {self.id}) with {num_chests} chests placed.")
                 
+        elif self.room_type == RoomType.BOSS:
+            # Boss Room: Center spawning for boss, specialized floor
+            for row in range(int(self.height)):
+                for col in range(int(self.width)):
+                    self.tiles[row][col] = 'Boss_room_floor'
+            
+            # Spawn Boss in the center
+            self.tiles[center_y][center_x] = 'Boss_spawn'
+            
+            # Spawn Player near the center
+            self.tiles[center_y + 3][center_x] = 'Player_spawn'
+            print(f"Boss Room (ID: {self.id}) Boss spawn placed.")
+
+        elif self.room_type == RoomType.FINAL:
+            # Final Room: Center NPC, surrounded by chests
+            for row in range(int(self.height)):
+                for col in range(int(self.width)):
+                    self.tiles[row][col] = 'Final_room_floor'
+            
+            # Spawn Final NPC (Win condition)
+            self.tiles[center_y][center_x] = 'Final_NPC_spawn'
+            
+            # Spawn Player near the center
+            self.tiles[center_y + 3][center_x] = 'Player_spawn'
+            
+            # Place chests around the center
+            chest_offsets = [(-2, -2), (-2, 2), (2, -2), (2, 2)]
+            for dr, dc in chest_offsets:
+                r, c = center_y + dr, center_x + dc
+                if 1 <= r < int(self.height) - 1 and 1 <= c < int(self.width) - 1:
+                    self.tiles[r][c] = 'Reward_spawn'
+            
+            print(f"Final Room (ID: {self.id}) Final NPC and chests placed.")
+
         elif self.room_type == RoomType.NPC:
             for row in range(int(self.height)):
                 for col in range(int(self.width)):

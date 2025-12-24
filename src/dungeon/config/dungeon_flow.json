@@ -36,16 +36,65 @@
                 "monster_room_ratio": 1.0
             },
             "portal": {
+                "target_dungeon_id": "boss_1",
+                "name": "To Boss Lair"
+            }
+        },
+        "boss_1": {
+            "name": "The Dark King's Lair",
+            "description": "A focused arena where the Dark King awaits.",
+            "config": {
+                "grid_width": 40,
+                "grid_height": 30,
+                "monster_room_ratio": 0.0,
+                "extra_bridge_ratio": 0.0,
+                "special_rooms": {
+                    "boss_room": {
+                        "enabled": true,
+                        "boss_id": "boss_dark_king",
+                        "room_size": [
+                            15,
+                            15
+                        ]
+                    }
+                },
+                "spawn_table": {}
+            },
+            "portal": {
+                "target_dungeon_id": "final_1",
+                "name": "To Victory"
+            }
+        },
+        "final_1": {
+            "name": "Treasure Vault",
+            "description": "You have won! Claim your reward.",
+            "config": {
+                "grid_width": 30,
+                "grid_height": 30,
+                "monster_room_ratio": 0.0,
+                "special_rooms": {
+                    "final_room": {
+                        "enabled": true,
+                        "npc_id": "final_npc",
+                        "room_size": [
+                            20,
+                            20
+                        ]
+                    }
+                }
+            },
+            "portal": {
                 "target_dungeon_id": 1,
-                "name": "Return to Surface"
+                "name": "New Game+"
             }
         }
     },
     "lobby": {
         "portal_npc": {
             "available_dungeons": [
-                1,
-                2
+                "1",
+                "2",
+                "boss_1"
             ]
         }
     }

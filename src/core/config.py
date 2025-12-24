@@ -111,6 +111,10 @@ ROOM_FLOOR_COLORS = {
     'Border_wall_convex_top_right':BLACK,
     'Border_wall_convex_bottom_left': BLACK,
     'Border_wall_convex_bottom_right': BLACK,
+    'Boss_room_floor': DEEP_PURPLE,  # Boss房間地板 - 深紫，特殊效果
+    'Boss_spawn': DEEP_PURPLE,      # Boss生成點 - 深紫，特殊效果
+    'Final_NPC_spawn': VIOLET_GLOW,  # 終點NPC生成點 - 紫羅蘭，魔法效果
+    'Final_room_floor': DARK_BLUE,  # 終點房間地板 - 暗藍，神秘感
 }
 
 PASSABLE_TILES = {
@@ -124,7 +128,8 @@ PASSABLE_TILES = {
     'Reward_room_floor',
     'Start_room_floor',
     'NPC_room_floor',
-    
+    'Boss_room_floor',
+    'Final_room_floor',
     # 環境結構
     'Door',
     
@@ -135,6 +140,8 @@ PASSABLE_TILES = {
     'Monster_spawn',
     'Trap_spawn',
     'Reward_spawn',
+    'Boss_spawn',
+    'Final_NPC_spawn',
     
     # 大廳 NPC/物件
     'Magic_crystal_NPC_spawn',

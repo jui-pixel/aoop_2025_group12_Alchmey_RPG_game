@@ -53,6 +53,12 @@ class DungeonManager:
             self.dungeon.config.grid_height = config_data.get("grid_height", 100)
             self.dungeon.config.monster_room_ratio = config_data.get("monster_room_ratio", 0.8)
             
+            # 應用生成表和特殊房間配置
+            if "spawn_table" in config_data:
+                self.dungeon.config.spawn_table = config_data["spawn_table"]
+            if "special_rooms" in config_data:
+                self.dungeon.config.special_rooms = config_data["special_rooms"]
+            
             # 儲存配置供 EntityManager 使用 (Portal 數據)
             self.current_dungeon_config = dungeon_data
         else:

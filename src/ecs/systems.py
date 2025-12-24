@@ -4,7 +4,7 @@ import math
 from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider, PlayerComponent, Tag
 from src.ecs.ai import EnemyContext
 from src.core.config import TILE_SIZE, PASSABLE_TILES, SCREEN_WIDTH, SCREEN_HEIGHT
-from src.entities.ecs_factory import create_damage_text_entity
+from src.entities.ecs_factory import create_damage_text_entity, create_dungeon_portal_npc
 
 class MovementSystem(esper.Processor):
     def process(self, *args, **kwargs):
@@ -323,6 +323,33 @@ class HealthSystem(esper.Processor):
             if game:
                 game.on_player_death()
         else:
+            # Check for Boss tag
+            tag_comp = esper.try_component(entity, Tag)
+            if tag_comp and tag_comp.tag == "boss":
+                print(f"Boss died! Spawning portal...")
+                if game and esper.has_component(entity, Position):
+                    pos = esper.component_for_entity(entity, Position)
+                    
+                    # Get portal config from DungeonManager
+                    dungeon_config = game.dungeon_manager.current_dungeon_config
+                    portal_data = dungeon_config.get('portal') if dungeon_config else None
+                    
+                    available_dungeons = []
+                    if portal_data:
+                         available_dungeons = [{
+                            'name': portal_data.get('name', 'Unknown Portal'),
+                            'level': 1,
+                            'dungeon_id': portal_data.get('target_dungeon_id', 1)
+                        }]
+                    else:
+                         available_dungeons = [{'name': 'Return to Start', 'level': 1, 'dungeon_id': 1}]
+
+                    create_dungeon_portal_npc(
+                        esper, x=pos.x, y=pos.y, 
+                        available_dungeons=available_dungeons, 
+                        game=game
+                    )
+
             esper.delete_entity(entity)
 
 class BuffSystem(esper.Processor):

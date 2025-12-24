@@ -14,6 +14,8 @@ class RoomType(Enum):
     REWARD = 'Reward_room'
     NORMAL = 'Normal_room'
     NPC = 'NPC_room'
+    BOSS = 'Boss_room'
+    FINAL = 'Final_room'
 
 
 # ======================================================================
@@ -28,6 +30,8 @@ TILE_DOOR = 'Door'
 TILE_WALL = 'Border_wall'
 TILE_PLAYER_SPAWN = 'Player_spawn'
 TILE_END_PORTAL = 'End_room_portal'
+TILE_BOSS_SPAWN = 'Boss_spawn'
+TILE_FINAL_NPC_SPAWN = 'Final_NPC_spawn'
 
 # ======================================================================
 # DungeonConfig Dataclass
@@ -88,7 +92,7 @@ class DungeonConfig:
     
     # ========== 房間類型比例 ==========
     monster_room_ratio: float = 0.8
-    """怪物房間的比例"""
+    """怪物房間的比例 (BOSS 和 FINAL 房間由特殊邏輯處理，不計入此比例)"""
     
     trap_room_ratio: float = 0.1
     """陷阱房間的比例"""
@@ -102,6 +106,23 @@ class DungeonConfig:
     
     lobby_height: int = 20
     """大廳的高度（瓦片數）"""
+    
+    # ========== 生成配置 (新增) ==========
+    
+    spawn_table: Dict[str, float] = field(default_factory=lambda: {"enemy_slime": 1.0})
+    """
+    怪物生成表。
+    Format: {"monster_id": probability_weight}
+    """
+    
+    special_rooms: Dict[str, Dict] = field(default_factory=dict)
+    """
+    特殊房間配置。
+    Format: {
+        "boss_room": {"enabled": bool, "boss_id": str, "room_size": Tuple[int, int]},
+        "final_room": {"enabled": bool, "npc_id": str, "room_size": Tuple[int, int]}
+    }
+    """
     
     # ========== 整合的瓦片屬性 (強化部分) ==========
     

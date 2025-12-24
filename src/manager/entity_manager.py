@@ -8,7 +8,8 @@ import random
 # 引入 ECS 實體工廠函數 (假設這些工廠函數已經在 ecs_factory.py 中定義)
 from src.entities.ecs_factory import (
     create_player_entity, create_alchemy_pot_npc, create_magic_crystal_npc, 
-    create_dungeon_portal_npc, create_dummy_entity, create_enemy1_entity
+    create_dungeon_portal_npc, create_dummy_entity, create_enemy1_entity,
+    create_boss_entity, create_win_npc_entity
 )
 # 引入 Player Facade (假設這是玩家實體的外部接口)
 from src.entities.player.player import Player 
@@ -191,9 +192,33 @@ class EntityManager:
                     self.game.render_manager.camera_offset = [entity_x - SCREEN_WIDTH // 2, entity_y - SCREEN_HEIGHT // 2] 
                 
                 elif tile_type == 'Monster_spawn':
-                    # 創建敵人實體 (使用工廠函數)
-                    enemy_id = create_enemy1_entity(self.world, x=entity_x, y=entity_y) 
-                    print(f"EntityManager: 創建敵人實體於瓦片 ({x}, {y})，像素座標 ({entity_x}, {entity_y}), 實體ID: {enemy_id}")   
+                    # 獲取當前地牢配置
+                    current_config = self.game.dungeon_manager.current_dungeon_config
+                    spawn_table = current_config.get("spawn_table", {"enemy_slime": 1.0}) if current_config else {"enemy_slime": 1.0}
+                    
+                    if spawn_table:
+                        monster_id = random.choices(list(spawn_table.keys()), weights=list(spawn_table.values()), k=1)[0]
+                    else:
+                        monster_id = "enemy_slime"
+
+                    # 根據 ID 生成
+                    if monster_id == "enemy_slime":
+                        enemy_id = create_enemy1_entity(self.world, x=entity_x, y=entity_y, game=self.game)
+                    else:
+                        # Fallback for unknown IDs
+                        enemy_id = create_enemy1_entity(self.world, x=entity_x, y=entity_y, game=self.game, tag=monster_id)
+                        
+                elif tile_type == 'Boss_spawn':
+                    current_config = self.game.dungeon_manager.current_dungeon_config
+                    special_rooms = current_config.get("special_rooms", {}) if current_config else {}
+                    boss_id = special_rooms.get("boss_room", {}).get("boss_id", "boss_dark_king")
+                    
+                    create_boss_entity(self.world, x=entity_x, y=entity_y, game=self.game, boss_id=boss_id)
+                    print(f"EntityManager: Spawning BOSS {boss_id} at ({x}, {y})")
+
+                elif tile_type == 'Final_NPC_spawn':
+                    create_win_npc_entity(self.world, x=entity_x, y=entity_y, game=self.game)
+                    print(f"EntityManager: Spawning Final NPC at ({x}, {y})")   
                 elif tile_type == 'End_room_portal':
                     # 獲取當前地牢配置的傳送門數據
                     dungeon_config = self.game.dungeon_manager.current_dungeon_config
