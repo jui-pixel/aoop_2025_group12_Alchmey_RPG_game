@@ -79,8 +79,8 @@
             "name": "Dark Cave",
             "description": "A dark and damp cave filled with monsters.",
             "config": {
-                "grid_width": 80,
-                "grid_height": 60,
+                "grid_width": 120,
+                "grid_height": 100,
                 "monster_room_ratio": 0.8
             },
             "portal": {
@@ -92,9 +92,10 @@
             "name": "Deep Abyss",
             "description": "The bottom of the world.",
             "config": {
-                "grid_width": 100,
-                "grid_height": 80,
-                "monster_room_ratio": 1.0
+                "grid_width": 240,
+                "grid_height": 200,
+                "monster_room_ratio": 1.0,
+                "extra_bridge_ratio": 0.02
             },
             "portal": {
                 "target_dungeon_id": "boss_1",
@@ -105,8 +106,8 @@
             "name": "The Dark King's Lair",
             "description": "A focused arena where the Dark King awaits.",
             "config": {
-                "grid_width": 40,
-                "grid_height": 30,
+                "grid_width": 100,
+                "grid_height": 100,
                 "monster_room_ratio": 0.0,
                 "extra_bridge_ratio": 0.0,
                 "special_rooms": {
@@ -114,8 +115,8 @@
                         "enabled": true,
                         "boss_id": "boss_dark_king",
                         "room_size": [
-                            15,
-                            15
+                            80,
+                            80
                         ]
                     }
                 },
