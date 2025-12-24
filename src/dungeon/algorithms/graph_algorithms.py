@@ -107,7 +107,7 @@ class GraphAlgorithms:
                        ratio: float,
                        rooms: List = None) -> List[Tuple[int, int]]:
         """
-        添加額外邊以增加連通性，避免穿過房間
+        添加額外邊以增加連通性，避免穿過房間、過長路徑和相鄰連接
         
         Args:
             mst_edges: MST 邊列表
@@ -125,40 +125,70 @@ class GraphAlgorithms:
         mst_set = set(mst_edges)
         mst_set.update((b, a) for a, b in mst_edges)  # 添加反向邊
         
+        # 構建鄰接表（用於檢測相鄰路徑）
+        adjacency = {}
+        for node1, node2 in mst_edges:
+            if node1 not in adjacency:
+                adjacency[node1] = set()
+            if node2 not in adjacency:
+                adjacency[node2] = set()
+            adjacency[node1].add(node2)
+            adjacency[node2].add(node1)
+        
         # 找出非 MST 邊
         non_mst_edges = [
             (node1, node2, weight) for node1, node2, weight in all_edges
             if (node1, node2) not in mst_set
         ]
         
-        # 計算要添加的邊數量
-        num_extra = int(len(non_mst_edges) * ratio)
-        
-        if num_extra <= 0 or not non_mst_edges:
+        if not non_mst_edges:
             return mst_edges
         
-        # 如果提供了房間列表，過濾掉會穿過房間的邊
-        if rooms:
-            valid_edges = []
-            for node1, node2, weight in non_mst_edges:
-                if not GraphAlgorithms._would_cross_rooms(rooms[node1], rooms[node2], rooms):
-                    valid_edges.append((node1, node2))
-            
-            # 如果過濾後沒有有效邊，返回原 MST
-            if not valid_edges:
-                print("GraphAlgorithms: 沒有不穿過房間的額外邊可用")
-                return mst_edges
-            
-            # 隨機選擇額外邊
-            extra_edges = random.sample(valid_edges, min(num_extra, len(valid_edges)))
-            return mst_edges + extra_edges
+        # 計算長度閾值（使用 MST 邊的平均長度作為參考）
+        mst_weights = [w for n1, n2, w in all_edges if (n1, n2) in mst_set or (n2, n1) in mst_set]
+        if mst_weights:
+            avg_mst_length = sum(mst_weights) / len(mst_weights)
+            max_extra_length = avg_mst_length * 1.5  # 最大允許為 MST 平均長度的 1.5 倍
         else:
-            # 沒有房間信息，使用原有邏輯
-            extra_edges = random.sample(
-                [(n1, n2) for n1, n2, _ in non_mst_edges], 
-                min(num_extra, len(non_mst_edges))
-            )
-            return mst_edges + extra_edges
+            max_extra_length = float('inf')
+        
+        # 過濾額外邊
+        valid_edges = []
+        for node1, node2, weight in non_mst_edges:
+            # 1. 檢查是否過長
+            if weight > max_extra_length:
+                continue
+            
+            # 2. 檢查是否為相鄰連接（避免三角形）
+            # 如果 node1 和 node2 有共同鄰居，則跳過
+            if node1 in adjacency and node2 in adjacency:
+                common_neighbors = adjacency[node1] & adjacency[node2]
+                if common_neighbors:
+                    # 有共同鄰居，會形成三角形，跳過
+                    continue
+            
+            # 3. 檢查是否會穿過房間（如果提供了房間列表）
+            if rooms:
+                if GraphAlgorithms._would_cross_rooms(rooms[node1], rooms[node2], rooms):
+                    continue
+            
+            valid_edges.append((node1, node2))
+        
+        # 如果過濾後沒有有效邊，返回原 MST
+        if not valid_edges:
+            print("GraphAlgorithms: 過濾後沒有符合條件的額外邊")
+            return mst_edges
+        
+        # 計算要添加的邊數量
+        num_extra = int(len(valid_edges) * ratio)
+        
+        if num_extra <= 0:
+            return mst_edges
+        
+        # 隨機選擇額外邊
+        extra_edges = random.sample(valid_edges, min(num_extra, len(valid_edges)))
+        print(f"GraphAlgorithms: 添加 {len(extra_edges)} 條額外邊（過濾前: {len(non_mst_edges)}）")
+        return mst_edges + extra_edges
     
     @staticmethod
     def _would_cross_rooms(room1, room2, all_rooms: List) -> bool:
