@@ -95,7 +95,7 @@
                 "grid_width": 240,
                 "grid_height": 200,
                 "monster_room_ratio": 1.0,
-                "extra_bridge_ratio": 0.02
+                "extra_bridge_ratio": 0.01
             },
             "portal": {
                 "target_dungeon_id": "boss_1",

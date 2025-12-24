@@ -128,7 +128,7 @@ class DungeonBuilder:
         # 6. 添加額外邊
         print("\n[6/10] 添加額外連接...")
         connections = GraphAlgorithms.add_extra_edges(
-            mst_edges, edges, self.config.extra_bridge_ratio
+            mst_edges, edges, self.config.extra_bridge_ratio, rooms=rooms
         )
         print(f"  ✓ 總連接數: {len(connections)}")
         

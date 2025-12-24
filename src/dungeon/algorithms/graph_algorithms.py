@@ -104,14 +104,16 @@ class GraphAlgorithms:
     @staticmethod
     def add_extra_edges(mst_edges: List[Tuple[int, int]], 
                        all_edges: List[Tuple[int, int, float]], 
-                       ratio: float) -> List[Tuple[int, int]]:
+                       ratio: float,
+                       rooms: List = None) -> List[Tuple[int, int]]:
         """
-        添加額外邊以增加連通性
+        添加額外邊以增加連通性，避免穿過房間
         
         Args:
             mst_edges: MST 邊列表
             all_edges: 所有可能的邊
             ratio: 額外邊的比例（0.0-1.0）
+            rooms: 房間列表，用於檢查是否穿過房間 (可選)
         
         Returns:
             包含 MST 和額外邊的邊列表
@@ -125,19 +127,152 @@ class GraphAlgorithms:
         
         # 找出非 MST 邊
         non_mst_edges = [
-            (node1, node2) for node1, node2, weight in all_edges
+            (node1, node2, weight) for node1, node2, weight in all_edges
             if (node1, node2) not in mst_set
         ]
         
         # 計算要添加的邊數量
         num_extra = int(len(non_mst_edges) * ratio)
         
-        # 隨機選擇額外邊
-        if num_extra > 0 and non_mst_edges:
-            extra_edges = random.sample(non_mst_edges, min(num_extra, len(non_mst_edges)))
-            return mst_edges + extra_edges
+        if num_extra <= 0 or not non_mst_edges:
+            return mst_edges
         
-        return mst_edges
+        # 如果提供了房間列表，過濾掉會穿過房間的邊
+        if rooms:
+            valid_edges = []
+            for node1, node2, weight in non_mst_edges:
+                if not GraphAlgorithms._would_cross_rooms(rooms[node1], rooms[node2], rooms):
+                    valid_edges.append((node1, node2))
+            
+            # 如果過濾後沒有有效邊，返回原 MST
+            if not valid_edges:
+                print("GraphAlgorithms: 沒有不穿過房間的額外邊可用")
+                return mst_edges
+            
+            # 隨機選擇額外邊
+            extra_edges = random.sample(valid_edges, min(num_extra, len(valid_edges)))
+            return mst_edges + extra_edges
+        else:
+            # 沒有房間信息，使用原有邏輯
+            extra_edges = random.sample(
+                [(n1, n2) for n1, n2, _ in non_mst_edges], 
+                min(num_extra, len(non_mst_edges))
+            )
+            return mst_edges + extra_edges
+    
+    @staticmethod
+    def _would_cross_rooms(room1, room2, all_rooms: List) -> bool:
+        """
+        檢查兩個房間之間的連線是否會穿過其他房間
+        
+        Args:
+            room1: 起始房間
+            room2: 終止房間
+            all_rooms: 所有房間列表
+        
+        Returns:
+            True 如果會穿過其他房間，False 否則
+        """
+        # 計算兩個房間的中心點
+        c1_x = room1.x + room1.width / 2
+        c1_y = room1.y + room1.height / 2
+        c2_x = room2.x + room2.width / 2
+        c2_y = room2.y + room2.height / 2
+        
+        # 檢查線段是否穿過其他房間
+        for room in all_rooms:
+            # 跳過起始和終止房間
+            if room.id == room1.id or room.id == room2.id:
+                continue
+            
+            # 檢查線段是否與房間矩形相交
+            if GraphAlgorithms._line_intersects_rect(
+                c1_x, c1_y, c2_x, c2_y,
+                room.x, room.y, room.width, room.height
+            ):
+                return True
+        
+        return False
+    
+    @staticmethod
+    def _line_intersects_rect(x1: float, y1: float, x2: float, y2: float,
+                               rect_x: float, rect_y: float, 
+                               rect_w: float, rect_h: float) -> bool:
+        """
+        檢查線段是否與矩形相交（穿過矩形內部）
+        
+        Args:
+            x1, y1: 線段起點
+            x2, y2: 線段終點
+            rect_x, rect_y: 矩形左上角
+            rect_w, rect_h: 矩形寬高
+        
+        Returns:
+            True 如果線段穿過矩形，False 否則
+        """
+        # 矩形邊界
+        left = rect_x
+        right = rect_x + rect_w
+        top = rect_y
+        bottom = rect_y + rect_h
+        
+        # 使用 Cohen-Sutherland 算法檢查線段是否與矩形相交
+        # 簡化版本：檢查線段是否與矩形內部相交
+        
+        # 檢查線段的兩個端點是否都在矩形外的同一側
+        out1 = GraphAlgorithms._outcode(x1, y1, left, right, top, bottom)
+        out2 = GraphAlgorithms._outcode(x2, y2, left, right, top, bottom)
+        
+        # 如果兩個端點都在矩形外的同一側，則不相交
+        if out1 & out2:
+            return False
+        
+        # 如果至少一個端點在矩形內部或邊界上，則相交
+        if out1 == 0 or out2 == 0:
+            # 但要確保不是僅僅觸碰邊界
+            # 檢查線段中點是否在矩形內
+            mid_x = (x1 + x2) / 2
+            mid_y = (y1 + y2) / 2
+            if left < mid_x < right and top < mid_y < bottom:
+                return True
+        
+        # 更精確的線段-矩形相交檢測
+        # 檢查線段是否與矩形的四條邊相交
+        return (
+            GraphAlgorithms._line_segment_intersect(x1, y1, x2, y2, left, top, right, top) or  # 上邊
+            GraphAlgorithms._line_segment_intersect(x1, y1, x2, y2, right, top, right, bottom) or  # 右邊
+            GraphAlgorithms._line_segment_intersect(x1, y1, x2, y2, right, bottom, left, bottom) or  # 下邊
+            GraphAlgorithms._line_segment_intersect(x1, y1, x2, y2, left, bottom, left, top)  # 左邊
+        )
+    
+    @staticmethod
+    def _outcode(x: float, y: float, left: float, right: float, 
+                 top: float, bottom: float) -> int:
+        """計算點相對於矩形的位置碼"""
+        code = 0
+        if x < left:
+            code |= 1  # 左
+        elif x > right:
+            code |= 2  # 右
+        if y < top:
+            code |= 4  # 上
+        elif y > bottom:
+            code |= 8  # 下
+        return code
+    
+    @staticmethod
+    def _line_segment_intersect(x1: float, y1: float, x2: float, y2: float,
+                                x3: float, y3: float, x4: float, y4: float) -> bool:
+        """
+        檢查兩條線段是否相交
+        線段1: (x1,y1) to (x2,y2)
+        線段2: (x3,y3) to (x4,y4)
+        """
+        def ccw(ax, ay, bx, by, cx, cy):
+            return (cy - ay) * (bx - ax) > (by - ay) * (cx - ax)
+        
+        return (ccw(x1, y1, x3, y3, x4, y4) != ccw(x2, y2, x3, y3, x4, y4) and
+                ccw(x1, y1, x2, y2, x3, y3) != ccw(x1, y1, x2, y2, x4, y4))
     
     @staticmethod
     def build_complete_graph(num_nodes: int, 
