@@ -112,10 +112,16 @@ class RenderSystem(esper.Processor):
             else:
                 pygame.draw.rect(screen, rend.color, (screen_x, screen_y, rend.w, rend.h))
                 
-            # Draw Health Bar if entity has Health component
+            # Draw Health Bar if entity has Health component (skip bosses)
             if  esper.has_component(ent, Health):
-                health =  esper.component_for_entity(ent, Health)
-                self.draw_health_bar(screen, pos, health, rend, camera_offset)
+                # Check if this is a boss entity
+                tag_comp = esper.try_component(ent, Tag)
+                is_boss = tag_comp and tag_comp.tag == "boss"
+                
+                # Skip drawing health bar above boss (will be drawn at top of screen)
+                if not is_boss:
+                    health =  esper.component_for_entity(ent, Health)
+                    self.draw_health_bar(screen, pos, health, rend, camera_offset)
 
     def draw_health_bar(self, screen, pos, health, rend, camera_offset):
         if health.max_hp <= 0:

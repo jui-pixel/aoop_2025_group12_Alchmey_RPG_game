@@ -243,6 +243,7 @@ class RenderManager:
         """繪製遊戲進行狀態。"""
         self.draw_game_world()
         self._draw_ui()
+        self._draw_boss_health_bar()  # 繪製 Boss 血條
         if self.game.menu_manager.active_menus:
             self.game.menu_manager.draw()
         pygame.display.flip()
@@ -406,3 +407,94 @@ class RenderManager:
         # 數值文字（右側）
         value_surf = font_small.render(value_text, True, (255, 255, 255))
         self.screen.blit(value_surf, (x + width - value_surf.get_width() - 6, y + (height - value_surf.get_height()) // 2))
+
+    def _draw_boss_health_bar(self) -> None:
+        """繪製 Boss 血條於螢幕上方中央"""
+        import esper
+        from src.ecs.components import Tag, Health, Position
+        
+        # 尋找所有帶有 "boss" 標籤的實體
+        boss_entities = []
+        for ent, (tag_comp, health_comp) in esper.get_components(Tag, Health):
+            if tag_comp.tag == "boss" and health_comp.current_hp > 0:
+                boss_entities.append((ent, health_comp))
+        
+        if not boss_entities:
+            return
+        
+        # 如果有多個 boss，只顯示第一個（通常只有一個）
+        boss_ent, boss_health = boss_entities[0]
+        
+        # Boss 血條參數
+        bar_width = 500
+        bar_height = 40
+        x = (SCREEN_WIDTH - bar_width) // 2
+        y = 30
+        
+        # 獲取 Boss 名稱（如果有 Position 組件可以獲取更多信息）
+        boss_name = "BOSS"
+        
+        # 繪製背景面板
+        panel_padding = 15
+        panel_width = bar_width + panel_padding * 2
+        panel_height = bar_height + panel_padding * 2 + 30  # 額外空間給名稱
+        panel_x = x - panel_padding
+        panel_y = y - panel_padding - 25
+        self._draw_stone_panel(panel_x, panel_y, panel_width, panel_height)
+        
+        # 繪製 Boss 名稱
+        font_boss = FontManager.get_font("Silver.ttf", 24)
+        name_surf = font_boss.render(boss_name, True, (255, 50, 50))  # 紅色名稱
+        name_x = (SCREEN_WIDTH - name_surf.get_width()) // 2
+        name_y = y - 20
+        self.screen.blit(name_surf, (name_x, name_y))
+        
+        # 計算血量比例
+        hp_ratio = boss_health.current_hp / max(boss_health.max_hp, 1)
+        
+        # 外框（加厚，更顯眼）
+        frame_thickness = 3
+        pygame.draw.rect(self.screen, (15, 12, 10), 
+                        (x - frame_thickness, y - frame_thickness, 
+                         bar_width + frame_thickness * 2, bar_height + frame_thickness * 2))
+        
+        # 背景（深色）
+        pygame.draw.rect(self.screen, (30, 25, 20), (x, y, bar_width, bar_height))
+        
+        # Boss 血條填充（紅色帶脈動感）
+        fill_width = int(bar_width * hp_ratio)
+        if fill_width > 0:
+            # 深紅色底色
+            pygame.draw.rect(self.screen, (150, 20, 20), (x, y, fill_width, bar_height))
+            
+            # 漸層高光（上半部）
+            glow_height = bar_height // 2
+            glow_surface = pygame.Surface((fill_width, glow_height), pygame.SRCALPHA)
+            for i in range(glow_height):
+                alpha = int(120 * (1 - i / glow_height))
+                color = (255, 80, 80, alpha)
+                pygame.draw.line(glow_surface, color, (0, i), (fill_width, i))
+            self.screen.blit(glow_surface, (x, y))
+            
+            # 底部陰影
+            shadow_height = bar_height // 3
+            shadow_surface = pygame.Surface((fill_width, shadow_height), pygame.SRCALPHA)
+            for i in range(shadow_height):
+                alpha = int(80 * (i / shadow_height))
+                pygame.draw.line(shadow_surface, (0, 0, 0, alpha), (0, i), (fill_width, i))
+            self.screen.blit(shadow_surface, (x, y + bar_height - shadow_height))
+        
+        # 內框高光
+        pygame.draw.rect(self.screen, (100, 90, 80), (x, y, bar_width, bar_height), 2)
+        
+        # HP 數值文字（中央，大字體）
+        font_hp = FontManager.get_font("Silver.ttf", 22)
+        hp_text = f"{boss_health.current_hp} / {boss_health.max_hp}"
+        hp_surf = font_hp.render(hp_text, True, (255, 255, 255))
+        hp_x = x + (bar_width - hp_surf.get_width()) // 2
+        hp_y = y + (bar_height - hp_surf.get_height()) // 2
+        
+        # 文字陰影（增加可讀性）
+        shadow_surf = font_hp.render(hp_text, True, (0, 0, 0))
+        self.screen.blit(shadow_surf, (hp_x + 2, hp_y + 2))
+        self.screen.blit(hp_surf, (hp_x, hp_y))
