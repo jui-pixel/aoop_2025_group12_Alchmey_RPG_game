@@ -26,7 +26,9 @@ class DungeonPortalNPC(AbstractNPCFacade): # <--- 繼承抽象基類
         interact_comp.start_interaction = self.start_interaction
         
         dungeon_comp = self._get_portal_comp()
-        dungeon_comp.available_dungeons = [{'name': 'Test Dungeon', 'level': 1, 'dungeon_id': 1}]
+        # 不要覆蓋工廠設置的 available_dungeons
+        if not dungeon_comp.available_dungeons:
+             dungeon_comp.available_dungeons = [{'name': 'Test Dungeon', 'level': 1, 'dungeon_id': 1}]
 
     # --- 輔助方法：特有組件獲取 ---
 

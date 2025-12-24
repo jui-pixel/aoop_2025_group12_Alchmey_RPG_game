@@ -117,9 +117,25 @@ class EntityManager:
                 
                 # 處理需要額外參數的 Dungeon Portal
                 if npc_key == 'dungeon_portal_npc':
-                    npc_entity_id = factory_func(
+                    # 獲取當前地牢配置的傳送門數據
+                    dungeon_config = self.game.dungeon_manager.current_dungeon_config
+                    portal_data = dungeon_config.get('portal') if dungeon_config else None
+                    print(f"EntityManager: Dungeon Portal NPC portal_data: {portal_data}")
+                    available_dungeons = []
+                    if portal_data:
+                        available_dungeons = [{
+                            'name': portal_data.get('name', 'Unknown Portal'),
+                            'level': 1,
+                            'dungeon_id': portal_data.get('target_dungeon_id', 1)
+                        }]
+                    else:
+                        # 默認回退
+                        available_dungeons = [{'name': 'Return to Start', 'level': 1, 'dungeon_id': 1}]
+                        
+                    # 創建地牢傳送門實體 (使用工廠函數)
+                    npc_id = create_dungeon_portal_npc(
                         self.world, x=npc_x, y=npc_y,
-                        available_dungeons=[{'name': 'Test Dungeon', 'level': 1, 'room_id': 1}],
+                        available_dungeons=available_dungeons,
                         game=self.game
                     )
                 else:
@@ -163,10 +179,25 @@ class EntityManager:
                     enemy_id = create_enemy1_entity(self.world, x=entity_x, y=entity_y) 
                     print(f"EntityManager: 創建敵人實體於瓦片 ({x}, {y})，像素座標 ({entity_x}, {entity_y}), 實體ID: {enemy_id}")   
                 elif tile_type == 'End_room_portal':
+                    # 獲取當前地牢配置的傳送門數據
+                    dungeon_config = self.game.dungeon_manager.current_dungeon_config
+                    portal_data = dungeon_config.get('portal') if dungeon_config else None
+                    
+                    available_dungeons = []
+                    if portal_data:
+                        available_dungeons = [{
+                            'name': portal_data.get('name', 'Unknown Portal'),
+                            'level': 1,
+                            'dungeon_id': portal_data.get('target_dungeon_id', 1)
+                        }]
+                    else:
+                        # 默認回退
+                        available_dungeons = [{'name': 'Return to Start', 'level': 1, 'dungeon_id': 1}]
+
                     # 創建地牢傳送門實體 (使用工廠函數)
                     npc_id = create_dungeon_portal_npc(
                         self.world, x=entity_x, y=entity_y,
-                        available_dungeons=[{'name': 'Test Dungeon', 'level': 1, 'room_id': 1}],
+                        available_dungeons=available_dungeons,
                         game=self.game
                     )
                     print(f"EntityManager: 創建地牢傳送門實體於瓦片 ({x}, {y})，像素座標 ({entity_x}, {entity_y}), 實體ID: {npc_id}")

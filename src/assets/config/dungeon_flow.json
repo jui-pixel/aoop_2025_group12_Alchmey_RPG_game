@@ -1,0 +1,52 @@
+{
+    "dungeons": {
+        "1": {
+            "name": "The Beginning",
+            "description": "A simple trial for new adventurers.",
+            "config": {
+                "grid_width": 60,
+                "grid_height": 50,
+                "monster_room_ratio": 0.5
+            },
+            "portal": {
+                "target_dungeon_id": 2,
+                "name": "To Dark Cave",
+                "dialogue": "The cave ahead is dangerous. Are you ready?"
+            }
+        },
+        "2": {
+            "name": "Dark Cave",
+            "description": "A dark and damp cave filled with monsters.",
+            "config": {
+                "grid_width": 80,
+                "grid_height": 60,
+                "monster_room_ratio": 0.8
+            },
+            "portal": {
+                "target_dungeon_id": 3,
+                "name": "To Deep Abyss"
+            }
+        },
+        "3": {
+            "name": "Deep Abyss",
+            "description": "The bottom of the world.",
+            "config": {
+                "grid_width": 100,
+                "grid_height": 80,
+                "monster_room_ratio": 1.0
+            },
+            "portal": {
+                "target_dungeon_id": 1,
+                "name": "Return to Surface"
+            }
+        }
+    },
+    "lobby": {
+        "portal_npc": {
+            "available_dungeons": [
+                1,
+                2
+            ]
+        }
+    }
+}

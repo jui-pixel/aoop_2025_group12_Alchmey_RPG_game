@@ -7,22 +7,60 @@ from src.core.config import TILE_SIZE
 class DungeonManager:
     def __init__(self, game: 'Game'):
         """初始化地牢管理器，負責管理地牢和房間。
-
+        
         Args:
             game: 遊戲主類的實例，用於與其他模組交互。
         """
-        self.game = game  # 保存遊戲實例引用
-        self.dungeon = Dungeon()  # 創建一個新的地牢實例
-        self.dungeon.game = game  # 將遊戲實例設置到地牢中
-        self.current_room_id = 0  # 當前房間的 ID，初始為 0（大廳）
+        self.game = game
+        self.dungeon = Dungeon()
+        self.dungeon.game = game
+        self.current_room_id = 0
+        
+        # 加載地牢配置
+        self.dungeon_flow = self._load_dungeon_flow()
+        self.current_dungeon_config = None # 當前地牢的配置數據
+        
+    def _load_dungeon_flow(self) -> dict:
+        import json
+        import os
+        from src.utils.helpers import get_project_path
+        
+        try:
+            path = get_project_path("src", "assets", "config", "dungeon_flow.json")
+            if not os.path.exists(path):
+                print(f"DungeonManager: Config file not found at {path}")
+                return {}
+                
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                print(f"DungeonManager: Loaded dungeon flow config.")
+                return data
+        except Exception as e:
+            print(f"DungeonManager: Failed to load dungeon flow: {e}")
+            return {}
 
     def initialize_dungeon(self, dungeon_id: int) -> None:
-        """初始化整個地牢。
+        """初始化整個地牢。"""
+        # 1. 從 JSON 獲取配置
+        dungeon_data = self.dungeon_flow.get("dungeons", {}).get(str(dungeon_id))
+        
+        if dungeon_data:
+            print(f"DungeonManager: Initializing Dungeon {dungeon_id} ({dungeon_data.get('name')})")
+            
+            # 應用配置到 DungeonConfig
+            config_data = dungeon_data.get("config", {})
+            self.dungeon.config.grid_width = config_data.get("grid_width", 120)
+            self.dungeon.config.grid_height = config_data.get("grid_height", 100)
+            self.dungeon.config.monster_room_ratio = config_data.get("monster_room_ratio", 0.8)
+            
+            # 儲存配置供 EntityManager 使用 (Portal 數據)
+            self.current_dungeon_config = dungeon_data
+        else:
+            print(f"DungeonManager: No config found for Dungeon ID {dungeon_id}, using defaults.")
+            self.current_dungeon_config = None
 
-        調用地牢的 initialize_dungeon 方法來生成地牢結構和房間。
-        """
         self.dungeon.initialize_dungeon(dungeon_id)
-        self.current_room_id = 1  # 將當前房間設置為第一個房間（非大廳）
+        self.current_room_id = 1
     
     def initialize_lobby(self) -> None:
         """初始化大廳房間。

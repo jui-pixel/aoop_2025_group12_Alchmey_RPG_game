@@ -3,18 +3,18 @@
     "defense_level": 16,
     "movement_level": 28,
     "health_level": 18,
-    "mana": 18762217,
+    "mana": 18762215,
     "awakened_elements": [
         "thunder",
-        "earth",
-        "fire",
-        "metal",
-        "light",
+        "ice",
         "wood",
+        "earth",
         "wind",
         "water",
+        "metal",
         "dark",
-        "ice"
+        "fire",
+        "light"
     ],
     "amplifiers": {},
     "skills_library": [
@@ -239,6 +239,19 @@
                 "avoid": 2,
                 "speed": 8,
                 "duration": 2
+            }
+        },
+        {
+            "name": "12345678",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "ice",
+            "params": {
+                "damage": 1,
+                "penetration": 1,
+                "elebuff": 1,
+                "explosion": 1,
+                "speed": 1
             }
         }
     ]
