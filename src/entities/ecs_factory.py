@@ -519,16 +519,21 @@ def create_boss_entity(
     boss_id: str = "boss_dark_king"
 ) -> int:
     """創建 Boss 實體"""
-    # 簡單起見，基於 enemy1 但更強大
+    from src.ecs.components import BossComponent
+    
     print(f"Creating Boss {boss_id} at {x}, {y}")
+    # 使用 enemy 標籤以避免與其他敵人互相傷害
     boss = create_enemy1_entity(
-        world, x, y, game, tag="boss",
+        world, x, y, game, tag="enemy",  # 改用 enemy 標籤
         base_max_hp=5000,
         damage=50,
-        w=TILE_SIZE * 2, h=TILE_SIZE * 2, # 2x2 大小
+        w=TILE_SIZE * 2, h=TILE_SIZE * 2,
         defense=50
     )
-    # 可能添加 Boss 組件以便系統識別
+    
+    # 添加 Boss 組件以便特殊處理
+    world.add_component(boss, BossComponent(boss_name=boss_id))
+    
     return boss
 
 def create_win_npc_entity(

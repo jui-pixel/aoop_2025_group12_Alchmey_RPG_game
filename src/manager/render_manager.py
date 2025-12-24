@@ -411,19 +411,19 @@ class RenderManager:
     def _draw_boss_health_bar(self) -> None:
         """繪製 Boss 血條於螢幕上方中央"""
         import esper
-        from src.ecs.components import Tag, Health, Position
+        from src.ecs.components import BossComponent, Health, Position
         
-        # 尋找所有帶有 "boss" 標籤的實體
+        # 尋找所有帶有 BossComponent 的實體
         boss_entities = []
-        for ent, (tag_comp, health_comp) in esper.get_components(Tag, Health):
-            if tag_comp.tag == "boss" and health_comp.current_hp > 0:
-                boss_entities.append((ent, health_comp))
+        for ent, (boss_comp, health_comp) in esper.get_components(BossComponent, Health):
+            if health_comp.current_hp > 0:
+                boss_entities.append((ent, boss_comp, health_comp))
         
         if not boss_entities:
             return
         
         # 如果有多個 boss，只顯示第一個（通常只有一個）
-        boss_ent, boss_health = boss_entities[0]
+        boss_ent, boss_comp, boss_health = boss_entities[0]
         
         # Boss 血條參數
         bar_width = 500
@@ -431,8 +431,8 @@ class RenderManager:
         x = (SCREEN_WIDTH - bar_width) // 2
         y = 30
         
-        # 獲取 Boss 名稱（如果有 Position 組件可以獲取更多信息）
-        boss_name = "BOSS"
+        # 使用 Boss 組件中的名稱
+        boss_name = boss_comp.boss_name.upper() if boss_comp.boss_name else "BOSS"
         
         # 繪製背景面板
         panel_padding = 15

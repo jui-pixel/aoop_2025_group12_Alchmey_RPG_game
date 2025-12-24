@@ -223,7 +223,13 @@ class AI:
 
 @dataclass
 class Tag:
-    tag: str = "default"
+    tag: str = "untagged"
+
+@dataclass
+class BossComponent:
+    """標記實體為 Boss，用於特殊顯示和機制"""
+    boss_name: str = "BOSS"  # Boss 名稱
+    is_boss: bool = True  # Boss 標記
 
 @dataclass
 class NPCInteractComponent:

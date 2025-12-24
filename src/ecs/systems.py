@@ -114,9 +114,9 @@ class RenderSystem(esper.Processor):
                 
             # Draw Health Bar if entity has Health component (skip bosses)
             if  esper.has_component(ent, Health):
-                # Check if this is a boss entity
-                tag_comp = esper.try_component(ent, Tag)
-                is_boss = tag_comp and tag_comp.tag == "boss"
+                # Check if this is a boss entity by BossComponent
+                from src.ecs.components import BossComponent
+                is_boss = esper.has_component(ent, BossComponent)
                 
                 # Skip drawing health bar above boss (will be drawn at top of screen)
                 if not is_boss:
@@ -329,10 +329,11 @@ class HealthSystem(esper.Processor):
             if game:
                 game.on_player_death()
         else:
-            # Check for Boss tag
-            tag_comp = esper.try_component(entity, Tag)
-            if tag_comp and tag_comp.tag == "boss":
-                print(f"Boss died! Spawning portal...")
+            # Check for Boss component
+            from src.ecs.components import BossComponent
+            if esper.has_component(entity, BossComponent):
+                boss_comp = esper.component_for_entity(entity, BossComponent)
+                print(f"Boss {boss_comp.boss_name} died! Spawning portal...")
                 if game and esper.has_component(entity, Position):
                     pos = esper.component_for_entity(entity, Position)
                     
