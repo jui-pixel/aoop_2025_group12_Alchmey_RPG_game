@@ -264,14 +264,11 @@ class DungeonPortalComponent:
 
 
 @dataclass
-class Lifetime:
+class TimerComponent:
     """
-    通用的生命週期組件。
-    用於追蹤實體的剩餘壽命，適用於各種需要壽命管理的實體。
+    通用計時器組件。
+    用於追蹤延遲、冷卻時間或其他需要計時的機制。
     """
-    max_lifetime: float = 5.0     # 總壽命
-    current_lifetime: float = field(init=False)
-
-    def __post_init__(self):
-        """初始化後，當前壽命等於最大壽命。"""
-        self.current_lifetime = self.max_lifetime
+    duration: float = 0.0      # 計時器總時間
+    elapsed_time: float = 0.0  # 已經過的時間
+    on_expire: Optional[Callable[[], None]] = None  # 計時器到期時調用的函數

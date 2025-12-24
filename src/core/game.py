@@ -7,7 +7,7 @@ import src.manager
 # 引入 ECS 系統（假設它們在 src.ecs.systems 中）
 from src.ecs.systems import (
     InputSystem, MovementSystem, CombatSystem, RenderSystem, 
-    HealthSystem, BuffSystem, EnergySystem, AISystem
+    HealthSystem, BuffSystem, EnergySystem, AISystem, TimerSystem
 )
 from src.menu.menus.main_menu import MainMenu
 class Game:
@@ -44,7 +44,7 @@ class Game:
         self.world.add_processor(HealthSystem())
         self.world.add_processor(BuffSystem())
         self.world.add_processor(EnergySystem())
-
+        self.world.add_processor(TimerSystem())
         self.world.add_processor(RenderSystem())
 
         # 菜單註冊

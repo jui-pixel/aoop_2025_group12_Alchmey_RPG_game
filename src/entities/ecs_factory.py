@@ -15,8 +15,8 @@ from src.core.config import TILE_SIZE
 
 # 假設這些是您自定義的組件 (Components)
 from ..ecs.components import (
-    Position, Velocity, Renderable, Collider, Health, Defense, Combat, Buffs, AI, Tag, 
-    NPCInteractComponent, DungeonPortalComponent, PlayerComponent, Lifetime
+    Position, TimerComponent, Velocity, Renderable, Collider, Health, Defense, Combat, Buffs, AI, Tag, 
+    NPCInteractComponent, DungeonPortalComponent, PlayerComponent
 )
 
 # 假設這些是您自定義的 AI 行為和行為樹節點
@@ -510,7 +510,8 @@ def create_damage_text_entity(
     ))
 
     # 3. 壽命組件 (用於控制顯示時間)
-    world.add_component(damage_text_entity, Lifetime(max_lifetime=duration))
+    on_expire = lambda e_id: world.delete_entity(e_id)
+    world.add_component(damage_text_entity, TimerComponent(duration=duration, on_expire=on_expire))
 
     return damage_text_entity
 

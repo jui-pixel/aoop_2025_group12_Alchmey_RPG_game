@@ -1,7 +1,7 @@
 import esper
 import pygame
 import math
-from .components import Position, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider, PlayerComponent, Tag
+from .components import Position, TimerComponent, Velocity, Renderable, Input, Health, Defense, Combat, Buffs, AI, Collider, PlayerComponent, Tag
 from src.ecs.ai import EnemyContext
 from src.core.config import TILE_SIZE, PASSABLE_TILES, SCREEN_WIDTH, SCREEN_HEIGHT
 from src.entities.ecs_factory import create_damage_text_entity, create_dungeon_portal_npc
@@ -968,6 +968,18 @@ class AISystem(esper.Processor):
             # 執行行為樹
             ai_comp.behavior_tree.execute(context, dt, current_time)
 
+class TimerSystem(esper.Processor):
+    def process(self, dt: float, *args, **kwargs) -> None:
+        """更新所有擁有 TimerComponent 的實體的計時器。"""
+        
+        for ent, timer_comp in esper.get_component(TimerComponent):
+            timer_comp.elapsed_time += dt
+            if timer_comp.elapsed_time >= timer_comp.duration:
+                # 計時器到期，觸發回調
+                if timer_comp.on_expire:
+                    timer_comp.on_expire(ent)
+                # 重置計時器
+                timer_comp.elapsed_time = 0.0
 # 遊戲主循環應在 MovementSystem, RenderSystem 之前調用 AISystem:
 # self.world.add_processor(AISystem(self))
 # ...
