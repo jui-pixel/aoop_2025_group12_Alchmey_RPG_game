@@ -1,5 +1,66 @@
 {
     "dungeons": {
+        "0": {
+            "_comment": "=== TEMPLATE DUNGEON - All Available Parameters ===",
+            "name": "Template Dungeon (Not Used)",
+            "description": "This is a reference template showing all configurable parameters",
+            "config": {
+                "_comment_grid": "Grid dimensions in tiles",
+                "grid_width": 120,
+                "grid_height": 100,
+                "_comment_room_size": "Room size constraints for BSP generation",
+                "room_width": 20,
+                "room_height": 20,
+                "min_room_size": 13,
+                "room_gap": 2,
+                "_comment_bsp": "Binary Space Partitioning parameters",
+                "max_split_depth": 15,
+                "min_split_size": 15,
+                "bias_ratio": 0.8,
+                "bias_strength": 0.3,
+                "_comment_corridors": "Corridor/bridge generation",
+                "min_bridge_width": 2,
+                "max_bridge_width": 4,
+                "extra_bridge_ratio": 0.1,
+                "_comment_room_types": "Room type distribution (must sum to 1.0)",
+                "monster_room_ratio": 0.8,
+                "trap_room_ratio": 0.1,
+                "reward_room_ratio": 0.1,
+                "_comment_spawn": "Monster spawn probability weights",
+                "spawn_table": {
+                    "enemy_slime": 0.5,
+                    "enemy_goblin": 0.3,
+                    "enemy_orc": 0.2
+                },
+                "_comment_special": "Special room configurations",
+                "special_rooms": {
+                    "boss_room": {
+                        "_comment": "Enable boss room (replaces END room)",
+                        "enabled": false,
+                        "boss_id": "boss_example",
+                        "room_size": [
+                            15,
+                            15
+                        ]
+                    },
+                    "final_room": {
+                        "_comment": "Enable final/victory room (replaces END room)",
+                        "enabled": false,
+                        "npc_id": "final_npc",
+                        "room_size": [
+                            20,
+                            20
+                        ]
+                    }
+                }
+            },
+            "portal": {
+                "_comment": "Portal configuration for END room",
+                "target_dungeon_id": 1,
+                "name": "Portal Name",
+                "dialogue": "Optional dialogue text"
+            }
+        },
         "1": {
             "name": "The Beginning",
             "description": "A simple trial for new adventurers.",
