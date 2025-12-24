@@ -328,11 +328,11 @@ class RenderManager:
         self.screen.blit(chain_label, (x_offset, y_offset + 2))
         self.screen.blit(chain_value, (x_offset + 80, y_offset))
 
-        # 法力值顯示（右上角，帶金幣風格）
+        # 法力值顯示（左側，主面板下方）
         mana_panel_width = 160
         mana_panel_height = 50
-        mana_x = SCREEN_WIDTH - mana_panel_width - 15
-        mana_y = 15
+        mana_x = 15  # 與主面板對齊
+        mana_y = y_offset + bar_height + 15  # 主面板下方
         self._draw_stone_panel(mana_x, mana_y, mana_panel_width, mana_panel_height)
         
         mana_label = font_small.render("法力", True, (200, 180, 150))
