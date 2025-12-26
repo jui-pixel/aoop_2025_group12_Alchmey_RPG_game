@@ -17,6 +17,12 @@ class MovementSystem(esper.Processor):
             if vel.x == 0 and vel.y == 0:
                 continue
             
+            # Get speed multiplier from buffs if available
+            speed_mult = 1.0
+            if esper.has_component(ent, Buffs):
+                buffs_comp = esper.component_for_entity(ent, Buffs)
+                speed_mult = buffs_comp.modifiers.get('speed_multiplier', 1.0)
+            
             # Get Collider if exists, else default
             collider =  esper.try_component(ent, Collider)
             pass_wall = collider.pass_wall if collider else False
@@ -24,9 +30,9 @@ class MovementSystem(esper.Processor):
             w = collider.w if collider else 32
             h = collider.h if collider else 32
             
-            # Calculate potential new position
-            new_x = pos.x + vel.x * dt
-            new_y = pos.y + vel.y * dt
+            # Calculate potential new position (apply speed multiplier from buffs)
+            new_x = pos.x + vel.x * dt * speed_mult
+            new_y = pos.y + vel.y * dt * speed_mult
             
             if not pass_wall and dungeon:
                 # Check bounds and walls

@@ -413,6 +413,39 @@ class RenderManager:
         self.screen.blit(next_skill_label, (x_offset, y_offset + 2))
         self.screen.blit(next_skill_value, (x_offset + 85, y_offset + 2))
 
+        # 顯示當前 Buffs（右側區域）
+        buff_x = SCREEN_WIDTH - 220
+        buff_y = 15
+        
+        # 獲取 Buffs 組件
+        from src.ecs.components import Buffs
+        buffs_comp = None
+        if esper.has_component(player_entity_id, Buffs):
+            buffs_comp = esper.component_for_entity(player_entity_id, Buffs)
+        
+        if buffs_comp and buffs_comp.active_buffs:
+            # 繪製 Buff 面板背景
+            buff_panel_width = 200
+            buff_panel_height = min(len(buffs_comp.active_buffs) * 28 + 20, 300)  # 最多顯示10個
+            self._draw_stone_panel(buff_x, buff_y, buff_panel_width, buff_panel_height)
+            
+            # 繪製標題
+            buff_title = font_small.render("當前增益效果:", True, (255, 220, 120))
+            self.screen.blit(buff_title, (buff_x + 10, buff_y + 5))
+            
+            # 繪製每個 buff
+            current_y = buff_y + 25
+            for i, buff in enumerate(buffs_comp.active_buffs[:10]):  # 最多顯示10個
+                # Buff 名稱
+                buff_name_text = font_small.render(buff.name if buff.name else "未知", True, (200, 255, 200))
+                self.screen.blit(buff_name_text, (buff_x + 10, current_y))
+                
+                # Buff 剩餘時間
+                duration_text = font_small.render(f"{buff.duration:.1f}s", True, (180, 180, 180))
+                self.screen.blit(duration_text, (buff_x + 140, current_y))
+                
+                current_y += 28
+
         # 法力值顯示（左側，主面板下方）
         mana_panel_width = 160
         mana_panel_height = 50

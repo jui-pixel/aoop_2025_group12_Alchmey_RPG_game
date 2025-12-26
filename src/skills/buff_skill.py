@@ -11,6 +11,7 @@ class BuffSkill(Skill):
                  shield_level: int = 0, remove_element_debuff: bool = False, remove_counter_element_debuff: bool = False,
                  avoid_level: int = 0, speed_level: int = 0,):
         super().__init__(name, type, element, energy_cost)
+        buff_name = buff_name if buff_name else f"{name}_buff"
         counter_elements = [strong for strong, weak in WEAKTABLE if weak == self.element]
         multipliers = {}
         if element_resistance_level > 0:
@@ -86,9 +87,23 @@ class BuffSkill(Skill):
         
         if esper.has_component(player_entity_id, Buffs):
             buffs_comp = esper.component_for_entity(player_entity_id, Buffs)
-            # Deep copy the buff to avoid shared state
-            buff_copy = copy.deepcopy(self.buff)
-            buffs_comp.active_buffs.append(buff_copy)
-            print(f"Applied buff '{self.buff.name}' to player entity {player_entity_id}")
+            
+            # Check if buff with same name already exists
+            existing_buff = None
+            for buff in buffs_comp.active_buffs:
+                if buff.name == self.buff.name:
+                    existing_buff = buff
+                    break
+            
+            if existing_buff:
+                # Refresh duration instead of stacking
+                existing_buff.duration = self.buff.duration
+                print(f"Refreshed buff '{self.buff.name}' duration to {self.buff.duration}s on player entity {player_entity_id}")
+            else:
+                # Add new buff
+                buff_copy = copy.deepcopy(self.buff)
+                buffs_comp.active_buffs.append(buff_copy)
+                buff_copy.on_apply(player_entity_id)
+                print(f"Applied buff '{buff_copy.name}' to player entity {player_entity_id}")
         else:
             print(f"Warning: Player entity {player_entity_id} does not have Buffs component")
