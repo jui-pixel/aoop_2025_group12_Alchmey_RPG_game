@@ -150,37 +150,91 @@ class StorageManager:
             return None
 
     def apply_stats_to_player(self) -> None:
-        """Apply current stat levels to the player. (與 ECS Facade 交互)"""
+        """Apply current stat levels to the player using ECS components."""
         if not self.game.entity_manager.player:
             print("StorageManager: No player instance found")
             return
+        
         player = self.game.entity_manager.player
+        player_entity_id = player.ecs_entity
         
-        # 應用攻擊等級 (映射至 Combat.damage)
-        player.damage = 10 + self.attack_level * 5 
+        # Import ECS components and systems
+        import esper
+        from src.ecs.components import Health, Defense, Combat, Velocity, PlayerComponent
+        from src.ecs.systems import HealthSystem
         
-        # 應用防禦等級 (映射至 Defense.defense 和 Health.max_shield)
-        player.defense = 1 + self.defense_level
-        player.max_shield = 5 + self.defense_level ** 2 
-        # player.current_shield = min(player.current_shield, player.max_shield) # 建議在遊戲初始化/重置時做
-
-        # 應用移動等級 (映射至 Velocity.speed 和 PlayerComponent 能量/速度欄位)
-        new_speed = TILE_SIZE * (5 + self.movement_level * 0.1)
-        player.speed = new_speed
-        player._base_max_speed = new_speed  # 更新基底速度
+        # Get ECS components
+        health_comp = None
+        defense_comp = None
+        combat_comp = None
+        velocity_comp = None
+        player_comp = None
         
-        new_regen_rate = 5 + self.movement_level * 2
-        player.base_energy_regen_rate = new_regen_rate
-        player.energy_regen_rate = new_regen_rate # 能量回覆率
-        player.max_energy = 100 + self.movement_level * 20 
-
-        # 應用生命等級 (映射至 Health.base_max_hp, Health.max_hp, Health.current_hp)
-        player.base_max_hp = 100 + self.health_level * 20
-        player.max_hp = player.base_max_hp # 更新最大 HP
-        # 確保當前 HP 不超過新的最大 HP
-        player.current_hp = min(player.current_hp, player.max_hp) 
+        if esper.has_component(player_entity_id, Health):
+            health_comp = esper.component_for_entity(player_entity_id, Health)
+        if esper.has_component(player_entity_id, Defense):
+            defense_comp = esper.component_for_entity(player_entity_id, Defense)
+        if esper.has_component(player_entity_id, Combat):
+            combat_comp = esper.component_for_entity(player_entity_id, Combat)
+        if esper.has_component(player_entity_id, Velocity):
+            velocity_comp = esper.component_for_entity(player_entity_id, Velocity)
+        if esper.has_component(player_entity_id, PlayerComponent):
+            player_comp = esper.component_for_entity(player_entity_id, PlayerComponent)
         
-        print(f"StorageManager: Applied stats to player - Attack: {player.damage}, Defense: {player.defense}, Speed: {player.speed}, HP: {player.max_hp}")
+        # Apply Attack Level (Combat damage)
+        if combat_comp:
+            combat_comp.damage = 10 + self.attack_level * 5
+            print(f"  - Attack: {combat_comp.damage} (level {self.attack_level})")
+        
+        # Apply Defense Level (Defense.defense and Health.max_shield)
+        if defense_comp:
+            defense_comp.defense = 1 + self.defense_level
+            print(f"  - Defense: {defense_comp.defense} (level {self.defense_level})")
+        
+        if health_comp:
+            # Set max shield
+            new_max_shield = 5 + self.defense_level ** 2
+            health_comp.max_shield = new_max_shield
+            # Clamp current shield
+            health_comp.current_shield = min(health_comp.current_shield, health_comp.max_shield)
+            print(f"  - Max Shield: {health_comp.max_shield} (level {self.defense_level})")
+        
+        # Apply Movement Level (Velocity.speed and PlayerComponent energy)
+        if velocity_comp:
+            new_speed = TILE_SIZE * (5 + self.movement_level * 0.1)
+            velocity_comp.speed = new_speed
+            print(f"  - Speed: {new_speed:.1f} (level {self.movement_level})")
+        
+        if player_comp:
+            new_regen_rate = 5 + self.movement_level * 2
+            player_comp.base_energy_regen_rate = new_regen_rate
+            player_comp.energy_regen_rate = new_regen_rate
+            player_comp.original_energy_regen_rate = new_regen_rate
+            
+            new_max_energy = 100 + self.movement_level * 20
+            player_comp.base_max_energy = new_max_energy
+            player_comp.max_energy = new_max_energy
+            # Clamp current energy
+            player_comp.energy = min(player_comp.energy, player_comp.max_energy)
+            print(f"  - Energy: {player_comp.max_energy} (regen: {new_regen_rate}) (level {self.movement_level})")
+        
+        # Apply Health Level (Health.base_max_hp and max_hp)
+        if health_comp:
+            new_base_max_hp = 100 + self.health_level * 20
+            health_comp.base_max_hp = new_base_max_hp
+            
+            # Use HealthSystem to properly set max HP (scales current HP)
+            health_system = esper.get_processor(HealthSystem)
+            if health_system:
+                health_system.set_max_hp(player_entity_id, new_base_max_hp)
+            else:
+                # Fallback if system not available
+                health_comp.max_hp = new_base_max_hp
+                health_comp.current_hp = min(health_comp.current_hp, health_comp.max_hp)
+            
+            print(f"  - HP: {health_comp.current_hp}/{health_comp.max_hp} (level {self.health_level})")
+        
+        print(f"StorageManager: Applied all stats to player ECS entity {player_entity_id}")
     
     def apply_skills_to_player(self) -> None:
         """Apply current skills to the player. (與 ECS Facade 交互)"""

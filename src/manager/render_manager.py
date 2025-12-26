@@ -265,6 +265,22 @@ class RenderManager:
         font = FontManager.get_font("Silver.ttf", 20)
         font_small = FontManager.get_font("Silver.ttf", 16)
 
+        # 從 ECS 系統獲取 Health 組件
+        import esper
+        from src.ecs.components import Health, PlayerComponent, Defense
+        
+        player_entity_id = player.ecs_entity
+        health_comp = None
+        player_comp = None
+        defense_comp = None
+        
+        if esper.has_component(player_entity_id, Health):
+            health_comp = esper.component_for_entity(player_entity_id, Health)
+        if esper.has_component(player_entity_id, PlayerComponent):
+            player_comp = esper.component_for_entity(player_entity_id, PlayerComponent)
+        if esper.has_component(player_entity_id, Defense):
+            defense_comp = esper.component_for_entity(player_entity_id, Defense)
+
         # UI 主題配色（地牢風格：深色、石質感）
         bg_dark = (25, 20, 15)  # 深棕黑色背景
         frame_outer = (80, 70, 60)  # 外框石頭色
@@ -280,46 +296,99 @@ class RenderManager:
         
         # 繪製主 UI 面板背景（左上角）
         panel_width = bar_width + 180
-        panel_height = (bar_height + bar_spacing) * 4 + 20
+        panel_height = (bar_height + bar_spacing) * 6 + 20  # 增加一行給防禦
         self._draw_stone_panel(x_offset - 8, y_offset - 8, panel_width, panel_height)
 
-        # HP 條（紅色，帶血液感）
-        hp_ratio = player.current_hp / max(player.max_hp, 1)
-        self._draw_dungeon_bar(
-            x_offset, y_offset, bar_width, bar_height,
-            hp_ratio, 
-            bar_color=(180, 30, 30),  # 深紅色
-            bar_glow=(255, 60, 60),   # 高光紅
-            label="生命",
-            value_text=f"{player.current_hp}/{player.max_hp}",
-            font=font, font_small=font_small
-        )
+        # HP 條（紅色，帶血液感）- 使用 ECS Health 組件
+        if health_comp:
+            hp_ratio = health_comp.current_hp / max(health_comp.max_hp, 1)
+            self._draw_dungeon_bar(
+                x_offset, y_offset, bar_width, bar_height,
+                hp_ratio, 
+                bar_color=(180, 30, 30),  # 深紅色
+                bar_glow=(255, 60, 60),   # 高光紅
+                label="生命",
+                value_text=f"{health_comp.current_hp}/{health_comp.max_hp}",
+                font=font, font_small=font_small
+            )
+        else:
+            # 回退到舊系統
+            hp_ratio = player.current_hp / max(player.max_hp, 1)
+            self._draw_dungeon_bar(
+                x_offset, y_offset, bar_width, bar_height,
+                hp_ratio, 
+                bar_color=(180, 30, 30),
+                bar_glow=(255, 60, 60),
+                label="生命",
+                value_text=f"{player.current_hp}/{player.max_hp}",
+                font=font, font_small=font_small
+            )
 
-        # 護盾條（藍色，帶魔法感）
+        # 護盾條（藍色，帶魔法感）- 使用 ECS Health 組件
         y_offset += bar_height + bar_spacing
-        shield_ratio = player.current_shield / max(player.max_shield, 1)
-        self._draw_dungeon_bar(
-            x_offset, y_offset, bar_width, bar_height,
-            shield_ratio,
-            bar_color=(30, 80, 150),  # 深藍
-            bar_glow=(60, 140, 255),  # 亮藍
-            label="護盾",
-            value_text=f"{player.current_shield}/{player.max_shield}",
-            font=font, font_small=font_small
-        )
+        if health_comp:
+            shield_ratio = health_comp.current_shield / max(health_comp.max_shield, 1) if health_comp.max_shield > 0 else 0
+            self._draw_dungeon_bar(
+                x_offset, y_offset, bar_width, bar_height,
+                shield_ratio,
+                bar_color=(30, 80, 150),  # 深藍
+                bar_glow=(60, 140, 255),  # 亮藍
+                label="護盾",
+                value_text=f"{health_comp.current_shield}/{health_comp.max_shield}",
+                font=font, font_small=font_small
+            )
+        else:
+            # 回退到舊系統
+            shield_ratio = player.current_shield / max(player.max_shield, 1) if player.max_shield > 0 else 0
+            self._draw_dungeon_bar(
+                x_offset, y_offset, bar_width, bar_height,
+                shield_ratio,
+                bar_color=(30, 80, 150),
+                bar_glow=(60, 140, 255),
+                label="護盾",
+                value_text=f"{player.current_shield}/{player.max_shield}",
+                font=font, font_small=font_small
+            )
 
         # 能量條（綠色，帶自然感）
         y_offset += bar_height + bar_spacing
-        energy_ratio = player.energy / max(player.max_energy, 1)
+        if player_comp:
+            energy_ratio = player_comp.energy / max(player_comp.max_energy, 1)
+            energy_current = int(player_comp.energy)
+            energy_max = int(player_comp.max_energy)
+        else:
+            energy_ratio = player.energy / max(player.max_energy, 1)
+            energy_current = int(player.energy)
+            energy_max = int(player.max_energy)
+            
         self._draw_dungeon_bar(
             x_offset, y_offset, bar_width, bar_height,
             energy_ratio,
             bar_color=(40, 120, 40),  # 深綠
             bar_glow=(80, 200, 80),   # 亮綠
             label="能量",
-            value_text=f"{int(player.energy)}/{int(player.max_energy)}",
+            value_text=f"{energy_current}/{energy_max}",
             font=font, font_small=font_small
         )
+
+        # 防禦顯示（灰色，帶金屬感）- 使用 ECS Defense 組件
+        y_offset += bar_height + bar_spacing
+        if defense_comp:
+            defense_value = defense_comp.defense
+            dodge_rate = defense_comp.dodge_rate * 100  # 轉換為百分比
+            defense_label = font_small.render("防禦:", True, (200, 180, 150))
+            defense_value_text = font.render(f"{defense_value}", True, (200, 200, 200))
+            dodge_text = font_small.render(f"閃避: {dodge_rate:.0f}%", True, (180, 180, 180))
+            
+            self.screen.blit(defense_label, (x_offset, y_offset + 2))
+            self.screen.blit(defense_value_text, (x_offset + 60, y_offset))
+            self.screen.blit(dodge_text, (x_offset + 120, y_offset + 4))
+        else:
+            # 回退顯示
+            defense_label = font_small.render("防禦:", True, (200, 180, 150))
+            defense_value_text = font.render(f"{player.defense if hasattr(player, 'defense') else 0}", True, (200, 200, 200))
+            self.screen.blit(defense_label, (x_offset, y_offset + 2))
+            self.screen.blit(defense_value_text, (x_offset + 60, y_offset))
 
         # 技能鏈顯示（文字加裝飾）
         y_offset += bar_height + bar_spacing
@@ -328,6 +397,21 @@ class RenderManager:
         chain_value = font.render(f"#{chain_idx}", True, (255, 220, 120))
         self.screen.blit(chain_label, (x_offset, y_offset + 2))
         self.screen.blit(chain_value, (x_offset + 80, y_offset))
+
+        # 下個技能顯示
+        y_offset += bar_height + bar_spacing
+        next_skill_name = "無"
+        if player.skill_chain and len(player.skill_chain) > player.current_skill_chain_idx:
+            current_chain = player.skill_chain[player.current_skill_chain_idx]
+            if current_chain and len(current_chain) > player.current_skill_idx:
+                next_skill = current_chain[player.current_skill_idx]
+                if next_skill and len(current_chain) > 0:
+                    next_skill_name = current_chain[player.current_skill_idx].name if hasattr(current_chain[player.current_skill_idx], 'name') else "未知"
+        
+        next_skill_label = font_small.render("下個技能:", True, (200, 180, 150))
+        next_skill_value = font_small.render(next_skill_name, True, (150, 255, 150))
+        self.screen.blit(next_skill_label, (x_offset, y_offset + 2))
+        self.screen.blit(next_skill_value, (x_offset + 85, y_offset + 2))
 
         # 法力值顯示（左側，主面板下方）
         mana_panel_width = 160

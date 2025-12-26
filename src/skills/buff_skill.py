@@ -23,21 +23,48 @@ class BuffSkill(Skill):
         if speed_level > 0:
             multipliers['speed_multiplier'] = 1 + speed_level * 0.1
 
-        def on_apply(entity):
-            if shield_level > 0:
-                entity.current_shield += shield_level * 10
-                entity.current_shield = min(entity.current_shield, entity.max_shield)
-            if remove_element_debuff and hasattr(entity, 'remove_buff'):
-                for buff in entity.buffs[:]:
-                    if buff.element == self.element:
-                        entity.remove_buff(buff)
-            if remove_counter_element_debuff and hasattr(entity, 'remove_buff'):
-                for buff in entity.buffs[:]:
-                    if buff.element in counter_elements:
-                        entity.remove_buff(buff)
+        # Store shield level for ECS application
+        self.shield_level = shield_level
+        self.remove_element_debuff = remove_element_debuff
+        self.remove_counter_element_debuff = remove_counter_element_debuff
+        self.counter_elements = counter_elements
+
+        def on_apply(entity_id):
+            """Apply buff effects using ECS systems"""
+            import esper
+            from src.ecs.components import Health, Buffs
+            from src.ecs.systems import HealthSystem
+            
+            # Apply shield using HealthSystem
+            if self.shield_level > 0:
+                health_system = esper.get_processor(HealthSystem)
+                if health_system:
+                    shield_amount = self.shield_level * 10
+                    health_system.add_shield(entity_id, shield_amount)
+                    print(f"Applied {shield_amount} shield to entity {entity_id}")
+            
+            # Remove debuffs if configured
+            if esper.has_component(entity_id, Buffs):
+                buffs_comp = esper.component_for_entity(entity_id, Buffs)
+                
+                if self.remove_element_debuff:
+                    # Remove buffs of the same element
+                    buffs_comp.active_buffs = [
+                        buff for buff in buffs_comp.active_buffs 
+                        if buff.element != self.element
+                    ]
+                    print(f"Removed {self.element} debuffs from entity {entity_id}")
+                
+                if self.remove_counter_element_debuff:
+                    # Remove counter-element debuffs
+                    buffs_comp.active_buffs = [
+                        buff for buff in buffs_comp.active_buffs 
+                        if buff.element not in self.counter_elements
+                    ]
+                    print(f"Removed counter-element debuffs from entity {entity_id}")
 
         self.buff = Buff(
-            name=buff_name ,
+            name=buff_name,
             duration=buff_duration_level + 1.0,
             element=self.element,
             multipliers=multipliers,
@@ -47,5 +74,21 @@ class BuffSkill(Skill):
         )
 
     def activate(self, player: 'Player', game: 'Game', target_position: Tuple[float, float], current_time: float) -> None:
+        """Activate the buff skill using ECS system"""
         self.last_used = current_time
-        player.add_buff(self.buff)
+        
+        # Use player's ECS entity ID to apply buff
+        import esper
+        from src.ecs.components import Buffs
+        import copy
+        
+        player_entity_id = player.ecs_entity
+        
+        if esper.has_component(player_entity_id, Buffs):
+            buffs_comp = esper.component_for_entity(player_entity_id, Buffs)
+            # Deep copy the buff to avoid shared state
+            buff_copy = copy.deepcopy(self.buff)
+            buffs_comp.active_buffs.append(buff_copy)
+            print(f"Applied buff '{self.buff.name}' to player entity {player_entity_id}")
+        else:
+            print(f"Warning: Player entity {player_entity_id} does not have Buffs component")
