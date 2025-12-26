@@ -229,11 +229,20 @@ class HealthSystem(esper.Processor):
         defense_value = defense.defense if defense else 0
         final_damage = max(1, int(base_damage * affinity_multiplier * (1.0 - resistance) * factor - defense_value))
         
-        # Apply to shield first
+        # Apply shield first (if any)
         if health.current_shield > 0:
-            shield_damage = min(final_damage, health.current_shield)
-            health.current_shield -= shield_damage
-            final_damage -= shield_damage
+            print(f"Entity {entity} has {health.current_shield} shield")
+            if final_damage >= health.current_shield:
+                # Damage exceeds shield - shield absorbs all damage and breaks
+                print(f"Shield absorbed all damage ({final_damage}), shield depleted")
+                health.current_shield = 0
+                # Shield blocks the entire attack - NO overflow damage to HP
+                final_damage = 0
+            else:
+                # Shield absorbs partial damage
+                health.current_shield -= final_damage
+                print(f"Shield reduced by {final_damage}, remaining shield: {health.current_shield}")
+                final_damage = 0
         
         # Apply to health
         if final_damage > 0:
