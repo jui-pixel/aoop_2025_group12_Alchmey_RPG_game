@@ -40,7 +40,7 @@ class ShootingSkill(Skill):
         self.explosion_current_hp_percentage_damage = 0
         self.explosion_lose_hp_percentage_damage = 0
         self.explosion_element = element
-        self.collision_cooldown = 0.2
+        self.collision_cooldown = 0.5
         self.pass_wall = False
         self.cause_death = True
         

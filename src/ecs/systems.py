@@ -709,7 +709,7 @@ class CombatSystem(esper.Processor):
             combat.collision_list[target] = combat.collision_cooldown
             
             # Increment penetration count
-            if combat.max_penetration_count > 0:
+            if combat.max_penetration_count >= 0:
                 combat.current_penetration_count += 1
             
             print(f"ECS Combat: Entity {attacker} hit {target} for {actual_damage} damage!")
@@ -724,8 +724,22 @@ class CombatSystem(esper.Processor):
                     target_buffs.active_buffs.append(buff_copy)
                     print(f"Applied buff to entity {target}")
             
-            # Trigger explosion if configured
-            if combat.explosion_range > 0:
+            # Check if penetration limit reached
+            if combat.max_penetration_count >= 0 and combat.current_penetration_count >= combat.max_penetration_count:
+                print(f"Penetration limit reached ({combat.current_penetration_count}/{combat.max_penetration_count})")
+                
+                # Trigger explosion if configured
+                if combat.explosion_range > 0:
+                    print(f"Triggering final explosion before destroying entity {attacker}")
+                    self._trigger_explosion(attacker, combat, game, damage_mult, entities_by_tag)
+                
+                # Destroy the projectile
+                print(f"Destroying entity {attacker} due to penetration limit")
+                esper.delete_entity(attacker)
+                return  # Exit early since entity is destroyed
+            
+            # Trigger explosion if configured (non-limit case)
+            if combat.explosion_range > 0 and combat.current_penetration_count < combat.max_penetration_count:
                 self._trigger_explosion(attacker, combat, game, damage_mult, entities_by_tag)
 
     def _trigger_explosion(self, source, combat, game, damage_mult, entities_by_tag):

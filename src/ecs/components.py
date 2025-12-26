@@ -159,7 +159,7 @@ class Combat:
     can_attack: bool = True
     atk_element: str = "untyped"
     damage_to_element: Optional[Dict[str, float]] = None
-    max_penetration_count: int = 0
+    max_penetration_count: int = 2147483647
     current_penetration_count: int = 0
     collision_cooldown: float = 0.2
     collision_list: Dict[int, float] = field(default_factory=dict)

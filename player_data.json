@@ -24,11 +24,11 @@
             "sub_type": null,
             "element": "untyped",
             "params": {
-                "damage": 1,
-                "penetration": 1,
+                "damage": 10,
+                "penetration": 0,
                 "elebuff": 1,
-                "explosion": 1,
-                "speed": 1
+                "explosion": 10,
+                "speed": 10
             }
         },
         {
