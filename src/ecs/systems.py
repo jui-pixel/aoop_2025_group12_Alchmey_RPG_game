@@ -486,7 +486,7 @@ class BuffSystem(esper.Processor):
                     # Only synthesize once per frame
                     break
     
-    def _update_modifiers(self, entity, buffs_comp, game):
+    def _update_modifiers(self, entity = None, buffs_comp = None, game = None):
         """Recalculate all modifiers based on active buffs."""
         # Reset modifiers
         multiplier_keys = [k for k in buffs_comp.modifiers if 'resistance' not in k.lower() and 'add' not in k.lower()]

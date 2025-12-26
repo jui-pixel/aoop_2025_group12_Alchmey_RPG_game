@@ -28,9 +28,8 @@ class Room:
     def generate_tiles(self) -> None:
         """Configure tiles based on room type with optimized item placement"""
         print(f"Generating tiles for Room ID {self.id} of type {self.room_type}")
-        if self.tiles is None:
-            # 初始化瓦片為空地板
-            self.tiles = [['Room_floor' for _ in range(int(self.width))] 
+        # 初始化所有瓦片為基本地板
+        self.tiles = [['Room_floor' for _ in range(int(self.width))] 
                           for _ in range(int(self.height))]
         
         # Calculate usable floor area (excluding walls)

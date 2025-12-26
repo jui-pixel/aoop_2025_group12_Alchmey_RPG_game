@@ -1,5 +1,7 @@
 # src/entities/skill/buff_skill.py
-from typing import Tuple, Dict
+from typing import TYPE_CHECKING, Tuple, Dict
+import esper
+from src.ecs.components import Buffs
 from ..buffs.buff import Buff
 from .abstract_skill import Skill
 from ..utils.elements import ELEMENTS, WEAKTABLE
@@ -50,6 +52,10 @@ class BuffSkill(Skill):
                 
                 if self.remove_element_debuff:
                     # Remove buffs of the same element
+                    to_remove = [buff for buff in buffs_comp.active_buffs if buff.element == self.element]
+                    for buff in to_remove:
+                        if buff.on_remove:
+                            buff.on_remove(entity_id)
                     buffs_comp.active_buffs = [
                         buff for buff in buffs_comp.active_buffs 
                         if buff.element != self.element
@@ -58,12 +64,24 @@ class BuffSkill(Skill):
                 
                 if self.remove_counter_element_debuff:
                     # Remove counter-element debuffs
+                    to_remove = [buff for buff in buffs_comp.active_buffs if buff.element in self.counter_elements]
+                    for buff in to_remove:
+                        if buff.on_remove:
+                            buff.on_remove(entity_id)
                     buffs_comp.active_buffs = [
                         buff for buff in buffs_comp.active_buffs 
                         if buff.element not in self.counter_elements
                     ]
                     print(f"Removed counter-element debuffs from entity {entity_id}")
+                from src.ecs.systems import BuffSystem
+                buff_system = esper.get_processor(BuffSystem)
+                if buff_system:
+                    buff_system._update_modifiers(entity_id, buffs_comp)
 
+        def on_remove(entity_id):
+            """Cleanup when buff is removed (if needed)"""
+            pass
+        
         self.buff = Buff(
             name=buff_name,
             duration=buff_duration_level + 1.0,
@@ -71,13 +89,13 @@ class BuffSkill(Skill):
             multipliers=multipliers,
             effect_per_second=None,
             on_apply=on_apply,
-            on_remove=None,
+            on_remove=on_remove,
         )
 
     def activate(self, player: 'Player', game: 'Game', target_position: Tuple[float, float], current_time: float) -> None:
         """Activate the buff skill using ECS system"""
         self.last_used = current_time
-        
+        print(f"Activating BuffSkill '{self.name}' for player at time {current_time}")
         # Use player's ECS entity ID to apply buff
         import esper
         from src.ecs.components import Buffs

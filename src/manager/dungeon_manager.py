@@ -58,6 +58,8 @@ class DungeonManager:
                 self.dungeon.config.spawn_table = config_data["spawn_table"]
             if "special_rooms" in config_data:
                 self.dungeon.config.special_rooms = config_data["special_rooms"]
+            else:
+                self.dungeon.config.special_rooms = {}
             
             # 儲存配置供 EntityManager 使用 (Portal 數據)
             self.current_dungeon_config = dungeon_data
