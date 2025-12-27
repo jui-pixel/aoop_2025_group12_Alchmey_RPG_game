@@ -66,6 +66,7 @@ class Room:
             self.tiles[int(self.height) - 3][4] = 'Alchemy_pot_NPC_spawn'  # 左下
             self.tiles[int(self.height) - 3][int(self.width) - 4] = 'Dummy_spawn'  # 右下
             self.tiles[center_y + 3][center_x] = 'Player_spawn'  # 中心下
+            self.tiles[center_y - 3][center_x] = 'NPC_spawn'  # 中心 NPC
             print(f"Lobby Room (ID: {self.id}) NPC and Player spawns placed.")
 
         elif self.room_type == RoomType.MONSTER:
@@ -118,20 +119,10 @@ class Room:
                 for col in range(int(self.width)):
                     self.tiles[row][col] = 'Reward_room_floor'
             
-            # Calculate number of chests based on room size (1-5)
-            floor_area = floor_width * floor_height
-            num_chests = max(1, min(5, floor_area // 20))
             
-            # Define center area for chest placement (±2 tiles from center)
-            center_area = [(r, c) for r in range(center_y - 2, center_y + 3)
-                         for c in range(center_x - 2, center_x + 3)
-                         if 1 <= r < int(self.height) - 1 and 1 <= c < int(self.width) - 1]
-            # Shuffle and select spawn points for chests
-            random.shuffle(center_area)
-            for i in range(min(num_chests, len(center_area))):
-                row, col = center_area[i]
-                self.tiles[row][col] = 'Reward_spawn'
-            print(f"Reward Room (ID: {self.id}) with {num_chests} chests placed.")
+            self.tiles[center_y][center_x] = 'Reward_spawn'
+            
+            print(f"Reward Room (ID: {self.id}) with chests placed.")
                 
         elif self.room_type == RoomType.BOSS:
             # Boss Room: Center spawning for boss, specialized floor

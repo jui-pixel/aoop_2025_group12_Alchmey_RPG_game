@@ -17,7 +17,7 @@ from src.core.config import TILE_SIZE
 # 假設這些是您自定義的組件 (Components)
 from ..ecs.components import (
     Position, TimerComponent, Velocity, Renderable, Collider, Health, Defense, Combat, Buffs, AI, Tag, 
-    NPCInteractComponent, DungeonPortalComponent, PlayerComponent
+    NPCInteractComponent, DungeonPortalComponent, PlayerComponent, TreasureStateComponent
 )
 
 # 假設這些是您自定義的 AI 行為和行為樹節點
@@ -725,5 +725,99 @@ def create_win_npc_entity(
             
         interact_comp = world.component_for_entity(npc_entity, NPCInteractComponent)
         interact_comp.start_interaction = open_win_menu
+
+    return npc_entity
+
+def create_trader_entity(
+    world: esper,
+    x: float = 0.0, 
+    y: float = 0.0, 
+    w: int = 64, 
+    h: int = 64, 
+    tag: str = "trader_npc",
+    game: 'Game' = None # 確保傳入 game
+) -> int:
+    """創建一個 ECS 商人 NPC 實體。"""
+    
+    # 這裡導入 TraderNPC，避免循環引用
+    from src.entities.npc.trader_npc import TraderNPC 
+
+    npc_entity = world.create_entity()
+
+    # 1. 核心位置與標籤
+    world.add_component(npc_entity, Tag(tag=tag))
+    world.add_component(npc_entity, Position(x=x, y=y))
+    
+    # 2. 視覺屬性
+    world.add_component(npc_entity, Renderable(
+        image=None, 
+        shape="rect",
+        w=w,
+        h=h,
+        color=(0, 255, 255), # 青色
+        layer=0 
+    ))
+
+    # 3. 碰撞器
+    world.add_component(npc_entity, Collider(
+        w=w, 
+        h=h, 
+        pass_wall=False, 
+        collision_group="npc"
+    ))
+
+    # 4. 健康與防禦 (NPC 自身無敵)
+    world.add_component(npc_entity, Health(max_hp=999999, current_hp=999999))
+    world.add_component(npc_entity, Defense(
+        defense=100,
+        element="untyped",
+        invulnerable=True
+    ))
+
+    # 5. 交互組件
+    world.add_component(npc_entity, NPCInteractComponent(interaction_range=80.0)) 
+
+    # 6. 初始化 Facade
+    if game:
+        TraderNPC(game, npc_entity)
+
+    return npc_entity
+
+def create_treasure_entity(
+    world: esper,
+    x: float = 0.0, 
+    y: float = 0.0, 
+    w: int = 64, 
+    h: int = 64, 
+    tag: str = "treasure_npc",
+    game: 'Game' = None
+) -> int:
+    """創建一個 寶藏/轉盤 NPC 實體 (金色外觀)"""
+    from src.entities.npc.treasure_npc import TreasureNPC
+
+    npc_entity = world.create_entity()
+
+    world.add_component(npc_entity, Tag(tag=tag))
+    world.add_component(npc_entity, Position(x=x, y=y))
+    
+    # 金色外觀
+    world.add_component(npc_entity, Renderable(
+        image=None, shape="rect", w=w, h=h, 
+        color=(255, 215, 0), # Gold
+        layer=0 
+    ))
+
+    world.add_component(npc_entity, Collider(w=w, h=h, pass_wall=False, collision_group="npc"))
+    
+    # 稍微脆弱一點，或者無敵也可以
+    world.add_component(npc_entity, Health(max_hp=500, current_hp=500))
+    world.add_component(npc_entity, Defense(defense=20, element="untyped", invulnerable=True))
+
+    world.add_component(npc_entity, NPCInteractComponent(interaction_range=80.0)) 
+
+    world.add_component(npc_entity, TreasureStateComponent(is_looted=False))
+    
+    if game:
+        TreasureNPC(game, npc_entity)
 
     return npc_entity

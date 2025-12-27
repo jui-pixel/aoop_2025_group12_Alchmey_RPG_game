@@ -25,6 +25,8 @@ from src.menu.menus.skill_chain_menu import SkillChainMenu
 from src.menu.menus.settings_menu import SettingsMenu
 from src.menu.menus.win_menu import WinMenu
 from src.menu.menus.death_menu import DeathMenu
+from src.menu.menus.trader_menu import TraderMenu
+from src.menu.menus.treasure_menu import TreasureMenu
 class MenuManager:
     def __init__(self, game):
         """初始化菜單管理器，負責管理遊戲中的各個菜單。
@@ -104,6 +106,10 @@ class MenuManager:
                 self.register_menu(menu_name, src.menu.WinMenu(self.game, data))
             elif menu_name == 'death_menu':
                 self.register_menu(menu_name, src.menu.DeathMenu(self.game, data))
+            elif menu_name == 'trader_menu':
+                self.register_menu(menu_name, src.menu.TraderMenu(self.game, data))
+            elif menu_name == 'treasure_menu':
+                self.register_menu(menu_name, src.menu.TreasureMenu(self.game, data))
             elif menu_name == 'dungeon_menu':
                     # 【修正點】解包 data 並將其傳遞給 DungeonMenu
                     dungeons = data.get('dungeons', []) if isinstance(data, dict) else data 

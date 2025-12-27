@@ -35,7 +35,8 @@ class MenuNavigation(str, Enum):
     CRYSTAL_MENU = "crystal_menu"
     ALCHEMY_MENU = "alchemy_menu"
     DUNGEON_MENU = "dungeon_menu"
-    
+    TRADER_MENU = "trader_menu"
+    TREASURE_MENU = "treasure_menu"
     # 玩家菜單
     STAT_MENU = "stat_menu"
     SKILL_CHAIN_MENU = "skill_chain_menu"

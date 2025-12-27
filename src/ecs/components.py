@@ -272,3 +272,8 @@ class TimerComponent:
     duration: float = 0.0      # 計時器總時間
     elapsed_time: float = 0.0  # 已經過的時間
     on_expire: Optional[Callable[[], None]] = None  # 計時器到期時調用的函數
+
+@dataclass
+class TreasureStateComponent:
+    """記錄寶藏是否已被領取"""
+    is_looted: bool = False

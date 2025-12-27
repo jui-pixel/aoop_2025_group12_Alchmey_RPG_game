@@ -9,7 +9,7 @@ import random
 from src.entities.ecs_factory import (
     create_player_entity, create_alchemy_pot_npc, create_magic_crystal_npc, 
     create_dungeon_portal_npc, create_dummy_entity, create_enemy1_entity,
-    create_boss_entity, create_win_npc_entity
+    create_boss_entity, create_win_npc_entity, create_trader_entity, create_treasure_entity
 )
 # 引入 Player Facade (假設這是玩家實體的外部接口)
 from src.entities.player.player import Player 
@@ -62,7 +62,8 @@ class EntityManager:
             'alchemy_pot_npc': ['Alchemy_pot_NPC_spawn'],
             'magic_crystal_npc': ['Magic_crystal_NPC_spawn'],
             'dungeon_portal_npc': ['Dungeon_portal_NPC_spawn'],
-            'dummy_entity': ['Dummy_spawn'] 
+            'dummy_entity': ['Dummy_spawn'],
+            'trader_npc': ['NPC_spawn']
         }
         fallback_tiles = self.get_valid_tiles(room, ['Lobby_room_floor', 'Room_floor'])
         used_tiles = set()
@@ -99,7 +100,8 @@ class EntityManager:
             (create_alchemy_pot_npc, 'alchemy_pot_npc'),
             (create_magic_crystal_npc, 'magic_crystal_npc'),
             (create_dungeon_portal_npc, 'dungeon_portal_npc'),
-            (create_dummy_entity, 'dummy_entity')
+            (create_dummy_entity, 'dummy_entity'),
+            (create_trader_entity, 'trader_npc')
         ]
 
         for factory_func, npc_key in npc_configs:
@@ -211,7 +213,10 @@ class EntityManager:
                     else:
                         # Fallback for unknown IDs
                         enemy_id = create_enemy1_entity(self.world, x=entity_x, y=entity_y, game=self.game)
-                        
+                elif tile_type == 'Reward_spawn':
+                    treasure_id = create_treasure_entity(self.world, x=entity_x, y=entity_y, game=self.game)
+                    print(f"EntityManager: Spawning Treasure at ({x}, {y})")
+                
                 elif tile_type == 'Boss_spawn':
                     current_config = self.game.dungeon_manager.current_dungeon_config
                     special_rooms = current_config.get("special_rooms", {}) if current_config else {}
@@ -222,7 +227,10 @@ class EntityManager:
 
                 elif tile_type == 'Final_NPC_spawn':
                     create_win_npc_entity(self.world, x=entity_x, y=entity_y, game=self.game)
-                    print(f"EntityManager: Spawning Final NPC at ({x}, {y})")   
+                    print(f"EntityManager: Spawning Final NPC at ({x}, {y})")
+                elif tile_type == 'NPC_spawn':
+                    create_trader_entity(self.world, x=entity_x, y=entity_y, game=self.game)
+                    print(f"EntityManager: Spawning Trader NPC at ({x}, {y})")    
                 elif tile_type == 'End_room_portal':
                     # 獲取當前地牢配置的傳送門數據
                     dungeon_config = self.game.dungeon_manager.current_dungeon_config
