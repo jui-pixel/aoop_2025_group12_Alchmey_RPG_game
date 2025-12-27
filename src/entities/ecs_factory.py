@@ -6,6 +6,7 @@ import esper
 import pygame
 import math
 from typing import List, Dict, Optional, TYPE_CHECKING
+import random
 # 類型檢查：假設 Game 類在 src.game 模組中
 if TYPE_CHECKING:
     from src.core.game import Game 
@@ -21,8 +22,11 @@ from ..ecs.components import (
 
 # 假設這些是您自定義的 AI 行為和行為樹節點
 from ..ecs.ai import (
-    EnemyContext,
-    ChaseAction, AttackAction, WaitAction, PatrolAction, DodgeAction, 
+    DashAction, DashBackAction,
+    EnemyContext, StrafeAction, TauntAction,
+    ChaseAction, AttackAction,
+    FanAttackAction,
+    RadialBurstAction, WaitAction, PatrolAction, DodgeAction, 
     SpecialAttackAction, MeleeAttackAction, RandomMoveAction, # 動作類
     RefillActionList, PerformNextAction, Sequence, Selector, ConditionNode # 行為樹節點
 )
@@ -519,22 +523,161 @@ def create_boss_entity(
     world: esper, x: float = 0.0, y: float = 0.0, game: 'Game' = None, 
     boss_id: str = "boss_dark_king"
 ) -> int:
-    """創建 Boss 實體"""
     from src.ecs.components import BossComponent
     
-    print(f"Creating Boss {boss_id} at {x}, {y}")
-    # 使用 enemy 標籤以避免與其他敵人互相傷害
+    # 1. 創建實體 (調整數值)
     boss = create_enemy1_entity(
-        world, x, y, game, tag="enemy",  # 改用 enemy 標籤
-        base_max_hp=5000,
-        damage=50,
-        w=TILE_SIZE * 2, h=TILE_SIZE * 2,
-        defense=50
+        world, x, y, game, tag="enemy",
+        base_max_hp=6000, # 血量稍微增加，因為有人性化硬直
+        damage=45,
+        w=TILE_SIZE * 3, h=TILE_SIZE * 3,
+        defense=40,
+        max_speed=TILE_SIZE * 2.0 # 移動速度提升，但會經常停頓
     )
     
-    # 添加 Boss 組件以便特殊處理
+    # 2. 定義 Boss 動作庫
+    # 新增了 strafe (走位) 和 taunt (嘲諷)
+    actions = {
+        # --- 移動 ---
+        'wait_brief': WaitAction(duration=0.4, action_id='wait'),
+        'wait_exhausted': WaitAction(duration=2.5, action_id='tired'), # 大招後的疲憊
+        'telegraph': WaitAction(duration=0.8, action_id='telegraph'),
+        
+        'strafe_left': StrafeAction(action_id='strafe', duration=1.5, speed=TILE_SIZE*2.5, clockwise=False),
+        'strafe_right': StrafeAction(action_id='strafe', duration=1.5, speed=TILE_SIZE*2.5, clockwise=True),
+        'slow_approach': ChaseAction(duration=1.5, action_id='chase', direction_source=lambda e: (
+             (e.player.x - e.x), (e.player.y - e.y))), # 簡化寫法，ChaseAction 內部應處理歸一化
+             
+        'dash_attack': DashAction(action_id='dash', duration=0.3, speed_mult=15.0),
+        'retreat': DashBackAction(action_id='retreat', duration=0.4, speed_mult=12.0), # 需確保你有 DashBackAction
+        
+        # --- 攻擊 ---
+        'fan_shot': FanAttackAction(action_id='fan_shot', damage=25, num_bullets=5, spread_angle=60),
+        'rapid_fire': FanAttackAction(action_id='rapid_fire', damage=15, num_bullets=1, spread_angle=0), # 單發速射
+        'radial_burst': RadialBurstAction(action_id='radial_burst', damage=30, density=16),
+        'snipe': AttackAction(action_id='snipe', damage=60, bullet_speed=700, bullet_size=20, tag="enemy"),
+        
+        # --- 行為 ---
+        'taunt': TauntAction(action_id='taunt', duration=1.2, heal_amount=100),
+        'huge_heal': TauntAction(action_id='huge_heal', duration=2.0, heal_amount=1000),
+        'dark_zone': SpecialAttackAction(action_id='dark_zone', damage=90, outer_radius=TILE_SIZE*5),
+    }
+
+    # 3. 人性化決策邏輯
+    def get_humanized_boss_combo(context: EnemyContext) -> List[str]:
+        if not context.player:
+            return ['taunt']
+
+        hp_ratio = context.current_hp / context.max_hp
+        dist = math.hypot(context.player.x - context.x, context.player.y - context.y)
+        
+        # 隨機因子：模擬人類的「心情」或「失誤」
+        rng = random.random()
+
+        # === Phase 3: 絕境/狂暴模式 (HP < 50%) ===
+        # Boss 處於瀕死狀態，腎上腺素飆升。
+        # 行為特徵：不再保留實力，根據距離做出極端反應，但偶爾會因體力透支而露出大破綻。
+        if hp_ratio < 0.5:
+            
+            # --- 情況 A: 玩家貼臉 (近距離 < 5 格) ---
+            # Boss 心態：「滾開！」或「跟你拼了！」
+            if dist < 5 * TILE_SIZE:
+                if rng < 0.4:
+                    # [Panic Burst] 恐慌反應：連續環形爆發把玩家炸開，然後自己衝走
+                    return ['telegraph', 'radial_burst', 'wait_very_brief', 'radial_burst', 'dash_attack']
+                elif rng < 0.7:
+                    # [Desperate Trade] 拼命換血：不做任何走位，直接近距離速射
+                    return ['rapid_fire', 'wait_very_brief', 'rapid_fire', 'wait_very_brief', 'fan_shot']
+                elif rng < 0.9:
+                    # [Tactical Retreat] 戰術撤退：後撤並留下彈幕掩護
+                    return ['retreat', 'fan_shot', 'wait_brief', 'snipe']
+                else:
+                    # [Exhaustion] 體力透支：近距離喘息 (給玩家斬殺機會，高風險高回報)
+                    return ['wait_exhausted', 'huge_heal']
+            # --- 情況 B: 玩家拉遠 (遠距離 > 12 格) ---
+            # Boss 心態：「別想跑！」或「抓到你了。」
+            elif dist > 12 * TILE_SIZE:
+                if rng < 0.5:
+                    # [Orbital Strike] 天降正義：預判玩家走位困難，直接在地板生成傷害區，配合狙擊
+                    return ['telegraph', 'dark_zone', 'wait_brief', 'snipe']
+                elif rng < 0.9:
+                    # [Mad Dog] 瘋狗突進：連續衝刺拉近距離 (無視地形/子彈)
+                    return ['telegraph', 'dash_attack', 'wait_very_brief', 'dash_attack', 'radial_burst']
+                else:
+                    # [Mockery] 嘲諷：覺得玩家在逃跑，於是停下來嘲笑 (回血)
+                    return ['huge_heal', 'wait_brief']
+
+            # --- 情況 C: 中距離對決 (5-12 格) ---
+            # Boss 心態：「來決鬥吧。」(最危險的距離)
+            else:
+                if rng < 0.3:
+                    # [Combo A] 空間壓縮：先用暗區限制走位，再用扇形射擊覆蓋
+                    return ['telegraph', 'dark_zone', 'dash_attack', 'fan_shot']
+                elif rng < 0.6:
+                    # [Combo B] 側滑射擊：高速移動中射擊，模擬高階玩家的操作
+                    return ['strafe_left', 'rapid_fire', 'strafe_right', 'rapid_fire']
+                elif rng < 0.85:
+                    # [Combo C] 亂舞：毫無章法的衝刺與爆發
+                    return ['dash_attack', 'radial_burst', 'retreat', 'snipe']
+                else:
+                    # [Mistake] 失誤/僵直
+                    return ['wait_exhausted']
+
+        # === Phase 2: 認真模式 (HP < 80%) ===
+        # 混合戰術與壓制。會使用連招。
+        elif hp_ratio < 0.8:
+            if dist < 4 * TILE_SIZE:
+                # 玩家太近：後撤 -> 扇形射擊 (拉打戰術)
+                return ['retreat', 'fan_shot', 'wait_brief', 'strafe_left']
+            
+            elif dist > 10 * TILE_SIZE:
+                # 玩家太遠：狙擊逼迫移動
+                return ['strafe_right', 'telegraph', 'snipe', 'wait_brief', 'snipe']
+            
+            else:
+                # 中距離對峙：走位找角度 -> 突進
+                if rng < 0.5:
+                    return ['strafe_left', 'wait_brief', 'dash_attack', 'radial_burst', 'retreat']
+                else:
+                    return ['strafe_right', 'fan_shot', 'strafe_right', 'fan_shot']
+
+        # === Phase 1: 傲慢/試探 (HP > 70%) ===
+        # 像是看不起玩家。多走位，多嘲諷，攻擊頻率低但精準。
+        else:
+            if rng < 0.3:
+                # 嘲諷玩家 (這時是輸出機會)
+                return ['taunt', 'wait_brief']
+            elif dist < 5 * TILE_SIZE:
+                # 只是把玩家推開，不急著殺
+                return ['radial_burst', 'wait_brief', 'strafe_left']
+            else:
+                # 隨意射擊
+                return ['strafe_right', 'wait_brief', 'rapid_fire', 'wait_brief', 'strafe_left']
+
+    # 4. 組裝
+    refill_node = RefillActionList(actions, get_humanized_boss_combo)
+    perform_action_sequence = Sequence([PerformNextAction(actions)])
+    
+    behavior_tree = Selector([
+        perform_action_sequence,
+        refill_node
+    ])
+    
+    world.add_component(boss, AI(
+        behavior_tree=behavior_tree,
+        action_list=[],
+        actions=actions,
+        vision_radius=25,
+    ))
     world.add_component(boss, BossComponent(boss_name=boss_id))
     
+    # 視覺調整：將 Boss 渲染成紅色或加上光環 (若是純色塊)
+    image = pygame.Surface((TILE_SIZE * 3, TILE_SIZE * 3))
+    image.fill((150, 0, 0)) # 暗紅色
+    # 可以在中間畫個 "眼睛" 增加識別度
+    pygame.draw.rect(image, (255, 255, 0), (TILE_SIZE, TILE_SIZE, TILE_SIZE, TILE_SIZE))
+    world.add_component(boss, Renderable(image=image, layer=2, w=TILE_SIZE*3, h=TILE_SIZE*3))
+
     return boss
 
 def create_win_npc_entity(
@@ -572,10 +715,7 @@ def create_win_npc_entity(
     # 4. 交互
     world.add_component(npc_entity, NPCInteractComponent(interaction_range=80.0))
     
-    # Facade 初始化 - 這裡需要一個 Facade 類來打開 WinMenu
-    # 由於我們還沒創建 WinNPC Facade，我們可以暫時借用 DungeonPortalNPC 的邏輯，或者直接在這裡注入 lambda ?
-    # 為了架構正確性，我們稍後應該創建 src/entities/npc/win_npc.py
-    # 暫時解決：在 EntityManager 中手動綁定 interaction 或者在這裡創建一個臨時的交互邏輯
+    #借用 NPCInteraction 的邏輯 ， 來打開 WinMenu
     
     # 如果 WinMenu 已存在，我們可以讓它打開 WinMenu
     if game:

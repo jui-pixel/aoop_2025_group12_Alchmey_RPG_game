@@ -6,30 +6,30 @@ from dataclasses import dataclass
 from src.ecs.components import Position, Velocity, Combat, Renderable, Collider, ProjectileState, Tag
 
 def create_standard_bullet_entity(
-    world: esper,
-    start_pos: Tuple[float, float],
-    w: int,
-    h: int,
-    tag: str,
-    direction: Tuple[float, float],
+    world: esper = esper,
+    start_pos: Tuple[float, float] = (0.0, 0.0),
+    w: int = 32,
+    h: int = 32,
+    tag: str = "projectile",
+    direction: Tuple[float, float] = (1.0, 0.0),
     # ProjectileState & Movement
-    max_speed: float,
-    lifetime: float, # 假設預設壽命
+    max_speed: float = 30.0,
+    lifetime: float = 5.0, # 假設預設壽命
     # Combat
-    damage: int,
-    atk_element: str,
-    damage_to_element: Dict[str, float],
-    max_penetration_count: int,
-    collision_cooldown: float,
-    buffs: List[Any],
-    explosion_range: float,
-    explosion_damage: int,
-    explosion_element: str,
-    explosion_buffs: List[Any],
+    damage: int = 10,
+    atk_element: str = "untyped",
+    damage_to_element: Dict[str, float] = {},
+    max_penetration_count: int = 0,
+    collision_cooldown: float = 0.5,
+    buffs: List[Any] = [],
+    explosion_range: float = 0.0,
+    explosion_damage: int = 0,
+    explosion_element: str = "untyped",
+    explosion_buffs: List[Any] = [],
     # Percentage Damage (簡化為一個 dict)
-    percentage_damage: Dict[str, int], 
+    percentage_damage: Dict[str, int] = {'max_hp': 0, 'current_hp': 0, 'lose_hp': 0}, 
     # Collider
-    pass_wall: bool,
+    pass_wall: bool = False,
     # 其他
     cause_death: bool = True
 ) -> int:

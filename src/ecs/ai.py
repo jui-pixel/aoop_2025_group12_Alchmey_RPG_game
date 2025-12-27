@@ -88,7 +88,7 @@ class EnemyContext:
     # 必須保留的舊方法，現在通過 game 訪問玩家 Facade
     @property
     def player(self):
-        return self.game.entity_manager.player # 假設 entity_manager.player 是一個 PlayerFacade
+        return self.game.entity_manager.player
 
     def is_alive(self) -> bool:
         return self.current_hp > 0
@@ -275,7 +275,7 @@ class AttackAction(Action):
                  bullet_speed: float = 400.0, 
                  bullet_size: int = 8,
                  lifetime: float = 2.0,
-                 tag: str = "enemy_projectile",
+                 tag: str = "enemy",
                  
                  # 元素與相剋
                  atk_element: str = "none",
@@ -616,3 +616,221 @@ class MeleeAttackAction(Action):
         )
         
         return False
+
+class FanAttackAction(Action):
+    """
+    扇形射擊：朝向玩家發射多枚子彈。
+    """
+    def __init__(self, action_id: str, damage: int, num_bullets: int = 5, spread_angle: float = 60.0):
+        super().__init__(action_id, duration=0.5) # 動作本身持續時間（硬直）
+        self.damage = damage
+        self.num_bullets = num_bullets
+        self.spread_angle = math.radians(spread_angle)
+
+    def start(self, context: 'EnemyContext', current_time: float) -> None:
+        context.move(0, 0, 0) # 射擊時停止移動
+        context.set_current_action(self.action_id)
+        
+        if not context.player: return
+
+        # 計算指向玩家的基礎角度
+        dx = context.player.x - context.x
+        dy = context.player.y - context.y
+        base_angle = math.atan2(dy, dx)
+        
+        start_angle = base_angle - (self.spread_angle / 2)
+        step_angle = self.spread_angle / (self.num_bullets - 1) if self.num_bullets > 1 else 0
+
+        for i in range(self.num_bullets):
+            angle = start_angle + (step_angle * i)
+            direction = (math.cos(angle), math.sin(angle))
+            
+            create_standard_bullet_entity(
+                world=context.world,
+                start_pos=(context.x, context.y),
+                w=10, h=10, tag=context.tag,
+                direction=direction,
+                max_speed=300.0,
+                lifetime=3.0,
+                damage=self.damage,
+                atk_element=context.atk_element,
+                pass_wall=False
+            )
+
+    def update(self, context: 'EnemyContext', dt: float, current_time: float) -> bool:
+        self.timer -= dt
+        return self.timer > 0
+
+class RadialBurstAction(Action):
+    """
+    環形爆發：以自身為中心，向 360 度發射子彈。
+    """
+    def __init__(self, action_id: str, damage: int, density: int = 12):
+        super().__init__(action_id, duration=0.8) # 較長的硬直
+        self.damage = damage
+        self.density = density # 子彈數量
+
+    def start(self, context: 'EnemyContext', current_time: float) -> None:
+        context.move(0, 0, 0)
+        context.set_current_action(self.action_id)
+        
+        step_angle = (2 * math.pi) / self.density
+        
+        # 加上一點隨機偏移，讓連續釋放時子彈縫隙不同
+        offset = random.uniform(0, step_angle)
+
+        for i in range(self.density):
+            angle = offset + (step_angle * i)
+            direction = (math.cos(angle), math.sin(angle))
+            
+            create_standard_bullet_entity(
+                world=context.world,
+                start_pos=(context.x, context.y),
+                w=12, h=12, tag=context.tag,
+                direction=direction,
+                max_speed=250.0,
+                lifetime=4.0,
+                damage=self.damage,
+                atk_element="fire", # Boss 特效屬性
+                pass_wall=True      # Boss 大招通常穿牆
+            )
+
+    def update(self, context: 'EnemyContext', dt: float, current_time: float) -> bool:
+        self.timer -= dt
+        return self.timer > 0
+
+class DashAction(Action):
+    """
+    衝刺：短時間內極高速度向玩家衝刺。
+    """
+    def __init__(self, action_id: str, duration: float = 0.4, speed_mult: float = 3.0):
+        super().__init__(action_id, duration)
+        self.speed_mult = speed_mult
+        self.dash_dir = (0, 0)
+
+    def start(self, context: 'EnemyContext', current_time: float) -> None:
+        self.timer = self.duration
+        context.set_current_action(self.action_id)
+        if context.player:
+            dx = context.player.x - context.x
+            dy = context.player.y - context.y
+            dist = math.hypot(dx, dy)
+            self.dash_dir = (dx/dist, dy/dist) if dist > 0 else (0,0)
+            context._get_comp(Velocity).speed *= self.speed_mult
+        else:
+            raise ValueError("DashAction requires a player to determine dash direction.")
+
+    def update(self, context: 'EnemyContext', dt: float, current_time: float) -> bool:
+        # 衝刺期間保持固定方向，不追蹤玩家（玩家可躲避）
+        if self.timer <= 0:
+            context._get_comp(Velocity).speed /= self.speed_mult
+            context.move(0, 0, dt)
+            return False
+        context.move(self.dash_dir[0], self.dash_dir[1], dt)
+        self.timer -= dt
+        return True
+
+class DashBackAction(Action):
+    """
+    衝刺後退：短時間內極高速度背離玩家衝刺。
+    """
+    def __init__(self, action_id: str, duration: float = 0.4, speed_mult: float = 3.0):
+        super().__init__(action_id, duration)
+        self.speed_mult = speed_mult
+        self.dash_dir = (0, 0)
+
+    def start(self, context: 'EnemyContext', current_time: float) -> None:
+        self.timer = self.duration
+        context.set_current_action(self.action_id)
+        if context.player:
+            dx = context.x - context.player.x
+            dy = context.y - context.player.y
+            dist = math.hypot(dx, dy)
+            self.dash_dir = (dx/dist, dy/dist) if dist > 0 else (0,0)
+            context._get_comp(Velocity).speed *= self.speed_mult
+        else:
+            raise ValueError("DashBackAction requires a player to determine dash direction.")
+
+    def update(self, context: 'EnemyContext', dt: float, current_time: float) -> bool:
+        # 衝刺期間保持固定方向，不追蹤玩家（玩家可躲避）
+        if self.timer <= 0:
+            context._get_comp(Velocity).speed /= self.speed_mult
+            context.move(0, 0, dt)
+            return False
+        context.move(self.dash_dir[0], self.dash_dir[1], dt)
+        self.timer -= dt
+        return True
+
+class StrafeAction(Action):
+    """
+    側向走位：像決鬥者一樣繞著玩家移動，而不是直接衝過去。
+    這讓 Boss 看起來更有戰術性，且讓玩家更難瞄準。
+    """
+    def __init__(self, action_id: str, duration: float, speed: float, clockwise: bool = True):
+        super().__init__(action_id, duration)
+        self.speed = speed
+        self.clockwise = 1 if clockwise else -1
+
+    def start(self, context: 'EnemyContext', current_time: float) -> None:
+        self.timer = self.duration
+        context.set_current_action(self.action_id)
+
+    def update(self, context: 'EnemyContext', dt: float, current_time: float) -> bool:
+        if self.timer <= 0 or not context.player:
+            return False
+
+        # 計算指向玩家的向量
+        dx = context.player.x - context.x
+        dy = context.player.y - context.y
+        dist = math.hypot(dx, dy)
+        
+        if dist < 1e-5: return False
+
+        # 1. 保持距離的移動 (稍微靠近或遠離)
+        desired_dist = 6 * TILE_SIZE
+        approach_factor = 0.0
+        if dist > desired_dist + TILE_SIZE: approach_factor = 0.5 # 太遠就靠近一點
+        if dist < desired_dist - TILE_SIZE: approach_factor = -0.5 # 太近就退後一點
+
+        norm_dx, norm_dy = dx / dist, dy / dist
+
+        # 2. 側向移動向量 (旋轉 90 度: -y, x)
+        strafe_dx = -norm_dy * self.clockwise
+        strafe_dy = norm_dx * self.clockwise
+
+        # 3. 混合向量
+        final_dx = strafe_dx + (norm_dx * approach_factor)
+        final_dy = strafe_dy + (norm_dy * approach_factor)
+
+        # 歸一化最終速度
+        final_len = math.hypot(final_dx, final_dy)
+        if final_len > 0:
+            context.move(final_dx/final_len * self.speed, final_dy/final_len * self.speed, dt)
+
+        self.timer -= dt
+        return True
+
+class TauntAction(Action):
+    """
+    嘲諷/蓄力：Boss 在安全時會嘲笑玩家，或者在憤怒時吼叫。
+    功能上是回血或單純的硬直，視覺上增加性格。
+    """
+    def __init__(self, action_id: str, duration: float, heal_amount: int = 0):
+        super().__init__(action_id, duration)
+        self.heal_amount = heal_amount
+
+    def start(self, context: 'EnemyContext', current_time: float) -> None:
+        self.timer = self.duration
+        context.set_current_action(self.action_id)
+        context.move(0, 0, 0) # 站定
+        print(f"Boss is taunting! HP: {context.current_hp}")
+        
+        # 可以在這裡加入回血邏輯
+        if self.heal_amount > 0:
+            current_hp = context._get_comp(Health).current_hp
+            max_hp = context._get_comp(Health).max_hp
+            context._get_comp(Health).current_hp = min(max_hp, current_hp + self.heal_amount)
+
+    def update(self, context: 'EnemyContext', dt: float, current_time: float) -> bool:
+        self.timer -= dt
+        return self.timer > 0

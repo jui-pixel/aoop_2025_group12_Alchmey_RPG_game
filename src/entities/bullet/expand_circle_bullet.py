@@ -5,7 +5,7 @@ import os
 from typing import Tuple, Dict, List, TYPE_CHECKING
 from src.core.config import TILE_SIZE
 from dataclasses import dataclass, field
-from src.ecs.components import Tag
+from src.ecs.components import Tag, TimerComponent
 from src.buffs.element_buff import ELEMENTAL_BUFFS
 # 假設這是您的組件導入路徑
 from src.ecs.components import (
@@ -126,5 +126,12 @@ def create_expanding_circle_bullet(
         expansion_duration=expansion_duration,
         animation_frames=frames
     ))
+    
+    
+    def on_expire(entity: int):
+        """當計時器結束回調函數"""
+        esper.delete_entity(entity)
+    world.add_component(bullet_entity, TimerComponent(duration=lifetime+1.0, on_expire=on_expire))
+    # 確保子彈在 lifetime 後被移除
 
     return bullet_entity

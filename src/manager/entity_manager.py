@@ -210,7 +210,7 @@ class EntityManager:
                         enemy_id = create_enemy1_entity(self.world, x=entity_x, y=entity_y, game=self.game)
                     else:
                         # Fallback for unknown IDs
-                        enemy_id = create_enemy1_entity(self.world, x=entity_x, y=entity_y, game=self.game, tag=monster_id)
+                        enemy_id = create_enemy1_entity(self.world, x=entity_x, y=entity_y, game=self.game)
                         
                 elif tile_type == 'Boss_spawn':
                     current_config = self.game.dungeon_manager.current_dungeon_config
