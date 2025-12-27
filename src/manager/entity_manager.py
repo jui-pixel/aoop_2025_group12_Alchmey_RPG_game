@@ -92,6 +92,7 @@ class EntityManager:
             self.game.storage_manager.apply_all_to_player() 
             print(f"EntityManager: 初始化玩家實體 ID: {player_ecs_id}，像素座標 ({player_x}, {player_y})")
         else:
+            self.refresh_player(x=player_x, y=player_y)
             print("EntityManager: 玩家實體已存在，跳過創建。")
         
         # self.game.storage_manager.apply_all_to_player() 
@@ -340,7 +341,6 @@ class EntityManager:
         health_comp = self.player._get_health_comp()
         health_comp.max_hp = health_comp.base_max_hp
         health_comp.current_hp = health_comp.max_hp
-        health_comp.max_shield = 0
         pos_comp = self.player._get_position_comp()
         pos_comp.x = x
         pos_comp.y = y
