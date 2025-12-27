@@ -105,7 +105,7 @@
 
 ### 1. 克隆專案
 ```bash
-git clone [https://github.com/jui-pixel/aoop_2025_group12_Alchmey_RPG_game.git](https://github.com/jui-pixel/aoop_2025_group12_Alchmey_RPG_game.git)
+git clone https://github.com/jui-pixel/aoop_2025_group12_Alchmey_RPG_game.git
 cd aoop_2025_group12_Alchmey_RPG_game
 ```
 
