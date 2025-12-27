@@ -599,10 +599,10 @@ def create_boss_entity(
             elif dist > 12 * TILE_SIZE:
                 if rng < 0.5:
                     # [Orbital Strike] 天降正義：預判玩家走位困難，直接在地板生成傷害區，配合狙擊
-                    return ['telegraph', 'dark_zone', 'wait_brief', 'snipe']
+                    return ['telegraph', 'dark_zone', 'wait_brief', 'snipe', 'wait_brief', 'snipe', 'wait_brief', 'snipe']
                 elif rng < 0.9:
                     # [Mad Dog] 瘋狗突進：連續衝刺拉近距離 (無視地形/子彈)
-                    return ['telegraph', 'dash_attack', 'wait_very_brief', 'dash_attack', 'radial_burst']
+                    return ['telegraph', 'dash_attack', 'radial_burst', 'wait_very_brief', 'dash_attack', 'radial_burst']
                 else:
                     # [Mockery] 嘲諷：覺得玩家在逃跑，於是停下來嘲笑 (回血)
                     return ['huge_heal', 'wait_brief']
@@ -615,7 +615,7 @@ def create_boss_entity(
                     return ['telegraph', 'dark_zone', 'dash_attack', 'fan_shot']
                 elif rng < 0.6:
                     # [Combo B] 側滑射擊：高速移動中射擊，模擬高階玩家的操作
-                    return ['strafe_left', 'rapid_fire', 'strafe_right', 'rapid_fire']
+                    return ['strafe_left', 'rapid_fire', 'wait_brief', 'fan_shot', 'wait_brief', 'snipe', 'strafe_right', 'rapid_fire', 'wait_brief', 'fan_shot', 'wait_brief', 'snipe']
                 elif rng < 0.85:
                     # [Combo C] 亂舞：毫無章法的衝刺與爆發
                     return ['dash_attack', 'radial_burst', 'retreat', 'snipe']
