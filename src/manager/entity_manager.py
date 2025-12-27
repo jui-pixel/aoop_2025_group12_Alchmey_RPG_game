@@ -88,12 +88,13 @@ class EntityManager:
             # 使用 ECS Factory 創建玩家實體，並儲存 Facade
             player_ecs_id = create_player_entity(self.world, x=player_x, y=player_y) 
             self.player = Player(self.game, player_ecs_id)
-            
+            self.refresh_player(x=player_x, y=player_y)
             self.game.storage_manager.apply_all_to_player() 
             print(f"EntityManager: 初始化玩家實體 ID: {player_ecs_id}，像素座標 ({player_x}, {player_y})")
         else:
             print("EntityManager: 玩家實體已存在，跳過創建。")
-        self.refresh_player(x=player_x, y=player_y)
+        
+        # self.game.storage_manager.apply_all_to_player() 
             
         # 2. 初始化 NPC (使用工廠函數)
         npc_configs: List[Tuple[callable, str]] = [
@@ -193,8 +194,8 @@ class EntityManager:
                         player_ecs_id = create_player_entity(self.world, x=entity_x, y=entity_y) 
                         self.player = Player(self.game, player_ecs_id)
                         print(f"EntityManager: 創建新玩家實體 ID: {player_ecs_id}，像素座標 ({entity_x}, {entity_y})")
+                        self.game.storage_manager.apply_all_to_player() 
                         
-                    self.game.storage_manager.apply_all_to_player() 
                     self.game.render_manager.camera_offset = [entity_x - SCREEN_WIDTH // 2, entity_y - SCREEN_HEIGHT // 2] 
                 
                 elif tile_type == 'Monster_spawn':
