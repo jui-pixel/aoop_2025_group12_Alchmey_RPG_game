@@ -2,7 +2,16 @@
 from typing import Dict, List, Optional, Callable
 from .buff import Buff
 # from ..buffable_entity import BuffableEntity
-from ..utils.elements import WEAKTABLE
+# try:
+#     import src.utils
+#     print("\n========== DEBUG INFO ==========")
+#     print(f"TYPE of src.utils: {type(src.utils)}")
+#     print(f"FILE of src.utils: {getattr(src.utils, '__file__', 'No file attribute')}")
+#     print(f"PATH of src.utils: {getattr(src.utils, '__path__', 'No path attribute (Not a package!)')}")
+#     print("================================\n")
+# except ImportError as e:
+#     print(f"\n========== DEBUG INFO ==========\nCould not import src.utils: {e}\n================================")
+from src.utils.elements import WEAKTABLE
 # Elemental affinities based on the game's interaction table (derived from combat_entity cycle and special affinities)
 
 
