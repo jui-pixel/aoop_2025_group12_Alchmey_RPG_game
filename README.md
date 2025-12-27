@@ -4,6 +4,8 @@
 
 > **AOOP 2025 Group 12 專案成果** > 一款結合隨機副本、屬性煉金與即時戰鬥的 Roguelike RPG 遊戲。
 
+![image](assets/screenshots/gameplay1.png) ![image](assets/screenshots/gameplay2.png)
+
 ---
 
 ## 📖 專案概述
@@ -71,11 +73,13 @@
 
 #### 屬性克制表
 不同的元素之間存在相剋關係，攻擊克制屬性的敵人可造成額外傷害。
-![Elemental Chart](https://hackmd.io/_uploads/ByJx0QTQWg.png)
+![Elemental Chart](assets/screenshots/element_chart.png)
 
 #### 屬性狀態異常
 各屬性攻擊有機率觸發特殊的狀態效果（如燃燒、凍結、麻痺等）。
-![Status Effects](https://hackmd.io/_uploads/BksNRQ6mbg.png)
+![Status Effects](assets/screenshots/status_effects.png)
+
+
 
 ### 3. 地牢探索與挑戰 (Dungeon & Enemies)
 在隨機生成的副本中，你將遭遇到不同的機遇與挑戰：
