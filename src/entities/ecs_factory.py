@@ -630,7 +630,7 @@ def create_boss_entity(
                 # 玩家太近：後撤 -> 扇形射擊 (拉打戰術)
                 return ['retreat', 'fan_shot', 'wait_brief', 'strafe_left']
             
-            elif dist > 10 * TILE_SIZE:
+            elif dist > 14 * TILE_SIZE:
                 # 玩家太遠：狙擊逼迫移動
                 return ['strafe_right', 'telegraph', 'snipe', 'wait_brief', 'snipe']
             
