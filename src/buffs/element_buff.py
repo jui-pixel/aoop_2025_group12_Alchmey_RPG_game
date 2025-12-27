@@ -18,9 +18,9 @@ class ElementBuff(Buff):
     """
     
     def __init__(self, name: str, duration: float, element: str, multipliers: Dict[str, float],
-                 effect_per_second: Optional[Callable[["BuffableEntity"], None]] = None,
-                 on_apply: Optional[Callable[["BuffableEntity"], None]] = None,
-                 on_remove: Optional[Callable[["BuffableEntity"], None]] = None,
+                 effect_per_second: Optional[Callable[[], None]] = None,
+                 on_apply: Optional[Callable[[], None]] = None,
+                 on_remove: Optional[Callable[[], None]] = None,
                  strength: float = 1.0,  # Buff strength modifier for elemental effects
                  ):
         super().__init__(name, duration, element, multipliers, effect_per_second, on_apply, on_remove)

@@ -5,7 +5,9 @@ from .components import Position, TimerComponent, Velocity, Renderable, Input, H
 from src.ecs.ai import EnemyContext
 from src.core.config import TILE_SIZE, PASSABLE_TILES, SCREEN_WIDTH, SCREEN_HEIGHT
 from src.entities.ecs_factory import create_damage_text_entity, create_dungeon_portal_npc
-
+from src.buffs.element_buff import ElementBuff, ELEMENTAL_BUFFS
+from src.utils.elements import WEAKTABLE
+from src.buffs.buff import Buff
 class MovementSystem(esper.Processor):
     def process(self, *args, **kwargs):
         dt = args[0] if args else 0.0
@@ -311,12 +313,13 @@ class HealthSystem(esper.Processor):
         
         from src.utils.elements import WEAKTABLE
         
-        # Check WEAKTABLE for direct weakness
-        for attacker, defender in WEAKTABLE:
-            if attack_element == attacker and defend_element == defender:
-                return 1.5  # Weakness: attacker deals more damage
-            elif attack_element == defender and defend_element == attacker:
-                return 0.5  # Resistance: defender takes less damage
+        # 檢查是否為弱點 (攻擊者剋制防禦者) -> 1.5倍傷害
+        if (attack_element, defend_element) in WEAKTABLE:
+            return 1.5
+            
+        # 檢查是否為抵抗 (防禦者剋制攻擊者) -> 0.5倍傷害
+        if (defend_element, attack_element) in WEAKTABLE:
+            return 0.5
         
         return 1.0  # Neutral
     
@@ -434,6 +437,10 @@ class BuffSystem(esper.Processor):
         
         # Apply health regen
         health_regen = buff.multipliers.get('health_regen_per_second', 0.0)
+        
+        if isinstance(buff, ElementBuff):
+            health_regen *= buff.strength
+            
         if health_regen != 0 and  esper.has_component(entity, Health):
             health_system = game.ecs_world.get_processor(HealthSystem) if game else None
             if health_system:
@@ -447,71 +454,81 @@ class BuffSystem(esper.Processor):
     
     def _remove_buff(self, entity, buff, buffs_comp, game):
         """Remove a buff and trigger on_remove callback."""
-        buffs_comp.active_buffs.remove(buff)
-        
-        if buff.on_remove:
-            wrapper = EntityWrapper(entity,  esper, game)
-            buff.on_remove(wrapper)
-        
-        print(f"Removed buff: {buff.name} from entity {entity}")
+        if buff in buffs_comp.active_buffs:
+            buffs_comp.active_buffs.remove(buff)
+            
+            if buff.on_remove:
+                wrapper = EntityWrapper(entity,  esper, game)
+                buff.on_remove(wrapper)
+            
+            print(f"Removed buff: {buff.name} from entity {entity}")
     
     def _synthesize_buffs(self, entity, buffs_comp, game):
         """Check for and apply buff synthesis rules."""
+        if len(buffs_comp.active_buffs) < 2:
+            return
+        buff_map = {buff.name: buff for buff in buffs_comp.active_buffs}
         buff_names = [buff.name for buff in buffs_comp.active_buffs]
         
         for (buff1_name, buff2_name), result_name in self.synthesis_rules.items():
             if buff1_name in buff_names and buff2_name in buff_names:
-                # Find the buff objects
-                buff1 = next((b for b in buffs_comp.active_buffs if b.name == buff1_name), None)
-                buff2 = next((b for b in buffs_comp.active_buffs if b.name == buff2_name), None)
                 
-                if buff1 and buff2:
-                    # Remove both buffs
-                    self._remove_buff(entity, buff1, buffs_comp, game)
-                    self._remove_buff(entity, buff2, buffs_comp, game)
+                # Find the buff objects
+                buff1 = buff_map[buff1_name]
+                buff2 = buff_map[buff2_name]
+                
+                self._remove_buff(entity, buff1, buffs_comp, game)
+                self._remove_buff(entity, buff2, buffs_comp, game)
+                
+                if result_name in ELEMENTAL_BUFFS:
                     
-                    # Add synthesized buff
-                    from src.buffs.element_buff import ELEMENTAL_BUFFS
-                    if result_name in ELEMENTAL_BUFFS:
-                        new_buff = ELEMENTAL_BUFFS[result_name].deepcopy()
-                        buffs_comp.active_buffs.append(new_buff)
-                        
-                        # Trigger on_apply callback
-                        if new_buff.on_apply:
-                            wrapper = EntityWrapper(entity,  esper, game)
-                            new_buff.on_apply(wrapper)
-                        
-                        print(f"Synthesized {buff1_name} + {buff2_name} = {result_name} on entity {entity}")
-                    
-                    # Only synthesize once per frame
-                    break
+                    new_buff = ELEMENTAL_BUFFS[result_name].deepcopy()
+                    strength1 = buff1.strength if isinstance(buff1, ElementBuff) else 1.0
+                    strength2 = buff2.strength if isinstance(buff2, ElementBuff) else 1.0
+                    new_strength = max(strength1, strength2)
+                    new_buff.strength = new_strength
+                    new_buff.duration *= (0.5 + 0.5 * new_strength)
+                    buffs_comp.active_buffs.append(new_buff)
+                    if new_buff.on_apply:
+                        wrapper = EntityWrapper(entity, esper, game)
+                        new_buff.on_apply(wrapper)
+                    print(f"Synthesized {buff1_name}({strength1}) + {buff2_name}({strength2}) = {result_name}({new_strength}) on entity {entity}")
+                
+                break
     
-    def _update_modifiers(self, entity = None, buffs_comp = None, game = None):
-        """Recalculate all modifiers based on active buffs."""
-        # Reset modifiers
-        multiplier_keys = [k for k in buffs_comp.modifiers if 'resistance' not in k.lower() and 'add' not in k.lower()]
-        additive_keys = [k for k in buffs_comp.modifiers if 'resistance' in k.lower() or 'add' in k.lower()]
+    def _update_modifiers(self, entity, buffs_comp, game = None):
+        """根據 Buff 計算屬性修正值"""
+        # 重置修正值
+        # 分離乘法修正和加法修正
+        for key in list(buffs_comp.modifiers.keys()):
+            if 'resistance' in key or 'add' in key:
+                buffs_comp.modifiers[key] = 0.0
+            else:
+                buffs_comp.modifiers[key] = 1.0
         
-        for key in multiplier_keys:
-            buffs_comp.modifiers[key] = 1.0
-        for key in additive_keys:
-            buffs_comp.modifiers[key] = 0.0
-        
-        # Accumulate modifiers from all active buffs
+        # 累加所有 Active Buff 的效果
         for buff in buffs_comp.active_buffs:
+            # [整合點] 獲取強度
+            strength = buff.strength if isinstance(buff, ElementBuff) else 1.0
             for modifier_name, value in buff.multipliers.items():
                 if modifier_name not in buffs_comp.modifiers:
-                    # Initialize new modifier
                     if 'resistance' in modifier_name or 'add' in modifier_name:
                         buffs_comp.modifiers[modifier_name] = 0.0
                     else:
                         buffs_comp.modifiers[modifier_name] = 1.0
                 
-                # Apply modifier
+                # 根據修正類型應用強度
                 if 'resistance' in modifier_name or 'add' in modifier_name:
-                    buffs_comp.modifiers[modifier_name] += value
+                    # 加法修正：直接乘以強度 (例如抗性 +10% * 1.5 = +15%)
+                    buffs_comp.modifiers[modifier_name] += (value * strength)
                 else:
-                    buffs_comp.modifiers[modifier_name] *= value
+                    # 乘法修正：這比較複雜。
+                    # 如果是 0.5 (減速)，強度 1.5 應該變成 0.25 還是 0.5 / 1.5?
+                    # 簡單算法： (Value - 1) * Strength + 1
+                    # 例：0.9 (減少10%) * 2.0強度 = -0.1 * 2 + 1 = 0.8 (減少20%)
+                    base_effect = value - 1.0
+                    scaled_effect = base_effect * strength
+                    buffs_comp.modifiers[modifier_name] *= (1.0 + scaled_effect)
 
 class EntityWrapper:
     """Wrapper class to provide entity-like interface for ECS entities."""
@@ -569,9 +586,12 @@ class EntityWrapper:
     def take_damage(self, **kwargs):
         """Delegate to HealthSystem."""
         if self.game:
+            # 獲取 HealthSystem 實例
             health_system = esper.get_processor(HealthSystem)
             if health_system:
-                return health_system.take_damage(self.ecs_entity, **kwargs)
+                # 調用 take_damage
+                killed, dmg = health_system.take_damage(self.ecs_entity, **kwargs)
+                return killed, dmg
         return False, 0
     
     def heal(self, amount):
@@ -730,14 +750,26 @@ class CombatSystem(esper.Processor):
             print(f"ECS Combat: Entity {attacker} hit {target} for {actual_damage} damage!")
             
             # Apply buffs to target
-            if combat.buffs and  esper.has_component(target, Buffs):
-                target_buffs =  esper.component_for_entity(target, Buffs)
+            if combat.buffs and esper.has_component(target, Buffs):
+                target_buffs = esper.component_for_entity(target, Buffs)
                 for buff in combat.buffs:
-                    # Deep copy buff before applying
-                    import copy
-                    buff_copy = copy.deepcopy(buff)
-                    target_buffs.active_buffs.append(buff_copy)
-                    print(f"Applied buff to entity {target}")
+                    # 確保是 ElementBuff 或 Buff 實例
+                    if isinstance(buff, (Buff, ElementBuff)):
+                        # [整合點] 使用 deepcopy 確保每個實體有獨立的 Buff 實例 (計時器獨立)
+                        buff_copy = buff.deepcopy()
+                        
+                        # 可以根據攻擊者的某些屬性增強 Buff 強度
+                        # 例如：如果有 "Status Effect Potency" 的屬性
+                        # buff_copy.strength *= attacker_potency 
+                        
+                        target_buffs.active_buffs.append(buff_copy)
+                        
+                        # 觸發應用回調
+                        if buff_copy.on_apply:
+                            wrapper = EntityWrapper(target, esper, game)
+                            buff_copy.on_apply(wrapper)
+                            
+                        print(f"Applied buff {buff_copy.name} to entity {target}")
             
             # Check if penetration limit reached
             if combat.max_penetration_count >= 0 and combat.current_penetration_count >= combat.max_penetration_count:

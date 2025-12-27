@@ -24,15 +24,15 @@
             "sub_type": null,
             "element": "untyped",
             "params": {
-                "damage": 10,
+                "damage": 100,
                 "penetration": 0,
                 "elebuff": 1,
                 "explosion": 10,
-                "speed": 10
+                "speed": 30
             }
         },
         {
-            "name": "def1",
+            "name": "Absolute Barrier",
             "type": "buff",
             "sub_type": "shield",
             "element": "untyped",
@@ -41,12 +41,12 @@
                 "remove_element": 1,
                 "counter_element_resistance": 100,
                 "remove_counter": 1,
-                "duration": 1000,
+                "duration": 10000,
                 "shield": 10000
             }
         },
         {
-            "name": "move1",
+            "name": "Godspeed Step",
             "type": "buff",
             "sub_type": "step",
             "element": "untyped",
@@ -57,80 +57,133 @@
             }
         },
         {
-            "name": "move1",
-            "type": "buff",
-            "sub_type": "step",
-            "element": "untyped",
+            "name": "metal Shot",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "metal",
             "params": {
-                "avoid": 100,
-                "speed": 30,
-                "duration": 100
+                "damage": 100,
+                "penetration": 0,
+                "elebuff": 1,
+                "explosion": 10,
+                "speed": 30
             }
         },
         {
-            "name": "move1",
-            "type": "buff",
-            "sub_type": "step",
-            "element": "untyped",
+            "name": "wood Shot",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "wood",
             "params": {
-                "avoid": 100,
-                "speed": 30,
-                "duration": 100
+                "damage": 100,
+                "penetration": 0,
+                "elebuff": 1,
+                "explosion": 10,
+                "speed": 30
             }
         },
         {
-            "name": "move1",
-            "type": "buff",
-            "sub_type": "step",
-            "element": "untyped",
+            "name": "water Shot",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "water",
             "params": {
-                "avoid": 100,
-                "speed": 30,
-                "duration": 100
+                "damage": 100,
+                "penetration": 0,
+                "elebuff": 1,
+                "explosion": 10,
+                "speed": 30
             }
         },
         {
-            "name": "move1",
-            "type": "buff",
-            "sub_type": "step",
-            "element": "untyped",
+            "name": "fire Shot",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "fire",
             "params": {
-                "avoid": 100,
-                "speed": 30,
-                "duration": 100
+                "damage": 100,
+                "penetration": 0,
+                "elebuff": 1,
+                "explosion": 10,
+                "speed": 30
             }
         },
         {
-            "name": "move1",
-            "type": "buff",
-            "sub_type": "step",
-            "element": "untyped",
+            "name": "earth Shot",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "earth",
             "params": {
-                "avoid": 100,
-                "speed": 30,
-                "duration": 100
+                "damage": 100,
+                "penetration": 0,
+                "elebuff": 1,
+                "explosion": 10,
+                "speed": 30
             }
         },
         {
-            "name": "move1",
-            "type": "buff",
-            "sub_type": "step",
-            "element": "untyped",
+            "name": "wind Shot",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "wind",
             "params": {
-                "avoid": 100,
-                "speed": 30,
-                "duration": 100
+                "damage": 100,
+                "penetration": 0,
+                "elebuff": 1,
+                "explosion": 10,
+                "speed": 30
             }
         },
         {
-            "name": "move1",
-            "type": "buff",
-            "sub_type": "step",
-            "element": "untyped",
+            "name": "electric Shot",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "electric",
             "params": {
-                "avoid": 100,
-                "speed": 30,
-                "duration": 100
+                "damage": 100,
+                "penetration": 0,
+                "elebuff": 1,
+                "explosion": 10,
+                "speed": 30
+            }
+        },
+        {
+            "name": "ice Shot",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "ice",
+            "params": {
+                "damage": 100,
+                "penetration": 0,
+                "elebuff": 1,
+                "explosion": 10,
+                "speed": 30
+            }
+        },
+        {
+            "name": "light Shot",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "light",
+            "params": {
+                "damage": 100,
+                "penetration": 0,
+                "elebuff": 1,
+                "explosion": 10,
+                "speed": 30
+            }
+        },
+        {
+            "name": "dark Shot",
+            "type": "shooting",
+            "sub_type": null,
+            "element": "dark",
+            "params": {
+                "damage": 100,
+                "penetration": 0,
+                "elebuff": 1,
+                "explosion": 10,
+                "speed": 30
             }
         },
         {
