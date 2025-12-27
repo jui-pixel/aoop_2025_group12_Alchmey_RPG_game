@@ -4,7 +4,7 @@
 
 > **AOOP 2025 Group 12 專案成果** > 一款結合隨機副本、屬性煉金與即時戰鬥的 Roguelike RPG 遊戲。
 
-![image](assets/screenshots/gameplay1.png) ![image](assets/screenshots/gameplay2.png)
+![image](src/assets/screenshots/gameplay1.png) ![image](src/assets/screenshots/gameplay2.png)
 
 ---
 
@@ -45,12 +45,11 @@
 
 ## 🎮 遊戲操作 (Controls)
 
-*(請根據實際遊戲按鍵修改此處)*
-
 | 按鍵 | 功能 |
 | :---: | :--- |
 | **W / A / S / D** | 移動角色 |
 | **滑鼠左鍵** | 使用技能 |
+| **滑鼠滾輪 / 數字鍵 1-9** | 切換技能鍊 |
 | **E** | 與 NPC 互動 / 開啟技能選單 |
 
 ---
@@ -73,11 +72,11 @@
 
 #### 屬性克制表
 不同的元素之間存在相剋關係，攻擊克制屬性的敵人可造成額外傷害。
-![Elemental Chart](assets/screenshots/element_chart.png)
+![Elemental Chart](src/assets/screenshots/element_chart.png)
 
 #### 屬性狀態異常
 各屬性攻擊有機率觸發特殊的狀態效果（如燃燒、凍結、麻痺等）。
-![Status Effects](assets/screenshots/status_effects.png)
+![Status Effects](src/assets/screenshots/status_effects.png)
 
 
 
@@ -106,7 +105,7 @@
 
 ### 1. 克隆專案
 ```bash
-git clone [https://github.com/jui-pixel/aoop_2025_group12_Alchmey_RPG_game.git](https://github.com/jui-pixel/aoop_2025_group12_Alchmey_RPG_game.git)
+git clone https://github.com/jui-pixel/aoop_2025_group12_Alchmey_RPG_game.git
 cd aoop_2025_group12_Alchmey_RPG_game
 ```
 
