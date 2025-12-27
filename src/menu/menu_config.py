@@ -31,6 +31,7 @@ class MenuNavigation(str, Enum):
     SETTINGS_MENU = "settings_menu"
     WIN_MENU = "win_menu"
     DEATH_MENU = "death_menu"
+    PAUSE_MENU = "pause_menu"
     # NPC 交互菜單
     CRYSTAL_MENU = "crystal_menu"
     ALCHEMY_MENU = "alchemy_menu"

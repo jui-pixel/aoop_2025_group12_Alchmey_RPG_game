@@ -21,7 +21,9 @@ from .menus.skill_library_menu import SkillLibraryMenu
 from .menus.stat_menu import StatMenu
 from .menus.win_menu import WinMenu
 from .menus.death_menu import DeathMenu
-
+from .menus.trader_menu import TraderMenu
+from .menus.treasure_menu import TreasureMenu
+from .menus.pause_menu import PauseMenu
 from .menu_config import MenuNavigation, BasicAction
 # 3. 定義公開接口，方便使用 from module import *
 __all__ = [
@@ -47,4 +49,7 @@ __all__ = [
     'DeathMenu',
     'MenuNavigation',
     'BasicAction',
+    'TraderMenu',
+    'TreasureMenu',
+    'PauseMenu',
 ]

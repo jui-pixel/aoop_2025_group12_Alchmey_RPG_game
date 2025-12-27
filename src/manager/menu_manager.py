@@ -27,6 +27,7 @@ from src.menu.menus.win_menu import WinMenu
 from src.menu.menus.death_menu import DeathMenu
 from src.menu.menus.trader_menu import TraderMenu
 from src.menu.menus.treasure_menu import TreasureMenu
+from src.menu.menus.pause_menu import PauseMenu
 class MenuManager:
     def __init__(self, game):
         """初始化菜單管理器，負責管理遊戲中的各個菜單。
@@ -110,6 +111,8 @@ class MenuManager:
                 self.register_menu(menu_name, src.menu.TraderMenu(self.game, data))
             elif menu_name == 'treasure_menu':
                 self.register_menu(menu_name, src.menu.TreasureMenu(self.game, data))
+            elif menu_name == 'pause_menu':
+                self.register_menu(menu_name, src.menu.PauseMenu(self.game, data))
             elif menu_name == 'dungeon_menu':
                     # 【修正點】解包 data 並將其傳遞給 DungeonMenu
                     dungeons = data.get('dungeons', []) if isinstance(data, dict) else data 

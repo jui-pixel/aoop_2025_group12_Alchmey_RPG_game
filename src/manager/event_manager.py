@@ -230,6 +230,8 @@ class EventManager:
                 interacted = self._handle_interaction()  # Handle NPC interaction
                 if not interacted:
                     self.game.menu_manager.open_menu(MenuNavigation.SKILL_CHAIN_MENU)  # Open skill chain menu if no NPC
+            elif event.key == pygame.K_ESCAPE:
+                self.game.menu_manager.open_menu(MenuNavigation.PAUSE_MENU)  # Open pause menu
             elif event.key in range(pygame.K_1, pygame.K_9 + 1):
                 chain_idx = event.key - pygame.K_1  # 1-9 keys map to chain_idx 0-8
                 self.game.entity_manager.player.switch_skill_chain(chain_idx)
