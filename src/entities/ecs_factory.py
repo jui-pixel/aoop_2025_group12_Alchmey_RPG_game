@@ -702,7 +702,7 @@ def create_win_npc_entity(
         shape="rect",
         w=w,
         h=h,
-        color=(255, 215, 0), # 金色
+        color=(255, 105, 180),
         layer=0 
     ))
 
