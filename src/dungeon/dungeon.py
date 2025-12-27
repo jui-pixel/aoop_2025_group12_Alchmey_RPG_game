@@ -72,8 +72,11 @@ class Dungeon:
         self.bridges = []  # 清空走廊列表
         self.builder.tile_manager.reset(default_tile='Outside')
         self.builder = DungeonBuilder(self.config)  # 使用當前配置初始化 Builder
-        self.builder.initialize_dungeon(dungeon_id)
-        
+
+        rooms, grid = self.builder.initialize_dungeon(dungeon_id)
+        self.rooms = rooms
+        self.dungeon_tiles = grid
+
         # 確保更新本地的網格尺寸，以匹配新的配置
         self.grid_width = self.config.grid_width
         self.grid_height = self.config.grid_height

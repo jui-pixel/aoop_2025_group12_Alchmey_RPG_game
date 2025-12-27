@@ -189,7 +189,7 @@ class DungeonBuilder:
         
         return rooms, self.tile_manager.grid
     
-    def initialize_dungeon(self, dungeon_id: int) -> None:
+    def initialize_dungeon(self, dungeon_id: int) -> Tuple[List[Room], List[List[str]]]:
         """
         初始化整個地牢
         
@@ -200,6 +200,7 @@ class DungeonBuilder:
         rooms, grid = self.build()
         print(f"DungeonBuilder: 地牢 ID {dungeon_id} 初始化完成，共有 {len(rooms)} 個房間。")
         # 這裡可以將生成的 rooms 和 grid 返回給 Dungeon 實例進行後續處理
+        return rooms, grid
         pass
     
     def _build_room_graph(self, rooms: List[Room]) -> List[Tuple[int, int, float]]:
