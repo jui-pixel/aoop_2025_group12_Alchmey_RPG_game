@@ -80,6 +80,9 @@ class RoomTypeAssigner:
             rooms: 房間列表
         """
         # 找出未分配類型的房間
+        if len(rooms) < 2:
+            return
+
         unassigned_rooms = [r for r in rooms if r.room_type == RoomType.EMPTY]
         
         if not unassigned_rooms:
