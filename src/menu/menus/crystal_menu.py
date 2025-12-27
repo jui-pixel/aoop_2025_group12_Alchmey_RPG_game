@@ -12,12 +12,12 @@ from src.menu.menu_config import (
 )
 
 class CrystalMenu(AbstractMenu):
-    """水晶商店菜單 - 優化版"""
+    """水晶商店菜單 - 輕量化版"""
     
     def __init__(self, game: 'Game', options: List[Dict] = None):
         """初始化水晶商店菜單"""
         self.game = game
-        self.title = "Crystal Repository" # 更具魔法感的標題
+        self.title = "Crystal Repository"
         self.options = options
         self.active = False
         
@@ -26,7 +26,7 @@ class CrystalMenu(AbstractMenu):
         self.header_font = pygame.font.SysFont(None, 40)
         self.text_font = pygame.font.SysFont(None, 32)
         
-        # 視覺效果
+        # 視覺效果變數
         self.animation_time = 0
         self.particles = []
         
@@ -51,10 +51,10 @@ class CrystalMenu(AbstractMenu):
         
         # 定義選單項
         menu_items = [
-            ("Enhance Stats", "show_stat", (100, 200, 255)),     # 藍色: 屬性
-            ("Amplifiers", "show_amplifier", (200, 100, 255)),   # 紫色: 增幅
-            ("Elemental Tuning", "show_element", (255, 100, 100)),# 紅色: 元素
-            ("Skill Library", "show_skill_library", (100, 255, 150)) # 綠色: 技能庫
+            ("Enhance Stats", "show_stat", (80, 120, 180)),      # 深藍
+            ("Amplifiers", "show_amplifier", (120, 80, 180)),    # 深紫
+            ("Elemental Tuning", "show_element", (180, 80, 80)), # 深紅
+            ("Skill Library", "show_skill_library", (80, 160, 100)) # 深綠
         ]
         
         self.buttons = []
@@ -76,57 +76,55 @@ class CrystalMenu(AbstractMenu):
         back_btn = Button(
             center_x - btn_width // 2, back_y, btn_width, btn_height,
             "Leave Repository",
-            self._create_button_surface(btn_width, btn_height, (150, 150, 150)),
+            self._create_button_surface(btn_width, btn_height, (100, 100, 100)),
             "back",
             self.header_font
         )
         self.buttons.append(back_btn)
 
     def _create_button_surface(self, width, height, base_color):
-        """創建帶有水晶質感的按鈕表面"""
+        """創建帶有水晶質感的按鈕表面 (簡化版)"""
         surface = pygame.Surface((width, height))
         r, g, b = base_color
         
-        # 漸層填充
-        for y in range(height):
-            factor = 0.8 + (y / height) * 0.4
-            color = (
-                min(255, int(r * factor * 0.4)), 
-                min(255, int(g * factor * 0.4)), 
-                min(255, int(b * factor * 0.4))
-            )
-            pygame.draw.line(surface, color, (0, y), (width, y))
-            
-        # 內部邊框
-        pygame.draw.rect(surface, (
-            min(255, int(r*1.2)), min(255, int(g*1.2)), min(255, int(b*1.2))
-        ), (2, 2, width-4, height-4), 1)
+        # 簡化 1: 直接填充底色，不做逐行漸層
+        surface.fill((r, g, b))
         
-        # 外邊框
+        # 簡化 2: 簡單的高亮邊框模擬水晶邊緣
         pygame.draw.rect(surface, (
-            min(255, int(r*0.6)), min(255, int(g*0.6)), min(255, int(b*0.6))
+            min(255, int(r * 1.5)), 
+            min(255, int(g * 1.5)), 
+            min(255, int(b * 1.5))
         ), (0, 0, width, height), 2)
+        
+        pygame.draw.rect(surface, (
+            max(0, int(r * 0.7)), 
+            max(0, int(g * 0.7)), 
+            max(0, int(b * 0.7))
+        ), (2, 2, width-4, height-4), 1)
         
         return surface
 
     def _init_particles(self):
-        """初始化懸浮水晶粒子"""
+        """初始化背景粒子 (數量減少)"""
         self.particles = []
-        for _ in range(25):
+        # 簡化 3: 粒子數量減少至 15
+        for _ in range(15):
             self.particles.append({
                 'x': random.randint(0, SCREEN_WIDTH),
                 'y': random.randint(0, SCREEN_HEIGHT),
-                'vy': random.uniform(-0.5, -1.5), # 向上浮動
-                'size': random.randint(2, 6),
+                'vy': random.uniform(-0.5, -1.0), 
+                'size': random.randint(2, 4),
                 'color': random.choice([
-                    (150, 200, 255), (200, 150, 255), (255, 150, 150), (150, 255, 150)
+                    (150, 200, 255), (200, 150, 255), (255, 150, 150)
                 ]),
-                'alpha': random.randint(50, 180)
+                'alpha': random.randint(100, 200)
             })
 
     def _register_menus(self):
-        """註冊子菜單"""
+        """註冊子菜單 (邏輯不變)"""
         mm = self.game.menu_manager
+        # 避免循環導入，使用延遲導入
         if not mm.menus.get(MenuNavigation.STAT_MENU):
             from src.menu.menus.stat_menu import StatMenu
             mm.register_menu(MenuNavigation.STAT_MENU, StatMenu(self.game, None))
@@ -148,26 +146,16 @@ class CrystalMenu(AbstractMenu):
         
         # 1. 背景
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay.fill((10, 15, 20)) # 深青色背景
+        overlay.fill((10, 15, 20)) 
         overlay.set_alpha(230)
         screen.blit(overlay, (0, 0))
         
-        # 2. 粒子效果
+        # 2. 粒子效果 (簡化版)
         for p in self.particles:
-            alpha = int(p['alpha'] + 50 * math.sin(self.animation_time + p['x']))
-            color = (*p['color'], max(0, min(255, alpha)))
-            
-            # 使用多邊形繪製類似水晶的形狀
-            points = [
-                (p['x'], p['y'] - p['size']),
-                (p['x'] + p['size']*0.8, p['y']),
-                (p['x'], p['y'] + p['size']),
-                (p['x'] - p['size']*0.8, p['y'])
-            ]
-            
-            s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-            pygame.draw.polygon(s, color, points)
-            screen.blit(s, (0, 0))
+            # 簡化 4: 改用簡單圓形，移除多邊形計算
+            s = pygame.Surface((p['size']*2, p['size']*2), pygame.SRCALPHA)
+            pygame.draw.circle(s, (*p['color'], 150), (p['size'], p['size']), p['size'])
+            screen.blit(s, (p['x'], p['y']))
             
             # 移動
             p['y'] += p['vy']
@@ -177,10 +165,10 @@ class CrystalMenu(AbstractMenu):
 
         # 3. 標題與裝飾
         title_y = 60
-        # 標題背景光暈
-        glow_radius = 150 + 20 * math.sin(self.animation_time)
-        s = pygame.Surface((int(glow_radius*2), int(glow_radius*2)), pygame.SRCALPHA)
-        pygame.draw.circle(s, (30, 50, 80, 50), (int(glow_radius), int(glow_radius)), int(glow_radius))
+        # 簡化 5: 靜態光暈，移除 sin 波運算
+        glow_radius = 120
+        s = pygame.Surface((glow_radius*2, glow_radius*2), pygame.SRCALPHA)
+        pygame.draw.circle(s, (30, 50, 80, 40), (glow_radius, glow_radius), glow_radius)
         screen.blit(s, (SCREEN_WIDTH//2 - glow_radius, title_y - glow_radius + 20))
         
         title_surface = self.title_font.render(self.title, True, (220, 240, 255))
@@ -192,6 +180,7 @@ class CrystalMenu(AbstractMenu):
             button.draw(screen)
 
     def handle_event(self, event: pygame.event.Event) -> str:
+        """事件處理 (邏輯完全保留)"""
         if not self.active:
             return ""
             
@@ -227,6 +216,7 @@ class CrystalMenu(AbstractMenu):
         return ""
         
     def _process_action(self, action: str) -> str:
+        """處理按鈕動作 (邏輯完全保留)"""
         mm = self.game.menu_manager
         
         if action == "back":
