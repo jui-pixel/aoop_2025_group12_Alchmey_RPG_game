@@ -10,6 +10,7 @@ async def main():
     clock = pygame.time.Clock()
     game = Game(screen, clock)
     await game.run()
+    await asyncio.sleep(0)
 
 if __name__ == "__main__":
     asyncio.run(main())

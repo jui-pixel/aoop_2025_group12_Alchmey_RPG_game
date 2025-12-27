@@ -1,0 +1,43 @@
+name: Deploy Game to GitHub Pages
+
+on:
+  # 當推送到 main 分支時觸發 (如果你的主分支叫 master，請改為 master)
+  push:
+    branches: [ main ]
+  # 允許手動在 Actions 頁面觸發
+  workflow_dispatch:
+
+permissions:
+  contents: write # 允許 Action 推送代碼到 gh-pages 分支
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code (檢出代碼)
+        uses: actions/checkout@v4
+
+      - name: Set up Python (設定 Python 環境)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # Pygbag 支援的版本
+
+      - name: Install dependencies (安裝依賴)
+        run: |
+          python -m pip install --upgrade pip
+          pip install pygbag
+          # 如果你有 requirements.txt，取消下面這行的註解：
+          # pip install -r requirements.txt
+
+      - name: Build with Pygbag (打包遊戲)
+        run: |
+          # --build 參數只打包不運行伺服器
+          # main.py 是你的入口檔案，請根據實際情況修改
+          python -m pygbag --build main.py
+
+      - name: Deploy to GitHub Pages (部署)
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages # 部署到哪個分支
+          folder: build/web # Pygbag 產生的網頁檔案路

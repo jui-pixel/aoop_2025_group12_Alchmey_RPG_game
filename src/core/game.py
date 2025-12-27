@@ -1,4 +1,5 @@
 # src/game.py 最終修正內容
+import asyncio
 import pygame
 import esper # 引入 esper 模組
 from src.core.config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
@@ -256,6 +257,7 @@ class Game:
             if not await self.update(dt): # 更新遊戲狀態
                 break
             self.draw() # 繪製畫面
+            await asyncio.sleep(0)
         
         pygame.quit() # 退出 Pygame
     
