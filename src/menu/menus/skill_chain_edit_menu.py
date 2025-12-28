@@ -20,7 +20,7 @@ class SkillChainEditMenu(AbstractMenu):
         self.game = game
         self.chain_idx = chain_idx
         self.options = options
-        self.title = f"Chain Configuration I" if chain_idx == 0 else f"Chain Configuration II"
+        self.title = f"Chain Configuration" + f" #{chain_idx + 1}"
         
         # 初始數據
         self.slots: List[Optional['Skill']] = []
@@ -158,6 +158,12 @@ class SkillChainEditMenu(AbstractMenu):
             self.header_font
         )
         self.buttons.append(finish_btn)
+        
+        # 調整 selected_index 避免越界
+        if self.selected_index >= len(self.buttons) or self.selected_index < 0:
+            self.selected_index = 0
+            if self.buttons:
+                self.buttons[0].is_selected = True
 
     def _create_slot_surface(self, width, height, color, is_marked):
         s = pygame.Surface((width, height))
@@ -298,7 +304,12 @@ class SkillChainEditMenu(AbstractMenu):
             for i, button in enumerate(self.buttons):
                 if button.rect.collidepoint(event.pos):
                     if self.selected_index != i:
-                        self.buttons[self.selected_index].is_selected = False
+                        # === 修復開始 ===
+                        # 先檢查舊的索引是否有效，再嘗試取消選中
+                        if 0 <= self.selected_index < len(self.buttons):
+                            self.buttons[self.selected_index].is_selected = False
+                        # === 修復結束 ===
+                        
                         self.selected_index = i
                         self.buttons[self.selected_index].is_selected = True
                     break
@@ -350,12 +361,16 @@ class SkillChainEditMenu(AbstractMenu):
     def update_slots_for_chain(self, chain_idx: int) -> None:
         """更新當前編輯的鏈索引並重載數據"""
         self.chain_idx = chain_idx
-        self.title = f"Chain Configuration I" if chain_idx == 0 else f"Chain Configuration II"
+        self.title = f"Chain Configuration" + f" #{chain_idx + 1}"
         self._load_current_chain()
         self._update_buttons()
+        self.selected_index = 0
 
     def get_selected_action(self) -> str:
-        return self.buttons[self.selected_index].action if self.active else ""
+        # 增加長度檢查
+        if self.active and 0 <= self.selected_index < len(self.buttons):
+            return self.buttons[self.selected_index].action
+        return ""
 
     def activate(self, active: bool) -> None:
         self.active = active

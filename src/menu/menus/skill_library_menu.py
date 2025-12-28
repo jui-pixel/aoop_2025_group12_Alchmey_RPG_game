@@ -118,6 +118,8 @@ class SkillLibraryMenu(AbstractMenu):
         # 確保選中索引有效
         if self.selected_index >= len(self.buttons):
             self.selected_index = len(self.buttons) - 1
+        elif self.selected_index < 0:
+            self.selected_index = 0
         if self.buttons:
             self.buttons[self.selected_index].is_selected = True
 
