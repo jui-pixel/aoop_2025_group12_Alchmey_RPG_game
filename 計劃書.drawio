@@ -2273,6 +2273,9 @@
         <mxCell id="8sjlLmCt3UES89s506ps-9" edge="1" parent="1" source="8sjlLmCt3UES89s506ps-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="8sjlLmCt3UES89s506ps-6">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
+        <mxCell id="ivxUGW5HPg2PnkJLngHl-2" edge="1" parent="1" source="8sjlLmCt3UES89s506ps-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="ivxUGW5HPg2PnkJLngHl-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="8sjlLmCt3UES89s506ps-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="AbstractMenu" vertex="1">
           <mxGeometry height="60" width="120" x="100" y="90" as="geometry" />
         </mxCell>
@@ -2356,6 +2359,9 @@
         </mxCell>
         <mxCell id="XG1aJHxqsjYydrKGsIN1-25" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="handle_event" vertex="1">
           <mxGeometry height="60" width="120" x="760" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="ivxUGW5HPg2PnkJLngHl-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="update" vertex="1">
+          <mxGeometry height="60" width="120" x="300" y="410" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

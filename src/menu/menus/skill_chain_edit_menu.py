@@ -42,12 +42,12 @@ class SkillChainEditMenu(AbstractMenu):
         # 視覺效果
         self.animation_time = 0
         self.particles = []
-        
+        self.selected_index = 0
         # 初始化
         self._update_buttons()
         self._init_particles()
         
-        self.selected_index = 0
+        
         if self.buttons:
             self.buttons[self.selected_index].is_selected = True
 
