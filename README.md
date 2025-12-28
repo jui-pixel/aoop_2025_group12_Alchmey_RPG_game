@@ -143,24 +143,26 @@ python main.py
 
 ```text
 alchemy-rpg-game/
-├── .github/workflows/          # CI/CD 自動化流程 (包含 deploy.yml)
-├── assets/                     # 遊戲資產庫 (圖片、音效、字體)
-├── src/                        # 遊戲核心源碼
-│   ├── core/                   # 核心邏輯 (Game Loop, Global Config)
-│   ├── dungeon/                # 隨機地圖生成系統 (核心特色)
-│   │   ├── algorithms/         # 生成演算法 (BSP, Graph)
-│   │   ├── builder/            # 地圖建構器
-│   │   └── generators/         # 房間與走廊生成邏輯
-│   ├── ecs/                    # ECS 架構核心 (Components, Systems)
-│   ├── entities/               # 實體定義 (Player, Enemy, NPC)
-│   ├── manager/                # 系統管理器 (Audio, Event, Render)
-│   ├── menu/                   # UI 與選單系統
-│   ├── skills/                 # 技能與煉金系統邏輯
-│   └── utils/                  # 通用工具
-├── tests/                      # 單元測試
-├── main.py                     # 遊戲啟動入口
-├── requirements.txt            # Python 依賴清單
-└── player_data.json            # 玩家存檔
+├── .github/workflows/            # CI/CD 自動化流程 (包含 deploy.yml)
+├── assets/                       # 遊戲資產庫 (圖片、音效、字體)
+├── src/                          # 遊戲核心源碼
+│   ├── core/                     # 核心邏輯 (Game Loop, Global Config)
+│   ├── dungeon/                  # 隨機地圖生成系統 (核心特色)
+│   │   ├── algorithms/           # 生成演算法 (BSP, Graph)
+│   │   ├── builder/              # 地圖建構器
+│   │   └── generators/           # 房間與走廊生成邏輯
+│   ├── ecs/                      # ECS 架構核心 (Components, Systems)
+│   ├── entities/                 # 實體定義 (Player, Enemy, NPC)
+│   ├── manager/                  # 系統管理器 (Audio, Event, Render)
+│   ├── menu/                     # 選單系統
+│   ├── skills/                   # 技能邏輯
+│   └── utils/                    # 通用工具
+├── tests/                        # 單元測試
+├── main.py                       # 遊戲啟動入口
+├── requirements.txt              # Python 依賴清單
+├── classes_Alchmey_RPG_game.png  # 類別圖
+├── packages_Alchmey_RPG_game.png # 依賴圖
+└── player_data.json              # 玩家存檔
 
 ```
 
