@@ -363,6 +363,7 @@ class SkillChainEditMenu(AbstractMenu):
             self._update_total_pages() # 確保頁數正確
             self._update_buttons()
             if 0 <= self.selected_index < len(self.buttons):
+                self.selected_index = 0
                 self.buttons[self.selected_index].is_selected = True
             
             # 重置
@@ -372,6 +373,7 @@ class SkillChainEditMenu(AbstractMenu):
         else:
             if 0 <= self.selected_index < len(self.buttons):
                 self.buttons[self.selected_index].is_selected = False
+                self.selected_index = 0
                 
     def _update_total_pages(self):
         self.skills = self.game.storage_manager.skills_library
