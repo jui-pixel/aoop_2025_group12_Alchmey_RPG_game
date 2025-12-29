@@ -187,7 +187,7 @@ class RenderManager:
             pygame.draw.rect(
                 self.screen, 
                 (255, 0, 0),
-                (minimap_player_x, minimap_player_y, self.minimap_scale, self.minimap_scale)
+                (minimap_player_x, minimap_player_y, self.minimap_scale * 2, self.minimap_scale * 2)
             )
 
     def _draw_fog(self) -> None:
