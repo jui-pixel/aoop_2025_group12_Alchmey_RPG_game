@@ -141,18 +141,38 @@ class RenderManager:
         self.screen.blit(minimap_surface, self.minimap_offset)
 
     def _draw_fog(self) -> None:
-        """繪製視野迷霧。"""
+        """優化版：只繪製攝影機範圍內的迷霧"""
         dungeon = self.game.dungeon_manager.get_dungeon()
-        self.fog_surface.fill(BLACK)
+        # 填充全黑背景 (假設未探索區域是全黑)
+        self.fog_surface.fill(BLACK) 
 
-        for y in range(dungeon.grid_height):
-            for x in range(dungeon.grid_width):
-                screen_x = x * TILE_SIZE - self.camera_offset[0]
-                screen_y = y * TILE_SIZE - self.camera_offset[1]
+        # 1. 計算攝影機涵蓋的 Tile 索引範圍 (加上 buffer 避免邊緣閃爍)
+        start_col = max(0, int(self.camera_offset[0] // TILE_SIZE))
+        end_col = min(dungeon.grid_width, int((self.camera_offset[0] + SCREEN_WIDTH) // TILE_SIZE) + 1)
+        
+        start_row = max(0, int(self.camera_offset[1] // TILE_SIZE))
+        end_row = min(dungeon.grid_height, int((self.camera_offset[1] + SCREEN_HEIGHT) // TILE_SIZE) + 1)
+
+        # 2. 優化距離計算：使用「距離平方」避免開根號 (sqrt 很慢)
+        vision_sq = self.last_vision_radius ** 2
+        px, py = self.last_player_pos
+
+        for y in range(start_row, end_row):
+            for x in range(start_col, end_col):
+                # 如果這個格子已經探索過 (fog_map 記錄已探索區域)
                 if self.fog_map[y][x]:
-                    if (x, y) == self.last_player_pos or math.sqrt((x - self.last_player_pos[0]) ** 2 + (y - self.last_player_pos[1]) ** 2) <= self.last_vision_radius:
+                    screen_x = x * TILE_SIZE - self.camera_offset[0]
+                    screen_y = y * TILE_SIZE - self.camera_offset[1]
+                    
+                    # 計算距離平方
+                    dist_sq = (x - px) ** 2 + (y - py) ** 2
+                    
+                    if dist_sq <= vision_sq:
+                        # 視野內：完全透明 (挖洞)
+                        # 注意：fill((0,0,0,0)) 需要 surface 支援 SRCALPHA
                         self.fog_surface.fill((0, 0, 0, 0), (screen_x, screen_y, TILE_SIZE, TILE_SIZE))
                     else:
+                        # 已探索但不在視野內：半透明迷霧 (記憶迷霧)
                         self.fog_surface.fill((0, 0, 0, 128), (screen_x, screen_y, TILE_SIZE, TILE_SIZE))
 
         self.screen.blit(self.fog_surface, (0, 0))
