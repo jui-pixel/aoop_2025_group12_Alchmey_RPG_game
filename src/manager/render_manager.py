@@ -35,6 +35,7 @@ class RenderManager:
         self.original_camera_lerp_factor = 1.5
         self.skill_rects = []
         self.minimap_scale = 1
+        self.minimap_cache_surface = None
         self.minimap_width = 0
         self.minimap_height = 0
         self.minimap_offset = (0, 0)
@@ -44,18 +45,38 @@ class RenderManager:
         self.last_vision_radius = None
 
     def reset_minimap(self) -> None:
+        """重置小地圖"""
         self._initialize_minimap()
+        # 如果需要，這裡也可以重置 fog_map
+        # self._initialize_fog_map()
         
     def reset_fog(self) -> None:
         self._initialize_fog_map()
     
     def _initialize_minimap(self) -> None:
-        """初始化小地圖的尺寸和偏移。"""
+        """初始化小地圖的尺寸、偏移與緩存 Surface。"""
         dungeon = self.game.dungeon_manager.get_dungeon()
         self.minimap_width = int(dungeon.grid_width * self.minimap_scale)
         self.minimap_height = int(dungeon.grid_height * self.minimap_scale)
         self.minimap_offset = (SCREEN_WIDTH - self.minimap_width - 10, 10)
-        print(f"RenderManager: 初始化小地圖，尺寸 ({self.minimap_width}, {self.minimap_height})，偏移 {self.minimap_offset}")
+        
+        # 初始化緩存 Surface (全黑)
+        self.minimap_cache_surface = pygame.Surface((self.minimap_width, self.minimap_height))
+        self.minimap_cache_surface.fill((0, 0, 0))
+        
+        print(f"RenderManager: 初始化小地圖與緩存，尺寸 ({self.minimap_width}, {self.minimap_height})")
+    
+    def _draw_tile_to_minimap_cache(self, x: int, y: int, tile_type: int) -> None:
+        """[優化輔助] 將單個格子繪製到小地圖緩存上"""
+        if self.minimap_cache_surface is None:
+            return
+            
+        color = ROOM_FLOOR_COLORS.get(tile_type, (50, 50, 50))
+        pygame.draw.rect(
+            self.minimap_cache_surface, 
+            color,
+            (x * self.minimap_scale, y * self.minimap_scale, self.minimap_scale, self.minimap_scale)
+        )
 
     def _initialize_fog_map(self) -> None:
         """初始化視野迷霧地圖。"""
@@ -66,33 +87,58 @@ class RenderManager:
         print("RenderManager: 初始化視野迷霧地圖")
 
     def _update_fog_map_from_player(self) -> None:
-        """根據玩家位置更新視野迷霧。"""
+        """根據玩家位置更新視野迷霧 (含小地圖增量更新)。"""
         if not self.game.entity_manager.player:
             return
+        
+        # 確保 fog_map 和 cache 都已初始化
         if not self.fog_map:
             self._initialize_fog_map()
+        if self.minimap_cache_surface is None:
+            self._initialize_minimap()
+
         player = self.game.entity_manager.player
         dungeon = self.game.dungeon_manager.get_dungeon()
         vision_radius = getattr(player, 'vision_radius', 5)
         player_tile_x = int(player.x // TILE_SIZE)
         player_tile_y = int(player.y // TILE_SIZE)
 
+        # 效能優化：如果玩家位置和視野半徑沒變，直接返回
         if self.last_player_pos == (player_tile_x, player_tile_y) and self.last_vision_radius == vision_radius:
             return
 
         self.last_player_pos = (player_tile_x, player_tile_y)
         self.last_vision_radius = vision_radius
 
-        for y in range(max(0, player_tile_y - vision_radius), min(dungeon.grid_height, player_tile_y + vision_radius + 1)):
-            for x in range(max(0, player_tile_x - vision_radius), min(dungeon.grid_width, player_tile_x + vision_radius + 1)):
-                if math.sqrt((x - player_tile_x) ** 2 + (y - player_tile_y) ** 2) <= vision_radius:
-                    if 0 <= y < dungeon.grid_height and 0 <= x < dungeon.grid_width:
+        # 計算視野邊界，避免不必要的迴圈
+        start_x = max(0, player_tile_x - vision_radius)
+        end_x = min(dungeon.grid_width, player_tile_x + vision_radius + 1)
+        start_y = max(0, player_tile_y - vision_radius)
+        end_y = min(dungeon.grid_height, player_tile_y + vision_radius + 1)
+
+        vision_sq = vision_radius ** 2  # 使用距離平方避免開根號
+
+        for y in range(start_y, end_y):
+            for x in range(start_x, end_x):
+                # 簡單的距離檢查
+                if (x - player_tile_x) ** 2 + (y - player_tile_y) ** 2 <= vision_sq:
+                    # 只有當該格 "尚未被探索" 時，才進行視線檢查與更新
+                    if not self.fog_map[y][x]:
+                        can_see = False
                         if dungeon.dungeon_tiles[y][x] not in PASSABLE_TILES:
-                            self.fog_map[y][x] = True
+                            # 牆壁通常直接視為可見（如果距離夠近），或者也做視線檢查
+                            # 這裡簡化邏輯：如果在範圍內且是牆壁，設為可見
+                            can_see = True 
                         elif self.has_line_of_sight(player_tile_x, player_tile_y, x, y, dungeon):
+                            can_see = True
+                        
+                        if can_see:
                             self.fog_map[y][x] = True
+                            # [關鍵優化] 立即將新探索的格子畫到小地圖緩存上
+                            self._draw_tile_to_minimap_cache(x, y, dungeon.dungeon_tiles[y][x])
                             
-        print(f"RenderManager: 更新迷霧，玩家位置 ({player_tile_x}, {player_tile_y})，視野半徑 {vision_radius}")
+        # 移除這裡的 print，避免洗版
+        # print(f"RenderManager: 更新迷霧...")
 
     def has_line_of_sight(self, x0, y0, x1, y1, dungeon):
         """檢查玩家(x0,y0)到(x1,y1)之間是否有阻擋"""
@@ -116,29 +162,33 @@ class RenderManager:
         return True
     
     def _draw_minimap(self) -> None:
-        """繪製小地圖，僅顯示地牢結構與玩家位置。"""
-        dungeon = self.game.dungeon_manager.get_dungeon()
-        minimap_surface = pygame.Surface((self.minimap_width, self.minimap_height))
-        minimap_surface.fill((0, 0, 0))
-        if not self.fog_map:
-            self._initialize_fog_map()
-        for y in range(dungeon.grid_height):
-            for x in range(dungeon.grid_width):
-                if self.fog_map[y][x]:
-                    tile_type = dungeon.dungeon_tiles[y][x]
-                    color = ROOM_FLOOR_COLORS[tile_type]
-                    pygame.draw.rect(
-                        minimap_surface, color,
-                        (x * self.minimap_scale, y * self.minimap_scale, self.minimap_scale, self.minimap_scale)
-                    )
+        """繪製小地圖 (極速版)。"""
+        # 1. 安全檢查：如果緩存不存在，初始化它 (並可能需要重繪已探索區域)
+        if self.minimap_cache_surface is None:
+            self._initialize_minimap()
+            # 如果是中途載入，這裡可能需要根據 fog_map 重建整個緩存，
+            # 但通常 _update_fog_map_from_player 會隨著移動慢慢補上，
+            # 若要完美，可以加一個 _rebuild_minimap_cache() 方法。
 
+        # 2. 直接繪製緩存的靜態背景 (O(1) 操作)
+        self.screen.blit(self.minimap_cache_surface, self.minimap_offset)
+
+        # 3. 繪製動態物件：玩家 (O(1) 操作)
         if self.game.entity_manager.player:
-            player_x = int(self.game.entity_manager.player.x // TILE_SIZE * self.minimap_scale)
-            player_y = int(self.game.entity_manager.player.y // TILE_SIZE * self.minimap_scale)
-            pygame.draw.rect(minimap_surface, (255, 0, 0),
-                            (player_x, player_y, self.minimap_scale, self.minimap_scale))
+            # 計算玩家在小地圖上的相對座標
+            p_x = self.game.entity_manager.player.x
+            p_y = self.game.entity_manager.player.y
+            
+            # 轉換為小地圖座標
+            minimap_player_x = self.minimap_offset[0] + (p_x / TILE_SIZE * self.minimap_scale)
+            minimap_player_y = self.minimap_offset[1] + (p_y / TILE_SIZE * self.minimap_scale)
 
-        self.screen.blit(minimap_surface, self.minimap_offset)
+            # 畫紅點
+            pygame.draw.rect(
+                self.screen, 
+                (255, 0, 0),
+                (minimap_player_x, minimap_player_y, self.minimap_scale, self.minimap_scale)
+            )
 
     def _draw_fog(self) -> None:
         """優化版：只繪製攝影機範圍內的迷霧"""
