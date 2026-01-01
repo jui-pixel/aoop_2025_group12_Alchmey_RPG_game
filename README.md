@@ -6,6 +6,7 @@
 
 ![image](src/assets/screenshots/gameplay1.png) ![image](src/assets/screenshots/gameplay2.png)
 
+### Canva : [LINK](<https://www.canva.com/design/DAG8sHiuRyA/4Z5ffgRHJUHJcNM1A6CJuA/edit?utm_content=DAG8sHiuRyA&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton>)
 ---
 
 ## 📖 專案概述
