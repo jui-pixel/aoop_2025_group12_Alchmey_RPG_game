@@ -2,15 +2,22 @@ name: Deploy Game (Prod & Dev)
 
 on:
   push:
-    # 同時監聽 main (正式) 和 dev (研發) 分支
     branches: [ main, dev ]
   workflow_dispatch:
 
+# 【融合點 1】權限設定
+# JamesIves 的 Action 需要 write 權限來推送到 gh-pages 分支
 permissions:
   contents: write
 
+# 【融合點 2】併發控制 (來自你的第一個範例)
+# 避免短時間內多次 push 導致部署衝突
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
-  # 第一個 Job：單元測試 (建議在打包前先測試)
+  # Job 1: 測試 (保持不變，這是好習慣)
   test:
     runs-on: ubuntu-latest
     steps:
@@ -25,18 +32,20 @@ jobs:
       - name: Install dependencies & Test
         run: |
           python -m pip install --upgrade pip
-          # 如果你有 requirements.txt，取消下面這行：
-          pip install -r requirements.txt
-          
-          # 這裡執行你的測試腳本。如果還沒有測試檔，可以先 echo 一個訊息
-          pytest # <--- 當你有撰寫測試時，取消這行
-          echo "Running tests for branch: ${{ github.ref_name }}"
+          pip install pytest
+          # pip install -r requirements.txt
+          echo "Running tests..."
+          # pytest
 
-  # 第二個 Job：打包並部署 (只有當測試通過後才會執行)
+  # Job 2: 打包並部署
   build-and-deploy:
-    needs: test # 確保 test 成功後才執行
+    needs: test
     runs-on: ubuntu-latest
-    
+    # 可以在 GitHub Repo 設定 Environments 以便追蹤部署狀態
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -48,34 +57,40 @@ jobs:
 
       - name: Install Pygbag
         run: |
-          python -m pip install --upgrade pip
           pip install pygbag
           # pip install -r requirements.txt
 
       - name: Build with Pygbag
         run: |
-          # 這裡假設你的入口是 main.py
+          echo "Building game..."
+          # pygbag 預設會輸出到 build/web 資料夾
           python -m pygbag --build main.py
 
-      # --- 分支判斷邏輯開始 ---
+      # 【關鍵步驟】解決 Jekyll 無法部署的問題
+      # 在 build/web 資料夾內建立 .nojekyll 檔案
+      # 這告訴 GitHub Pages：不要嘗試用 Jekyll 編譯，直接顯示這些檔案
+      - name: Add .nojekyll file
+        run: touch build/web/.nojekyll
 
-      # 情況 A：如果是 dev 分支 -> 部署到 'gh-pages' 的 'dev-test' 子資料夾
-      - name: Deploy DEV to GitHub Pages (Subfolder)
+      # --- 部署邏輯 (使用 JamesIves 以支援資料夾共存) ---
+
+      # 情況 A：Dev 分支 -> 部署到 /dev-test 子目錄
+      - name: Deploy DEV to GitHub Pages
         if: github.ref == 'refs/heads/dev'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
           folder: build/web
-          target-folder: dev-test # 部署到 URL/dev-test/
-          clean: false # 不要清除其他檔案 (保留主程式)
+          target-folder: dev-test
+          clean: false # 【關鍵】不要清除其他檔案（保留 Main 的內容）
 
-      # 情況 B：如果是 main 分支 -> 部署到 'gh-pages' 的 根目錄
-      - name: Deploy MAIN to GitHub Pages (Root)
+      # 情況 B：Main 分支 -> 部署到 根目錄
+      - name: Deploy MAIN to GitHub Pages
         if: github.ref == 'refs/heads/main'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
           folder: build/web
-          target-folder: . # 部署到根目錄
-          clean: true # 清除根目錄舊檔案
-          clean-exclude: dev-test # 重要！保留 dev-test 資料夾不被刪除
+          target-folder: .
+          clean: true # 清除根目錄舊檔案，但排除 dev-test
+          clean-exclude: dev-test # 【關鍵】保護 dev-test 不被刪除
