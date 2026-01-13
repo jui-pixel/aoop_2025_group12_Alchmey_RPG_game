@@ -1,43 +1,82 @@
-name: Deploy Game to GitHub Pages
+name: Deploy Game (Prod & Dev)
 
 on:
-  # 當推送到 main 分支時觸發 (如果你的主分支叫 master，請改為 master)
   push:
-    branches: [ main ]
-  # 允許手動在 Actions 頁面觸發
+    # 同時監聽 main (正式) 和 dev (研發) 分支
+    branches: [ main, dev ]
   workflow_dispatch:
 
 permissions:
-  contents: write # 允許 Action 推送代碼到 gh-pages 分支
+  contents: write
 
 jobs:
-  build-and-deploy:
+  # 第一個 Job：單元測試 (建議在打包前先測試)
+  test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code (檢出代碼)
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python (設定 Python 環境)
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' # Pygbag 支援的版本
+          python-version: '3.11'
 
-      - name: Install dependencies (安裝依賴)
+      - name: Install dependencies & Test
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest # 安裝測試工具
+          # 如果你有 requirements.txt，取消下面這行：
+          # pip install -r requirements.txt
+          
+          # 這裡執行你的測試腳本。如果還沒有測試檔，可以先 echo 一個訊息
+          # pytest # <--- 當你有撰寫測試時，取消這行
+          echo "Running tests for branch: ${{ github.ref_name }}"
+
+  # 第二個 Job：打包並部署 (只有當測試通過後才會執行)
+  build-and-deploy:
+    needs: test # 確保 test 成功後才執行
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Pygbag
         run: |
           python -m pip install --upgrade pip
           pip install pygbag
-          # 如果你有 requirements.txt，取消下面這行的註解：
           # pip install -r requirements.txt
 
-      - name: Build with Pygbag (打包遊戲)
+      - name: Build with Pygbag
         run: |
-          # --build 參數只打包不運行伺服器
-          # main.py 是你的入口檔案，請根據實際情況修改
+          # 這裡假設你的入口是 main.py
           python -m pygbag --build main.py
 
-      - name: Deploy to GitHub Pages (部署)
+      # --- 分支判斷邏輯開始 ---
+
+      # 情況 A：如果是 dev 分支 -> 部署到 'gh-pages' 的 'dev-test' 子資料夾
+      - name: Deploy DEV to GitHub Pages (Subfolder)
+        if: github.ref == 'refs/heads/dev'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          branch: gh-pages # 部署到哪個分支
-          folder: build/web # Pygbag 產生的網頁檔案路
+          branch: gh-pages
+          folder: build/web
+          target-folder: dev-test # 部署到 URL/dev-test/
+          clean: false # 不要清除其他檔案 (保留主程式)
+
+      # 情況 B：如果是 main 分支 -> 部署到 'gh-pages' 的 根目錄
+      - name: Deploy MAIN to GitHub Pages (Root)
+        if: github.ref == 'refs/heads/main'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: build/web
+          target-folder: . # 部署到根目錄
+          clean: true # 清除根目錄舊檔案
+          clean-exclude: dev-test # 重要！保留 dev-test 資料夾不被刪除
