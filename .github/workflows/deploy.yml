@@ -25,12 +25,11 @@ jobs:
       - name: Install dependencies & Test
         run: |
           python -m pip install --upgrade pip
-          pip install pytest # 安裝測試工具
           # 如果你有 requirements.txt，取消下面這行：
-          # pip install -r requirements.txt
+          pip install -r requirements.txt
           
           # 這裡執行你的測試腳本。如果還沒有測試檔，可以先 echo 一個訊息
-          # pytest # <--- 當你有撰寫測試時，取消這行
+          pytest # <--- 當你有撰寫測試時，取消這行
           echo "Running tests for branch: ${{ github.ref_name }}"
 
   # 第二個 Job：打包並部署 (只有當測試通過後才會執行)
