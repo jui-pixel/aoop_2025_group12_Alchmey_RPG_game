@@ -46,7 +46,7 @@ jobs:
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'github-pages' || 'development' }}
       # 注意：請將下方的 username/repo 換成你自己的
-      url: ${{ github.ref == 'refs/heads/main' && 'https://你的帳號.github.io/aoop_2025_group12_Alchmey_RPG_game/' || 'https://你的帳號.github.io/aoop_2025_group12_Alchmey_RPG_game/dev-test/' }}
+      url: ${{ github.ref == 'refs/heads/main' && 'https://jui-pixel.github.io/aoop_2025_group12_Alchmey_RPG_game/' || 'https://jui-pixel.github.io/aoop_2025_group12_Alchmey_RPG_game/dev-test/' }}
 
     steps:
       - name: Checkout code
