@@ -41,10 +41,12 @@ jobs:
   build-and-deploy:
     needs: test
     runs-on: ubuntu-latest
-    # 可以在 GitHub Repo 設定 Environments 以便追蹤部署狀態
+    
+    # 【重點修改】根據分支自動切換環境名稱與網址
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: ${{ github.ref == 'refs/heads/main' && 'github-pages' || 'development' }}
+      # 注意：請將下方的 username/repo 換成你自己的
+      url: ${{ github.ref == 'refs/heads/main' && 'https://你的帳號.github.io/aoop_2025_group12_Alchmey_RPG_game/' || 'https://你的帳號.github.io/aoop_2025_group12_Alchmey_RPG_game/dev-test/' }}
 
     steps:
       - name: Checkout code
@@ -74,23 +76,23 @@ jobs:
 
       # --- 部署邏輯 (使用 JamesIves 以支援資料夾共存) ---
 
-      # 情況 A：Dev 分支 -> 部署到 /dev-test 子目錄
-      - name: Deploy DEV to GitHub Pages
+      # 情況 A：Dev -> 部署到 development 環境 (dev-test 資料夾)
+      - name: Deploy DEV
         if: github.ref == 'refs/heads/dev'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
           folder: build/web
           target-folder: dev-test
-          clean: false # 【關鍵】不要清除其他檔案（保留 Main 的內容）
+          clean: false # 保留 Main 的檔案
 
-      # 情況 B：Main 分支 -> 部署到 根目錄
-      - name: Deploy MAIN to GitHub Pages
+      # 情況 B：Main -> 部署到 github-pages 環境 (根目錄)
+      - name: Deploy MAIN
         if: github.ref == 'refs/heads/main'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
           folder: build/web
           target-folder: .
-          clean: true # 清除根目錄舊檔案，但排除 dev-test
-          clean-exclude: dev-test # 【關鍵】保護 dev-test 不被刪除
+          clean: true
+          clean-exclude: dev-test
