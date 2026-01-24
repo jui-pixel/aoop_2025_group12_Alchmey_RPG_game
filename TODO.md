@@ -1,86 +1,61 @@
-# Project Restructure TODO
+# Project Architecture Refactoring
 
-## Phase 1: Setup
+## 1. Directory Structure Setup
+- [x] Create `.github/workflows/`
+- [x] Create `assets/images`, `assets/audio`, `assets/fonts`
+- [x] Create `data/dungeon_flows`, `data/prefabs`, `data/saves`
+- [x] Create `src/alchemy_rpg/core`
+- [x] Create `src/alchemy_rpg/ecs/components`, `src/alchemy_rpg/ecs/systems`
+- [x] Create `src/alchemy_rpg/dungeon/algorithms`
+- [x] Create `src/alchemy_rpg/ui/menus`
+- [x] Create `src/alchemy_rpg/utils`
 
-- [ ] Create `pyproject.toml` with package configuration
-- [ ] Update `.gitignore` to include `data/saves/`
-- [ ] Create new directory structure under `src/alchemy_rpg/`
+## 2. Core Infrastructure implementation
+- [x] Implement `src/alchemy_rpg/core/engine.py` (Game Loop)
+- [x] Implement `src/alchemy_rpg/core/event_bus.py`
+- [x] Implement `src/alchemy_rpg/core/input.py`
+- [x] Implement `src/alchemy_rpg/core/resources.py`
+- [x] Implement `src/alchemy_rpg/core/state_machine.py`
 
-## Phase 2: Directory Creation
+## 3. ECS Layer Migration
+- [x] Implement `src/alchemy_rpg/ecs/world.py`
+- [x] Implement `src/alchemy_rpg/ecs/prefabs.py`
+- [x] Refactor Components:
+    - [x] `src/alchemy_rpg/ecs/components/common.py`
+    - [x] `src/alchemy_rpg/ecs/components/combat.py`
+    - [x] `src/alchemy_rpg/ecs/components/interaction.py`
+    - [x] `src/alchemy_rpg/ecs/components/skills.py`
+- [x] Refactor Systems:
+    - [x] `src/alchemy_rpg/ecs/systems/movement.py`
+    - [x] `src/alchemy_rpg/ecs/systems/render.py`
+    - [x] `src/alchemy_rpg/ecs/systems/combat.py`
+    - [x] `src/alchemy_rpg/ecs/systems/ai.py`
+    - [ ] `src/alchemy_rpg/ecs/systems/skill.py`
 
-- [ ] Create `src/alchemy_rpg/core/`
-- [ ] Create `src/alchemy_rpg/dungeon/algorithms/`
-- [ ] Create `src/alchemy_rpg/dungeon/builder/`
-- [ ] Create `src/alchemy_rpg/dungeon/tiles/`
-- [ ] Create `src/alchemy_rpg/ecs/components/`
-- [ ] Create `src/alchemy_rpg/ecs/systems/`
-- [ ] Create `src/alchemy_rpg/ecs/assemblages/`
-- [ ] Create `src/alchemy_rpg/scenes/`
-- [ ] Create `src/alchemy_rpg/services/`
-- [ ] Create `src/alchemy_rpg/utils/`
+## 4. Dungeon System Migration
+- [x] Implement `src/alchemy_rpg/dungeon/loader.py`
+- [x] Implement `src/alchemy_rpg/dungeon/context.py`
+- [x] Implement `src/alchemy_rpg/dungeon/pipeline.py`
+- [x] Refactor Algorithms:
+    - [x] `src/alchemy_rpg/dungeon/algorithms/registry.py`
+    - [ ] `src/alchemy_rpg/dungeon/algorithms/bsp.py`
+    - [ ] `src/alchemy_rpg/dungeon/algorithms/automata.py`
+    - [ ] `src/alchemy_rpg/dungeon/algorithms/graph.py`
+- [x] Implement `src/alchemy_rpg/dungeon/tiles.py`
 
-## Phase 3: File Migration
+## 5. UI System Migration
+- [x] Implement `src/alchemy_rpg/ui/manager.py`
+- [x] Implement `src/alchemy_rpg/ui/base.py`
+- [ ] Refactor Menus:
+    - [ ] `src/alchemy_rpg/ui/menus/hud.py`
+    - [ ] `src/alchemy_rpg/ui/menus/inventory.py`
+    - [ ] `src/alchemy_rpg/ui/menus/alchemy.py`
+    - [ ] `src/alchemy_rpg/ui/menus/skill_tree.py`
 
-### Core Module
-- [ ] Move `src/core/config.py` → `src/alchemy_rpg/core/config.py`
-- [ ] Move `src/core/game.py` → `src/alchemy_rpg/core/game.py`
-- [ ] Create `src/alchemy_rpg/core/__init__.py`
+## 6. Data & Utils
+- [x] Move/Refactor utils to `src/alchemy_rpg/utils/math.py`, `logger.py`
+- [ ] Create JSON data files in `data/`
 
-### Dungeon Module
-- [ ] Move `src/dungeon/algorithms/` → `src/alchemy_rpg/dungeon/algorithms/`
-- [ ] Move `src/dungeon/builder/` → `src/alchemy_rpg/dungeon/builder/`
-- [ ] Move `src/dungeon/config/` → `src/alchemy_rpg/dungeon/config/`
-- [ ] Move `src/dungeon/generators/` → merge into algorithms
-- [ ] Move `src/dungeon/managers/` → `src/alchemy_rpg/dungeon/`
-- [ ] Move `src/dungeon/*.py` → `src/alchemy_rpg/dungeon/`
-- [ ] Create `src/alchemy_rpg/dungeon/tiles/` with tile definitions
-
-### ECS Module
-- [ ] Move `src/ecs/components.py` → `src/alchemy_rpg/ecs/components/`
-- [ ] Move `src/ecs/systems.py` → `src/alchemy_rpg/ecs/systems/`
-- [ ] Move `src/ecs/ai.py` → `src/alchemy_rpg/ecs/systems/ai.py`
-- [ ] Move `src/buffs/` → `src/alchemy_rpg/ecs/components/buffs/`
-- [ ] Move `src/skills/` → `src/alchemy_rpg/ecs/components/skills/`
-
-### Assemblages (from entities/)
-- [ ] Move `src/entities/` → `src/alchemy_rpg/ecs/assemblages/`
-- [ ] Rename/restructure prefab files
-
-### Services (from manager/)
-- [ ] Move `src/manager/audio_manager.py` → `src/alchemy_rpg/services/`
-- [ ] Move `src/manager/dungeon_manager.py` → `src/alchemy_rpg/services/`
-- [ ] Move `src/manager/entity_manager.py` → `src/alchemy_rpg/services/`
-- [ ] Move `src/manager/event_manager.py` → `src/alchemy_rpg/services/`
-- [ ] Move `src/manager/menu_manager.py` → `src/alchemy_rpg/services/`
-- [ ] Move `src/manager/render_manager.py` → `src/alchemy_rpg/services/`
-- [ ] Move `src/manager/storage_manager.py` → `src/alchemy_rpg/services/`
-- [ ] Create `src/alchemy_rpg/services/__init__.py`
-
-### Scenes (from menu/)
-- [ ] Move `src/menu/` → `src/alchemy_rpg/scenes/`
-- [ ] Rename menu classes to Scene classes where appropriate
-
-### Utils Module
-- [ ] Move `src/utils/` → `src/alchemy_rpg/utils/`
-
-## Phase 4: Import Updates
-
-- [ ] Update all imports in `src/alchemy_rpg/core/`
-- [ ] Update all imports in `src/alchemy_rpg/dungeon/`
-- [ ] Update all imports in `src/alchemy_rpg/ecs/`
-- [ ] Update all imports in `src/alchemy_rpg/scenes/`
-- [ ] Update all imports in `src/alchemy_rpg/services/`
-- [ ] Update all imports in `src/alchemy_rpg/utils/`
-- [ ] Update `main.py` entry point
-
-## Phase 5: Cleanup
-
-- [ ] Remove old directories (`src/core/`, `src/dungeon/`, etc.)
-- [ ] Update `tests/` imports
-- [ ] Run tests to verify
-- [ ] Run game to verify functionality
-
-## Phase 6: Documentation
-
-- [ ] Update `README.md` with new structure
-- [ ] Add architecture diagram to `docs/architecture/`
+## 7. Cleanup
+- [ ] Remove old source files
+- [ ] Update `main.py`

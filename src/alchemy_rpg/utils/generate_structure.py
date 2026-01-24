@@ -40,6 +40,8 @@ def generate_structure_md(start_path, output_file):
                 dirs.remove("backup")
             if "build" in dirs:
                 dirs.remove("build")
+            if "assets" in dirs:
+                dirs.remove("assets")
             if ".gemini" in dirs: 
                 dirs.remove(".gemini") # Don't list my own brain folder if it's there
             if "docs" in dirs and root == start_path:
@@ -65,7 +67,12 @@ def generate_structure_md(start_path, output_file):
                 if f == os.path.basename(__file__):
                     continue # Skip this script
                 
-                out.write(f"{subindent}- [{f}](file:///{os.path.abspath(os.path.join(root, f)).replace(os.sep, '/')})\n")
+                # 修改後的寫法 (輸出 file://root/...)
+                full_path = os.path.join(root, f)
+                # 計算相對於 start_path (專案根目錄) 的路徑
+                relative_path = os.path.relpath(full_path, start_path).replace(os.sep, '/')
+                # 組合新的連結格式
+                out.write(f"{subindent}- [{f}](file://root/{relative_path})\n")
                 
                 if f.endswith(".py"):
                     defs = get_definitions(os.path.join(root, f))
